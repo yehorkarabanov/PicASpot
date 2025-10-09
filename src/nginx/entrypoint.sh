@@ -20,7 +20,7 @@ else
 fi
 
 #envsubst '$$FRONTEND_PORT_INTERNAL $$BACKEND_PORT_INTERNAL $$MAILHOG_UI_PORT_INTERNAL $$DOMAIN' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
-envsubst '$$DOMAIN' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+envsubst '$$BACKEND_PORT_INTERNAL $$DOMAIN' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
 echo "Starting Nginx."
 exec nginx -g "daemon off;"
