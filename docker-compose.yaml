@@ -1,12 +1,10 @@
 services:
   backend:
-#    depends_on:
-#      - postgres
     expose:
       - ${BACKEND_PORT_INTERNAL}
     build:
-        context: ./src/backend
-        dockerfile: Dockerfile
+      context: ./src/backend
+      dockerfile: Dockerfile
     volumes:
       - ./src/backend/:/code
       - /code/.venv
@@ -15,57 +13,32 @@ services:
     networks:
       - app-network
     command: sh -c "uv run fastapi dev --port ${BACKEND_PORT_INTERNAL} --host 0.0.0.0 --reload --proxy-headers"
-#
-#  frontend:
-#    depends_on:
-#      - backend
-#    build:
-#        context: ./frontend
-#        dockerfile: Dockerfile
-#    expose:
-#      - ${FRONTEND_PORT_INTERNAL}
-#    volumes:
-#      - ./frontend:/app
-#      - /app/node_modules
-#    environment:
-#      - PORT=${FRONTEND_PORT_INTERNAL}
-#      - VERIFY_MAIL_PATH=${VERIFY_MAIL_PATH}
-#      - PASSWORD_RESET_PATH=${PASSWORD_RESET_PATH}
-#    networks:
-#      - app-network
-#    tty: true
-#    command: sh -c "npm run dev -- --host 0.0.0.0 --port ${FRONTEND_PORT_INTERNAL}"
-#
-#  postgres:
-#    image: postgres:17.2-alpine
-#    ports:
-#      - ${POSTGRES_PORT}:${POSTGRES_PORT_INTERNAL}
-#    volumes:
-#      - postgres_data:/var/lib/postgresql/data
-#    environment:
-#      - POSTGRES_DB=${POSTGRES_DB}
-#      - POSTGRES_USER=${POSTGRES_USER}
-#      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-#    networks:
-#      - app-network
+
+  #  postgres:
+  #    image: postgres:17.2-alpine
+  #    ports:
+  #      - ${POSTGRES_PORT}:${POSTGRES_PORT_INTERNAL}
+  #    volumes:
+  #      - postgres_data:/var/lib/postgresql/data
+  #    environment:
+  #      - POSTGRES_DB=${POSTGRES_DB}
+  #      - POSTGRES_USER=${POSTGRES_USER}
+  #      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  #    networks:
+  #      - app-network
 
   nginx:
     image: nginx:1.29.2-alpine-slim
-#    depends_on:
-#      - frontend
-#      - backend
-#      - postgres
+    depends_on:
+      - backend
     volumes:
       - ./src/nginx/conf/nginx.conf:/etc/nginx/nginx.conf.template
       - ./src/nginx/entrypoint.sh:/etc/nginx/entrypoint.sh
       - ./src/nginx/certs/:/etc/nginx/certs/
     environment:
-        - BACKEND_PORT_INTERNAL=${BACKEND_PORT_INTERNAL}
-#        - FRONTEND_PORT_INTERNAL=${FRONTEND_PORT_INTERNAL}
-#        - POSTGRES_PORT_INTERNAL=${POSTGRES_PORT_INTERNAL}
-#        - REDIS_PORT_INTERNAL=${REDIS_PORT_INTERNAL}
-        - DOMAIN=${DOMAIN}
-    entrypoint: ["/bin/sh", "/etc/nginx/entrypoint.sh"]
+      - BACKEND_PORT_INTERNAL=${BACKEND_PORT_INTERNAL}
+      - DOMAIN=${DOMAIN}
+    entrypoint: [ "/bin/sh", "/etc/nginx/entrypoint.sh" ]
     ports:
       - "${HTTP_PORT}:80"
       - "${HTTPS_PORT}:443"
