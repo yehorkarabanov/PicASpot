@@ -1,7 +1,5 @@
 services:
   backend:
-#    depends_on:
-#      - postgres
     expose:
       - ${BACKEND_PORT_INTERNAL}
     build:
@@ -51,19 +49,14 @@ services:
 
   nginx:
     image: nginx:1.29.2-alpine-slim
-#    depends_on:
-#      - frontend
-#      - backend
-#      - postgres
+    depends_on:
+      - backend
     volumes:
       - ./src/nginx/conf/nginx.conf:/etc/nginx/nginx.conf.template
       - ./src/nginx/entrypoint.sh:/etc/nginx/entrypoint.sh
       - ./src/nginx/certs/:/etc/nginx/certs/
     environment:
         - BACKEND_PORT_INTERNAL=${BACKEND_PORT_INTERNAL}
-#        - FRONTEND_PORT_INTERNAL=${FRONTEND_PORT_INTERNAL}
-#        - POSTGRES_PORT_INTERNAL=${POSTGRES_PORT_INTERNAL}
-#        - REDIS_PORT_INTERNAL=${REDIS_PORT_INTERNAL}
         - DOMAIN=${DOMAIN}
     entrypoint: ["/bin/sh", "/etc/nginx/entrypoint.sh"]
     ports:

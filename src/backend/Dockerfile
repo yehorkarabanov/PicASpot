@@ -1,8 +1,18 @@
-FROM python:3.13-slim
+FROM python:3.14.0-slim
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-RUN apt-get update && apt-get install -y --no-install-recommends
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    make \
+    libc-dev \
+    libuv1-dev \
+    automake \
+    autoconf \
+    libtool \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy
