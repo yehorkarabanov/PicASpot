@@ -7,11 +7,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     make \
     libc-dev \
-    libuv1-dev \
-    automake \
-    autoconf \
-    libtool \
-    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 ENV UV_COMPILE_BYTECODE=1 \
