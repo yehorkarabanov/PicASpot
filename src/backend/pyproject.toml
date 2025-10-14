@@ -4,8 +4,12 @@ version = "0.1.0"
 description = "PicASpot backend"
 requires-python = ">=3.14"
 dependencies = [
+    "alembic>=1.17.0",
+    "asyncpg>=0.30.0",
     "fastapi[standard]>=0.119.0",
+    "geoalchemy2>=0.18.0",
     "pydantic-settings>=2.11.0",
+    "sqlalchemy>=2.0.44",
 ]
 
 

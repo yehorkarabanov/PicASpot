@@ -24,3 +24,5 @@ COPY . /code/
 WORKDIR /code/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --extra "test" --frozen --no-dev
+
+CMD ["sh", "-c", "uv run fastapi dev --port ${BACKEND_PORT_INTERNAL} --host 0.0.0.0 --reload --proxy-headers"]
