@@ -25,7 +25,9 @@ class AbstractRepository(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    async def get_by_id(self, entity_id: Any, load_options: Optional[List[Any]] = None) -> Optional[T]:
+    async def get_by_id(
+        self, entity_id: Any, load_options: Optional[List[Any]] = None
+    ) -> Optional[T]:
         """Get an entity by its ID, with optional loading options for efficiency.
 
         Args:
@@ -39,7 +41,12 @@ class AbstractRepository(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    async def get_by_field(self, field_name: str, field_value: Any, load_options: Optional[List[Any]] = None) -> Optional[T]:
+    async def get_by_field(
+        self,
+        field_name: str,
+        field_value: Any,
+        load_options: Optional[List[Any]] = None,
+    ) -> Optional[T]:
         """Get an entity by a specific field, with optional loading options for efficiency.
 
         Args:
@@ -54,7 +61,11 @@ class AbstractRepository(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    async def get_all(self, filter_criteria: Optional[Dict[str, Any]] = None, load_options: Optional[List[Any]] = None) -> List[T]:
+    async def get_all(
+        self,
+        filter_criteria: Optional[Dict[str, Any]] = None,
+        load_options: Optional[List[Any]] = None,
+    ) -> List[T]:
         """Get all entities, optionally filtered, with optional loading options for efficiency.
 
         Args:

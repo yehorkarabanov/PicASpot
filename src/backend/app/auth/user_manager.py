@@ -2,11 +2,11 @@ import uuid
 from typing import Optional
 from urllib.request import Request
 
-from fastapi_users import UUIDIDMixin, BaseUserManager
+from fastapi_users import BaseUserManager, UUIDIDMixin
 
 from app.auth.dependencies import UserRepositoryDep
-from app.settings import settings
 from app.auth.models import User
+from app.settings import settings
 
 
 class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):

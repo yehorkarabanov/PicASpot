@@ -1,22 +1,24 @@
 from collections.abc import AsyncGenerator
+
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
-from app.settings import settings
-from .base import Base
 
+from app.settings import settings
+
+from .base import Base
 
 # Engine with proper pooling
 engine = create_async_engine(
     url=settings.DATABASE_URL,
     echo=settings.DEBUG,  # SQL logging in debug mode
     # Connection pool settings (defaults are good, but here's explicit config):
-    pool_size=5,           # Min connections kept alive
-    max_overflow=10,       # Max extra connections during load spikes
-    pool_pre_ping=True,    # Check connection health before use (prevents "gone away" errors)
-    pool_recycle=3600,     # Recycle connections after 1 hour (prevents stale connections)
+    pool_size=5,  # Min connections kept alive
+    max_overflow=10,  # Max extra connections during load spikes
+    pool_pre_ping=True,  # Check connection health before use (prevents "gone away" errors)
+    pool_recycle=3600,  # Recycle connections after 1 hour (prevents stale connections)
 )
 
 # Session factory
@@ -24,8 +26,8 @@ async_session_maker = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
     expire_on_commit=False,  # Don't expire objects after commit (better for APIs)
-    autoflush=False,         # Manual control over flushes (more predictable)
-    autocommit=False,        # Always explicit commits (safer)
+    autoflush=False,  # Manual control over flushes (more predictable)
+    autocommit=False,  # Always explicit commits (safer)
 )
 
 

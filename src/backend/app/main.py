@@ -1,10 +1,11 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .settings import settings
-from .router import router
 from .database import create_db_and_tables, dispose_engine
+from .router import router
+from .settings import settings
 
 
 @asynccontextmanager

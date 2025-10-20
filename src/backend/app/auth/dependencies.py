@@ -2,9 +2,11 @@ from typing import Annotated
 
 from fastapi import Depends
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import SessionDep
 
 from .models import User
-from app.database import SessionDep
 
 
 async def get_user_repository(session: SessionDep):
@@ -12,5 +14,5 @@ async def get_user_repository(session: SessionDep):
 
 
 UserRepositoryDep = Annotated[
-    SQLAlchemyUserDatabase[User], Depends(get_user_repository)
+    SQLAlchemyUserDatabase[User, AsyncSession], Depends(get_user_repository)
 ]

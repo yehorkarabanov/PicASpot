@@ -1,4 +1,5 @@
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, List, Optional, TypeVar
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,7 +23,9 @@ class BaseRepository(AbstractRepository[T]):
         await self.session.refresh(obj)
         return obj
 
-    async def get_by_id(self, entity_id: Any, load_options: Optional[List[Any]] = None) -> Optional[T]:
+    async def get_by_id(
+        self, entity_id: Any, load_options: Optional[List[Any]] = None
+    ) -> Optional[T]:
         # Example: To fetch foreign keys efficiently, use load_options like [selectinload(Model.foreign_relationship)]
         # e.g., [selectinload(User.posts)] to load posts with the user in one query
         query = select(self.model).where(getattr(self.model, self.pk_attr) == entity_id)
@@ -31,7 +34,12 @@ class BaseRepository(AbstractRepository[T]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_field(self, field_name: str, field_value: Any, load_options: Optional[List[Any]] = None) -> Optional[T]:
+    async def get_by_field(
+        self,
+        field_name: str,
+        field_value: Any,
+        load_options: Optional[List[Any]] = None,
+    ) -> Optional[T]:
         # Example: To fetch foreign keys efficiently, use load_options like [selectinload(Model.foreign_relationship)]
         # e.g., [selectinload(Post.author)] to load the author with the post
         query = select(self.model).where(getattr(self.model, field_name) == field_value)
@@ -40,7 +48,11 @@ class BaseRepository(AbstractRepository[T]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_all(self, filter_criteria: Optional[Dict[str, Any]] = None, load_options: Optional[List[Any]] = None) -> List[T]:
+    async def get_all(
+        self,
+        filter_criteria: Optional[Dict[str, Any]] = None,
+        load_options: Optional[List[Any]] = None,
+    ) -> List[T]:
         # Example: To fetch foreign keys efficiently, use load_options like [selectinload(Model.foreign_relationship)]
         # e.g., [selectinload(User.posts)] to load posts for all users in one query
         query = select(self.model)
