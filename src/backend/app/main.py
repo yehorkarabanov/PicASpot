@@ -1,8 +1,11 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth.authentication import current_active_user
+from app.auth.models import User
+from .auth.dependencies import ActiveUserDep
 from .database import create_db_and_tables, dispose_engine
 from .router import router
 from .settings import settings

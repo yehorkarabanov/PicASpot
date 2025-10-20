@@ -16,3 +16,13 @@ async def get_user_repository(session: SessionDep):
 UserRepositoryDep = Annotated[
     SQLAlchemyUserDatabase[User, AsyncSession], Depends(get_user_repository)
 ]
+
+
+async def ActiveUserDep():
+    # use like this
+    # @app.get("/me")
+    # async def read_current_user(user: ActiveUserDep):
+    #     return user
+    from .authentication import current_active_user
+
+    return Annotated[User, Depends(current_active_user)]
