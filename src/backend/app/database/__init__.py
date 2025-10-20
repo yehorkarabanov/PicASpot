@@ -1,5 +1,5 @@
 from .base import Base
-from .db_helper import db_helper
+from .manager import get_async_session, create_db_and_tables, dispose_engine
 from .dependencies import SessionDep
 
-__all__ = ["Base", "db_helper", "SessionDep"]
+__all__ = ["Base", "get_async_session", "create_db_and_tables", "dispose_engine", "SessionDep"]
