@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app.auth.models import User
 from app.auth.schemas import UserRead, UserCreate, UserUpdate
-from app.auth.user_manager import fastapi_users, auth_backend, current_active_user
+from app.auth.authentication import fastapi_users, auth_backend, current_active_user
 
 router = APIRouter()
 

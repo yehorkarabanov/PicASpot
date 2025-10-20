@@ -2,12 +2,7 @@ import uuid
 from typing import Optional
 from urllib.request import Request
 
-from fastapi_users import UUIDIDMixin, BaseUserManager, models, FastAPIUsers
-from fastapi_users.authentication import (
-    BearerTransport,
-    JWTStrategy,
-    AuthenticationBackend,
-)
+from fastapi_users import UUIDIDMixin, BaseUserManager
 
 from app.auth.dependencies import UserRepositoryDep
 from app.settings import settings
@@ -35,22 +30,3 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
 
 async def get_user_manager(user_repository: UserRepositoryDep):
     yield UserManager(user_repository)
-
-
-bearer_transport = BearerTransport(tokenUrl="v1/auth/jwt/login")
-
-
-def get_jwt_strategy() -> JWTStrategy[models.UP, models.ID]:
-    return JWTStrategy(secret=settings.SECRET_KEY, lifetime_seconds=3600)
-
-
-auth_backend = AuthenticationBackend(
-    name="jwt",
-    transport=bearer_transport,
-    get_strategy=get_jwt_strategy,
-)
-
-fastapi_users = FastAPIUsers[User, uuid.UUID](get_user_manager, [auth_backend])
-
-current_active_user = fastapi_users.current_user(active=True)
-
