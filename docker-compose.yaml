@@ -27,6 +27,40 @@ services:
       - app-network
     command: sh -c "uv run fastapi dev --port ${BACKEND_PORT_INTERNAL} --host 0.0.0.0 --reload --proxy-headers"
 
+  celery_worker:
+    depends_on:
+      - backend
+      - redis
+    container_name: celery_worker
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    command: uv run celery --app app.celery.worker worker --loglevel=info --uid=nobody  --gid=nogroup
+    volumes:
+      - ./src/backend/:/code
+      - /code/.venv
+    env_file:
+      - ./.env
+    networks:
+      - app-network
+
+  flower:
+    container_name: flower
+    expose:
+      - ${FLOWER_PORT_INTERNAL}
+    environment:
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:${REDIS_PORT_INTERNAL}/0
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:${REDIS_PORT_INTERNAL}/0
+    depends_on:
+      - celery_worker
+      - redis
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    command: uv run celery --broker=redis://:${REDIS_PASSWORD}@redis:${REDIS_PORT_INTERNAL}/0 flower --port=${FLOWER_PORT_INTERNAL} --url-prefix=/dev/flower
+    networks:
+      - app-network
+
   postgres:
     image: postgis/postgis:18-3.6-alpine
     ports:
