@@ -86,6 +86,7 @@ services:
       - BACKEND_PORT_INTERNAL=${BACKEND_PORT_INTERNAL}
       - DOMAIN=${DOMAIN}
       - MAILHOG_UI_PORT_INTERNAL=${MAILHOG_UI_PORT_INTERNAL}
+      - FLOWER_PORT_INTERNAL=${FLOWER_PORT_INTERNAL}
     entrypoint: [ "/bin/sh", "/etc/nginx/entrypoint.sh" ]
     ports:
       - "${HTTP_PORT}:80"
