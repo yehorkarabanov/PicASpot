@@ -55,7 +55,12 @@ class AuthService:
         user_verify_mail_event.delay(email, link, user.username)
 
     async def login(self, user_data: UserLogin) -> Token:
-        user = await self.user_repository.get_by_field("email", user_data.email)
+        if user_data.username is EmailStr:
+            user = await self.user_repository.get_by_field("email", user_data.username)
+        else:
+            user = await self.user_repository.get_by_field(
+                "username", user_data.username
+            )
         if not user:
             raise BadRequestError("Invalid email or password")
 
@@ -68,7 +73,6 @@ class AuthService:
         access_token = create_access_token(subject=str(user.id))
         user.access_token = access_token
         return UserLoginResponse.model_validate(user)
-
 
     async def verify_token(self, token: str) -> None:
         token_data = await decode_verification_token(token, use_redis=False)
