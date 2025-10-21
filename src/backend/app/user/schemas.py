@@ -2,6 +2,9 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.auth.schemas import UserBase
+from app.core.schemas import BaseReturn
+
 
 class UserResponse(BaseModel):
     id: str
@@ -23,8 +26,5 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
 
 
-class StudentData(BaseModel):
-    id: str
-    email: EmailStr
-
-    model_config = ConfigDict(from_attributes=True)
+class UserReturn(BaseReturn):
+    data: UserResponse | None = None
