@@ -23,15 +23,23 @@ class UserService:
 
         # Check if username is being changed and if it's already taken
         if "username" in update_data:
-            existing_user = await self.user_repository.get_by_field("username", update_data["username"])
+            existing_user = await self.user_repository.get_by_field(
+                "username", update_data["username"]
+            )
             if existing_user and existing_user.id != user.id:
-                raise BadRequestError(f"Username '{update_data['username']}' is already taken")
+                raise BadRequestError(
+                    f"Username '{update_data['username']}' is already taken"
+                )
 
         # Check if email is being changed and if it's already taken
         if "email" in update_data:
-            existing_user = await self.user_repository.get_by_field("email", update_data["email"])
+            existing_user = await self.user_repository.get_by_field(
+                "email", update_data["email"]
+            )
             if existing_user and existing_user.id != user.id:
-                raise BadRequestError(f"Email '{update_data['email']}' is already taken")
+                raise BadRequestError(
+                    f"Email '{update_data['email']}' is already taken"
+                )
             # Reset verification status when email is changed
             user.is_verified = False
 
@@ -41,7 +49,9 @@ class UserService:
         await self.user_repository.save(user)
         return UserResponse.model_validate(user)
 
-    async def update_password(self, user_id: str, password_data: UserUpdatePassword) -> None:
+    async def update_password(
+        self, user_id: str, password_data: UserUpdatePassword
+    ) -> None:
         user = await self.user_repository.get_by_id(user_id)
         if not user:
             raise NotFoundError("User not found")

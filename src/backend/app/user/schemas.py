@@ -1,4 +1,5 @@
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -9,9 +10,8 @@ class UserBase(BaseModel):
     username: str
     email: EmailStr
 
-
 class UserResponse(BaseModel):
-    id: str
+    id: UUID
     username: str
     email: EmailStr
     is_superuser: bool
