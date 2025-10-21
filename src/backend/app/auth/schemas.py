@@ -20,15 +20,7 @@ class UserCreate(UserBase):
 
 
 class UserLogin(UserBase):
-    password: str
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "email": "user@example.com",
-                "password": "stringst",
-            }
-        },
-    )
+    password: str = Field(min_length=8)
 
 
 class UserResponse(UserBase):

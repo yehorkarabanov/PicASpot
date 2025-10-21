@@ -1,3 +1,5 @@
+from pydantic import EmailStr
+
 from app.auth.repository import UserRepository
 from app.auth.schemas import UserCreate
 from app.auth.security import TokenType, create_verification_token, get_password_hash
@@ -31,4 +33,17 @@ class AuthService:
         link = f"{settings.VERIFY_EMAIL_URL}/{verification_token}"
         user_verify_mail_event.delay(user_data.email, link, user.username)
 
+    async def resend_verification_email(self, email: EmailStr) -> None:
+        user = await self.user_repository.get_by_field("email", email)
+        if not user:
+            raise BadRequestError("User with this email does not exist")
+
+        if user.is_verified:
+            raise BadRequestError("User is already verified")
+
+        verification_token = await create_verification_token(
+            user_id=str(user.id), token_type=TokenType.VERIFICATION, use_redis=False
+        )
+        link = f"{settings.VERIFY_EMAIL_URL}/{verification_token}"
+        user_verify_mail_event.delay(email, link, user.username)
 
