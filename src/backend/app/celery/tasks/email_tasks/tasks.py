@@ -19,7 +19,7 @@ def user_verify_mail_event(recipient: str, link: str, username: str):
             "verification_link": link,
             "username": username,
             "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "year": datetime.now().year,
+            "year": str(datetime.now().year),
         },
     )
     async_to_sync(mail.send_message)(message, "verify.html")
@@ -36,7 +36,7 @@ def user_password_reset_mail(recipient: str, link: str, username: str):
             "reset_link": link,
             "username": username,
             "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "year": datetime.now().year,
+            "year": str(datetime.now().year),
         },
     )
     async_to_sync(mail.send_message)(message, "password_reset.html")

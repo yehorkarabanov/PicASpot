@@ -3,8 +3,8 @@ from app.core.schemas import BaseReturn
 
 
 class UserBase(BaseModel):
-    username: EmailStr
-    email: str
+    username: str
+    email: EmailStr
 
 
 class UserCreate(UserBase):
