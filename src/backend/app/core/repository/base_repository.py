@@ -26,7 +26,8 @@ class BaseRepository(AbstractRepository[T]):
     async def get_by_id(
         self, entity_id: Any, load_options: list[Any] | None = None
     ) -> T | None:
-        # Example: To fetch foreign keys efficiently, use load_options like [selectinload(Model.foreign_relationship)]
+        # Example: To fetch foreign keys efficiently, use load_options like
+        # [selectinload(Model.foreign_relationship)]
         # e.g., [selectinload(User.posts)] to load posts with the user in one query
         query = select(self.model).where(getattr(self.model, self.pk_attr) == entity_id)
         if load_options:
@@ -40,7 +41,8 @@ class BaseRepository(AbstractRepository[T]):
         field_value: Any,
         load_options: list[Any] | None = None,
     ) -> T | None:
-        # Example: To fetch foreign keys efficiently, use load_options like [selectinload(Model.foreign_relationship)]
+        # Example: To fetch foreign keys efficiently, use load_options like
+        # [selectinload(Model.foreign_relationship)]
         # e.g., [selectinload(Post.author)] to load the author with the post
         query = select(self.model).where(getattr(self.model, field_name) == field_value)
         if load_options:
@@ -53,7 +55,8 @@ class BaseRepository(AbstractRepository[T]):
         filter_criteria: dict[str, Any] | None = None,
         load_options: list[Any] | None = None,
     ) -> list[T]:
-        # Example: To fetch foreign keys efficiently, use load_options like [selectinload(Model.foreign_relationship)]
+        # Example: To fetch foreign keys efficiently, use load_options like
+        # [selectinload(Model.foreign_relationship)]
         # e.g., [selectinload(User.posts)] to load posts for all users in one query
         query = select(self.model)
         if filter_criteria:

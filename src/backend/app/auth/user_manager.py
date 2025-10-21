@@ -13,18 +13,18 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     verification_token_secret = settings.SECRET_KEY
 
     # TODO: Implement custom user management methods as needed
-    async def on_after_register(self, user: User, request: Request | None = None):
-        print(f"User {user.id} has registered.")
+    async def on_after_register(self, user: User, _request: Request | None = None):
+        pass
 
     async def on_after_forgot_password(
-        self, user: User, token: str, request: Request | None = None
+        self, user: User, token: str, _request: Request | None = None
     ):
-        print(f"User {user.id} has forgot their password. Reset token: {token}")
+        pass
 
     async def on_after_request_verify(
-        self, user: User, token: str, request: Request | None = None
+        self, user: User, token: str, _request: Request | None = None
     ):
-        print(f"Verification requested for user {user.id}. Verification token: {token}")
+        pass
 
 
 async def get_user_manager(user_repository: UserRepositoryDep):

@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
 
-class AbstractRepository(ABC, Generic[T]):
+class AbstractRepository[T](ABC):
     """Abstract base class for all repositories.
 
     This class defines the interface for data access operations.
@@ -17,7 +17,8 @@ class AbstractRepository(ABC, Generic[T]):
         """Create a new entity.
 
         Args:
-            data (Dict[str, Any]): A dictionary of field names and values to create the entity.
+            data (Dict[str, Any]): A dictionary of field names and values
+                to create the entity.
 
         Returns:
             T: The created entity instance.
@@ -31,8 +32,9 @@ class AbstractRepository(ABC, Generic[T]):
 
         Args:
             entity_id (Any): The ID of the entity to retrieve.
-            load_options (Optional[List[Any]]): List of SQLAlchemy loading options for eager loading,
-                e.g., [selectinload(Model.relationship)] to fetch related objects in one query.
+            load_options (Optional[List[Any]]): List of SQLAlchemy loading options
+                for eager loading, e.g., [selectinload(Model.relationship)] to fetch
+                related objects in one query.
 
         Returns:
             Optional[T]: The entity if found, else None.
@@ -50,8 +52,9 @@ class AbstractRepository(ABC, Generic[T]):
         Args:
             field_name (str): The name of the field to filter by.
             field_value (Any): The value of the field to match.
-            load_options (Optional[List[Any]]): List of SQLAlchemy loading options for eager loading,
-                e.g., [selectinload(Model.relationship)] to fetch related objects in one query.
+            load_options (Optional[List[Any]]): List of SQLAlchemy loading options
+                for eager loading, e.g., [selectinload(Model.relationship)] to fetch
+                related objects in one query.
 
         Returns:
             Optional[T]: The entity if found, else None.
@@ -66,10 +69,11 @@ class AbstractRepository(ABC, Generic[T]):
         """Get all entities, optionally filtered, with optional loading options for efficiency.
 
         Args:
-            filter_criteria (Optional[Dict[str, Any]]): A dictionary of field names and values to filter by,
-                using equality checks.
-            load_options (Optional[List[Any]]): List of SQLAlchemy loading options for eager loading,
-                e.g., [selectinload(Model.relationship)] to fetch related objects in one query.
+            filter_criteria (Optional[Dict[str, Any]]): A dictionary of field names
+                and values to filter by, using equality checks.
+            load_options (Optional[List[Any]]): List of SQLAlchemy loading options
+                for eager loading, e.g., [selectinload(Model.relationship)] to fetch
+                related objects in one query.
 
         Returns:
             List[T]: A list of matching entities.

@@ -17,7 +17,8 @@ engine = create_async_engine(
     # Connection pool settings (defaults are good, but here's explicit config):
     pool_size=5,  # Min connections kept alive
     max_overflow=10,  # Max extra connections during load spikes
-    pool_pre_ping=True,  # Check connection health before use (prevents "gone away" errors)
+    pool_pre_ping=True,  # Check connection health before use
+    # (prevents "gone away" errors)
     pool_recycle=3600,  # Recycle connections after 1 hour (prevents stale connections)
 )
 
