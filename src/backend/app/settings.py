@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     DOMAIN: str
     DEBUG: bool = Field(..., alias="BACKEND_DEBUG")
     CORS_ORIGINS: list[str] = Field(..., alias="BACKEND_CORS_ORIGINS")
+    ACCESS_TOKEN_EXPIRE_SECONDS: int
 
     POSTGRES_PORT: int
     POSTGRES_DB: str
@@ -41,7 +42,7 @@ class Settings(BaseSettings):
     EMAIL_RESET_PASSWORD_PATH: str
 
     @property
-    def EMAIL_VERIFY_URL(self) -> str:  # noqa: N802
+    def VERIFY_EMAIL_URL(self) -> str:  # noqa: N802
         return f"{self.DOMAIN}{self.EMAIL_VERIFY_PATH}"
 
     @property

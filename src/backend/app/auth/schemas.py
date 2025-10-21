@@ -1,15 +1,52 @@
-import uuid
+from pydantic import BaseModel, EmailStr, Field
 
-from fastapi_users import schemas
+from app.core.schemas import BaseReturn
+from app.user.schemas import UserBase, UserResponse
 
 
-class UserRead(schemas.BaseUser[uuid.UUID]):
+class UserCreate(UserBase):
+    # Password must be at least 8 characters, contain at least one uppercase letter and one number
+    password: str = Field(min_length=8)
+
+    # @field_validator('password')
+    # @classmethod
+    # def validate_password(cls, v):
+    #     if not re.match(r'^(?=.*[A-Z])(?=.*\d).{8,}$', v):
+    #         raise ValueError('Password must be at least 8 characters, contain at least one uppercase letter and one number')
+    #     return v
+
+
+class UserLogin(BaseModel):
     username: str
+    password: str = Field(min_length=8)
 
 
-class UserCreate(schemas.BaseUserCreate):
-    username: str
+class Token(BaseModel):
+    token: str
 
 
-class UserUpdate(schemas.BaseUserUpdate):
-    username: str | None = None
+class AccessToken(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class UserLoginResponse(UserResponse):
+    token: AccessToken
+
+
+class UserLoginReturn(BaseReturn):
+    data: UserLoginResponse | None = None
+
+
+class EmailRequest(BaseModel):
+    email: EmailStr
+
+
+class AuthReturn(BaseReturn):
+    data: UserResponse | None = None
+
+
+class UserResetPassword(BaseModel):
+    password: str = Field(..., min_length=8)
+    token: str
+
