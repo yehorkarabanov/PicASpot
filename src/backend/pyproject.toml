@@ -6,11 +6,16 @@ requires-python = ">=3.14"
 dependencies = [
     "alembic>=1.17.0",
     "asyncpg>=0.30.0",
+    "asgiref>=3.10.0",
+    "celery>=5.5.3",
+    "celery-types==0.23.0",
     "fastapi-mail>=1.5.2",
     "fastapi-users[sqlalchemy]>=14.0.1",
     "fastapi[standard]>=0.119.0",
+    "flower>=2.0.1",
     "geoalchemy2>=0.18.0",
     "pydantic-settings>=2.11.0",
+    "redis>=6.4.0",
     "sqlalchemy>=2.0.44",
 ]
 
@@ -23,8 +28,31 @@ test = [
 
 [tool.isort]
 profile = "black"
-line_length = 88
 skip_gitignore = true
+known_first_party = ["app", "tests"]
 
 [tool.ruff]
-line-length = 88
+target-version = "py314"
+indent-width = 4
+
+[tool.ruff.lint]
+select = [
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "I", # isort
+    "C", # flake8-comprehensions
+    "B", # flake8-bugbear
+]
+ignore = [
+    "E501", # line too long, handled by black
+    "B008", # do not perform function calls in argument defaults
+    "C901", # complexity
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
