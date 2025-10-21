@@ -1,5 +1,4 @@
 from typing import Any, Dict, List  # noqa: I001
-from pydantic import SecretStr
 
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 
