@@ -39,7 +39,6 @@ interface CustomMapProps extends Omit<MapViewProps, 'provider'> {
 
 const TILE_URLS = {
   'dark-nolabels': 'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
-
 };
 
 const Map = React.forwardRef<MapView, CustomMapProps>(
@@ -76,23 +75,21 @@ const Map = React.forwardRef<MapView, CustomMapProps>(
         <MapView
           ref={ref}
           provider={PROVIDER_DEFAULT}
-          style={[styles.map, style]}
-          showsCompass={showsCompass}
-          showsScale={showsScale}
-          mapType='none'
+          style={[styles.map, style, { opacity: tilesLoaded ? 1 : 0 }]}
+          mapType="none"
           showsUserLocation={false}
-          showsMyLocationButton={false}
           showsPointsOfInterest={false}
           showsBuildings={true}
           showsTraffic={false}
           showsIndoors={false}
+          showsCompass={showsCompass}
+          showsScale={showsScale}
           {...props}>
           <UrlTile
             urlTemplate={tileUrl}
             maximumZ={19}
             flipY={false}
-            zIndex={-1}
-            opacity={tilesLoaded ? 1 : 0}
+            zIndex={10000}
           />
           {children}
         </MapView>
