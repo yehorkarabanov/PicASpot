@@ -16,3 +16,4 @@ def get_auth_service(
     user_repository: UserRepository = Depends(get_user_repository),
 ) -> AuthService:
     return AuthService(user_repository=user_repository)
+

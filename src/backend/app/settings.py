@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     DOMAIN: str
     DEBUG: bool = Field(..., alias="BACKEND_DEBUG")
     CORS_ORIGINS: list[str] = Field(..., alias="BACKEND_CORS_ORIGINS")
+    ACCESS_TOKEN_EXPIRE_SECONDS: int
 
     POSTGRES_PORT: int
     POSTGRES_DB: str

@@ -47,3 +47,4 @@ class AuthService:
         link = f"{settings.VERIFY_EMAIL_URL}/{verification_token}"
         user_verify_mail_event.delay(email, link, user.username)
 
+
