@@ -40,8 +40,6 @@ class UserService:
                 raise BadRequestError(
                     f"Email '{update_data['email']}' is already taken"
                 )
-            # Reset verification status when email is changed
-            user.is_verified = False
 
         for key, value in update_data.items():
             setattr(user, key, value)
