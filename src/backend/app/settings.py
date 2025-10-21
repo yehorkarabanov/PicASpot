@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -44,6 +45,9 @@ class Settings(BaseSettings):
     @property
     def REDIS_URL(self) -> str:  # noqa: N802
         return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+
+    BASE_DIR: Path = Path(__file__).resolve().parent
+    ROOT_DIR: Path = Path(__file__).resolve().parent.parent
 
 
 @lru_cache

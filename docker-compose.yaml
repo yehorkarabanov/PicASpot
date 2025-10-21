@@ -10,6 +10,9 @@ services:
       - app-network
 
   backend:
+    depends_on:
+      - postgres
+      - redis
     expose:
       - ${BACKEND_PORT_INTERNAL}
     build:
