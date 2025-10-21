@@ -9,7 +9,7 @@ from .settings import settings
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     # Startup: Create tables
     await create_db_and_tables()
     yield

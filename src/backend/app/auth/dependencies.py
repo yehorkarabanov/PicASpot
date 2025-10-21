@@ -18,11 +18,11 @@ UserRepositoryDep = Annotated[
 ]
 
 
-async def ActiveUserDep():
+def GetUserDep():
     # use like this
     # @app.get("/me")
-    # async def read_current_user(user: ActiveUserDep):
-    #     return user
-    from .authentication import current_active_user
+    # async def read_current_user(user: GetUserDep()):
+    #     return user  # noqa: ERA001
+    from .authentication import current_active_user  # noqa: PLC0415
 
     return Annotated[User, Depends(current_active_user)]

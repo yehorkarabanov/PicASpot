@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, TypeVar
+from typing import Any, TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,7 +16,7 @@ class BaseRepository(AbstractRepository[T]):
         self.model = model
         self.pk_attr = pk_attr
 
-    async def create(self, data: Dict[str, Any]) -> T:
+    async def create(self, data: dict[str, Any]) -> T:
         obj = self.model(**data)
         self.session.add(obj)
         await self.session.commit()
@@ -24,9 +24,10 @@ class BaseRepository(AbstractRepository[T]):
         return obj
 
     async def get_by_id(
-        self, entity_id: Any, load_options: Optional[List[Any]] = None
-    ) -> Optional[T]:
-        # Example: To fetch foreign keys efficiently, use load_options like [selectinload(Model.foreign_relationship)]
+        self, entity_id: Any, load_options: list[Any] | None = None
+    ) -> T | None:
+        # Example: To fetch foreign keys efficiently, use load_options like
+        # [selectinload(Model.foreign_relationship)]
         # e.g., [selectinload(User.posts)] to load posts with the user in one query
         query = select(self.model).where(getattr(self.model, self.pk_attr) == entity_id)
         if load_options:
@@ -38,9 +39,10 @@ class BaseRepository(AbstractRepository[T]):
         self,
         field_name: str,
         field_value: Any,
-        load_options: Optional[List[Any]] = None,
-    ) -> Optional[T]:
-        # Example: To fetch foreign keys efficiently, use load_options like [selectinload(Model.foreign_relationship)]
+        load_options: list[Any] | None = None,
+    ) -> T | None:
+        # Example: To fetch foreign keys efficiently, use load_options like
+        # [selectinload(Model.foreign_relationship)]
         # e.g., [selectinload(Post.author)] to load the author with the post
         query = select(self.model).where(getattr(self.model, field_name) == field_value)
         if load_options:
@@ -50,10 +52,11 @@ class BaseRepository(AbstractRepository[T]):
 
     async def get_all(
         self,
-        filter_criteria: Optional[Dict[str, Any]] = None,
-        load_options: Optional[List[Any]] = None,
-    ) -> List[T]:
-        # Example: To fetch foreign keys efficiently, use load_options like [selectinload(Model.foreign_relationship)]
+        filter_criteria: dict[str, Any] | None = None,
+        load_options: list[Any] | None = None,
+    ) -> list[T]:
+        # Example: To fetch foreign keys efficiently, use load_options like
+        # [selectinload(Model.foreign_relationship)]
         # e.g., [selectinload(User.posts)] to load posts for all users in one query
         query = select(self.model)
         if filter_criteria:
@@ -64,7 +67,7 @@ class BaseRepository(AbstractRepository[T]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def update(self, entity_id: Any, data: Dict[str, Any]) -> Optional[T]:
+    async def update(self, entity_id: Any, data: dict[str, Any]) -> T | None:
         obj = await self.session.get(self.model, entity_id)
         if not obj:
             return None
