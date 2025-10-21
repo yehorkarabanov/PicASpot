@@ -1,11 +1,7 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from app.core.schemas import BaseReturn
-
-
-class UserBase(BaseModel):
-    username: str
-    email: EmailStr
+from app.user.schemas import UserBase, UserResponse
 
 
 class UserCreate(UserBase):
@@ -23,14 +19,6 @@ class UserCreate(UserBase):
 class UserLogin(BaseModel):
     username: str
     password: str = Field(min_length=8)
-
-
-class UserResponse(UserBase):
-    id: str
-    is_superuser: bool
-    is_verified: bool
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class Token(BaseModel):

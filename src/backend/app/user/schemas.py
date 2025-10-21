@@ -2,8 +2,12 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.auth.schemas import UserBase
 from app.core.schemas import BaseReturn
+
+
+class UserBase(BaseModel):
+    username: str
+    email: EmailStr
 
 
 class UserResponse(BaseModel):
