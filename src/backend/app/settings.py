@@ -29,7 +29,6 @@ class Settings(BaseSettings):
         case_sensitive=True,
     )
 
-
     # Email settings
     SMTP_USER: str
     SMTP_PASSWORD: str
@@ -37,6 +36,15 @@ class Settings(BaseSettings):
     SMTP_PORT: int
     SMTP_HOST: str
     EMAIL_FROM_NAME: str
+
+    # Redis
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_PASSWORD: str
+
+    @property
+    def REDIS_URL(self) -> str:
+        return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
 
 @lru_cache
