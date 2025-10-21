@@ -24,23 +24,32 @@ async def register(
 
 
 @router.post(
-    "/resend-verification-email",
+    "/resend-verification-token",
     response_model=AuthReturn,
     response_model_exclude_none=True,
 )
-async def resend_verification_email(
+async def resend_verification_token(
     email_request: EmailRequest,
     auth_service: AuthServiceDep,
 ) -> AuthReturn:
     """Resend verification email to the user."""
-    await auth_service.resend_verification_email(email_request.email)
+    await auth_service.resend_verification_token(email_request.email)
     return AuthReturn(message="Verification email resent successfully.")
 
 
-@router.post("/login", response_model=UserLoginResponse, response_model_exclude_none=True)
+@router.post(
+    "/login", response_model=UserLoginResponse, response_model_exclude_none=True
+)
 async def login(
     user_data: UserLogin,
     auth_service: AuthServiceDep,
 ) -> Token:
     """Login a user and return an access token."""
     return await auth_service.login(user_data)
+
+
+@router.post("/verify", response_model=AuthReturn, response_model_exclude_none=True)
+async def verify_token(token: Token, auth_service: AuthServiceDep):
+    """Verify email using the provided token."""
+    await auth_service.verify_token(token.token)
+    return AuthReturn(message="Email verified successfully.")

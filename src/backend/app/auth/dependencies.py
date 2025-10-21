@@ -4,21 +4,11 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from app.core.exceptions import UnauthorizedError
-from app.database import SessionDep
+from app.user.dependencies import UserRepDep
+from app.user.models import User
 
-from .models import User
-from .repository import UserRepository
 from .security import decode_token
 from .service import AuthService
-
-
-# Repository
-def get_user_repository(session: SessionDep) -> UserRepository:
-    """Get an instance of UserRepository."""
-    return UserRepository(session=session, model=User)
-
-
-UserRepDep = Annotated[UserRepository, Depends(get_user_repository)]
 
 
 def get_auth_service(
