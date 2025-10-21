@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import MapView, { MapViewProps, UrlTile, PROVIDER_DEFAULT } from 'react-native-maps';
+import { StyleSheet, View } from 'react-native';
+import MapView, { MapViewProps, PROVIDER_DEFAULT, UrlTile } from 'react-native-maps';
 
 const mapVariants = cva('overflow-hidden', {
   variants: {
@@ -31,18 +31,15 @@ interface CustomMapProps extends Omit<MapViewProps, 'provider'> {
   className?: string;
   variant?: MapVariantProps['variant'];
   rounded?: MapVariantProps['rounded'];
-  tileServer?: 'carto-light' | 'carto-dark' | 'carto-voyager' | 'osm' | 'custom';
+  tileServer?: 'dark-nolabels';
   customTileUrl?: string;
   showsCompass?: boolean;
   showsScale?: boolean;
 }
 
-// Using CartoDB (CARTO) tiles - they're free, fast, and don't require API keys
 const TILE_URLS = {
-  'carto-light': 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-  'carto-dark': 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-  'carto-voyager': 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-  osm: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  'dark-nolabels': 'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+
 };
 
 const Map = React.forwardRef<MapView, CustomMapProps>(
@@ -61,10 +58,18 @@ const Map = React.forwardRef<MapView, CustomMapProps>(
     },
     ref
   ) => {
+    const [tilesLoaded, setTilesLoaded] = React.useState(false);
+
     const tileUrl =
       tileServer === 'custom' && customTileUrl
         ? customTileUrl
-        : TILE_URLS[tileServer as keyof typeof TILE_URLS] || TILE_URLS['carto-light'];
+        : TILE_URLS[tileServer as keyof typeof TILE_URLS] || TILE_URLS['dark-nolabels'];
+
+    React.useEffect(() => {
+      setTilesLoaded(false);
+      const timer = setTimeout(() => setTilesLoaded(true), 10);
+      return () => clearTimeout(timer);
+    }, [tileUrl]);
 
     return (
       <View className={cn(mapVariants({ variant, rounded }), className)}>
@@ -74,18 +79,21 @@ const Map = React.forwardRef<MapView, CustomMapProps>(
           style={[styles.map, style]}
           showsCompass={showsCompass}
           showsScale={showsScale}
-          mapType={Platform.OS === 'android' ? 'none' : 'standard'}
+          mapType='none'
           showsUserLocation={false}
           showsMyLocationButton={false}
           showsPointsOfInterest={false}
           showsBuildings={true}
           showsTraffic={false}
           showsIndoors={false}
-          {...props}
-        >
-          {Platform.OS === 'android' && (
-            <UrlTile urlTemplate={tileUrl} maximumZ={19} flipY={false} zIndex={-1} />
-          )}
+          {...props}>
+          <UrlTile
+            urlTemplate={tileUrl}
+            maximumZ={19}
+            flipY={false}
+            zIndex={-1}
+            opacity={tilesLoaded ? 1 : 0}
+          />
           {children}
         </MapView>
       </View>

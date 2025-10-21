@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { Minus, Plus, Locate } from 'lucide-react-native';
@@ -24,6 +25,7 @@ function MapControls({
   showLocateControl = true,
   ...props
 }: MapControlsProps) {
+
   const positionClasses = {
     'top-right': 'top-3 right-3',
     'top-left': 'top-3 left-3',
@@ -44,7 +46,7 @@ function MapControls({
             onPress={onZoomIn}
             className="h-9 w-9 rounded-none border-b border-border/50"
           >
-            <Plus className="text-foreground" size={16} strokeWidth={2} />
+            <Icon as={Plus} size={16} strokeWidth={2} />
           </Button>
           <Button
             variant="ghost"
@@ -52,7 +54,7 @@ function MapControls({
             onPress={onZoomOut}
             className="h-9 w-9 rounded-none"
           >
-            <Minus className="text-foreground" size={16} strokeWidth={2} />
+            <Icon as={Minus} size={16} strokeWidth={2} />
           </Button>
         </View>
       )}
@@ -63,7 +65,7 @@ function MapControls({
           onPress={onLocate}
           className="h-9 w-9 border-border/50 bg-background/95 backdrop-blur"
         >
-          <Locate className="text-foreground" size={16} strokeWidth={2} />
+          <Icon as={Locate} size={16} strokeWidth={2} />
         </Button>
       )}
     </View>
@@ -80,6 +82,8 @@ interface MapLegendProps extends ViewProps {
 }
 
 function MapLegend({ className, items, position = 'bottom-left', ...props }: MapLegendProps) {
+  const { colorScheme } = useColorScheme();
+
   const positionClasses = {
     'top-right': 'top-3 right-3',
     'top-left': 'top-3 left-3',

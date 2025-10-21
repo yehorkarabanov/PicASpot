@@ -7,7 +7,7 @@ import { MoonStarIcon, SunIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { type ImageStyle, View } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
+import MapView, { Region } from 'react-native-maps';
 
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -77,31 +77,17 @@ export default function Screen() {
             className="h-full w-full"
             region={region}
             onRegionChangeComplete={setRegion}
-            tileServer={colorScheme === 'dark' ? 'carto-dark' : 'carto-light'}
+            tileServer='dark-nolabels'
           >
-            <Marker
-              coordinate={{
-                latitude: 50.054343,
-                longitude: 19.936744,
-              }}
-              title="Example Location"
-              description="This is a sample marker"
-            />
           </Map>
 
           <MapControls
-            position="top-right"
+            position="bottom-right"
             onZoomIn={handleZoomIn}
             onZoomOut={handleZoomOut}
             onLocate={handleLocate}
           />
 
-          {/*<MapLegend*/}
-          {/*  position="bottom-left"*/}
-          {/*  items={[*/}
-          {/*    { label: 'Haha', color: '#ef4444' },*/}
-          {/*  ]}*/}
-          {/*/>*/}
         </View>
       </View>
     </>
