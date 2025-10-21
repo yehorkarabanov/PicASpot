@@ -25,8 +25,17 @@ class Token(BaseModel):
     token: str
 
 
-class UserLoginResponse(UserResponse, Token):
-    pass
+class AccessToken(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class UserLoginResponse(UserResponse):
+    token: AccessToken
+
+
+class UserLoginReturn(BaseReturn):
+    data: UserLoginResponse | None = None
 
 
 class EmailRequest(BaseModel):

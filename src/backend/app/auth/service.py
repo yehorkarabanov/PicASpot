@@ -1,6 +1,6 @@
 from pydantic import EmailStr
 
-from app.auth.schemas import Token, UserCreate, UserLogin, UserLoginResponse
+from app.auth.schemas import UserCreate, UserLogin, UserLoginResponse, AccessToken
 from app.auth.security import (
     TokenType,
     create_access_token,
@@ -54,7 +54,7 @@ class AuthService:
         link = f"{settings.VERIFY_EMAIL_URL}/{verification_token}"
         user_verify_mail_event.delay(email, link, user.username)
 
-    async def login(self, user_data: UserLogin) -> Token:
+    async def login(self, user_data: UserLogin) -> UserLoginResponse:
         if user_data.username is EmailStr:
             user = await self.user_repository.get_by_field("email", user_data.username)
         else:
@@ -71,8 +71,14 @@ class AuthService:
             raise BadRequestError("Please verify your email before logging in")
 
         access_token = create_access_token(subject=str(user.id))
-        user.access_token = access_token
-        return UserLoginResponse.model_validate(user)
+        return UserLoginResponse(
+            id=str(user.id),
+            username=user.username,
+            email=user.email,
+            is_superuser=user.is_superuser,
+            is_verified=user.is_verified,
+            token=AccessToken(access_token=access_token),
+        )
 
     async def verify_token(self, token: str) -> None:
         token_data = await decode_verification_token(token, use_redis=False)
@@ -95,4 +101,3 @@ class AuthService:
         # Mark user as verified
         user.is_verified = True
         await self.user_repository.save(user)
-

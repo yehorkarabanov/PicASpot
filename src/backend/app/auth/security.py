@@ -37,7 +37,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(
-    subject: str, extra_data: dict, expires_delta: Optional[timedelta] = None
+    subject: str,
+    extra_data: dict | None = None,
+    expires_delta: Optional[timedelta] = None,
 ) -> str:
     """Create JWT access token for authentication"""
     if expires_delta:
@@ -48,7 +50,8 @@ def create_access_token(
         )
 
     to_encode = {"exp": expire, "sub": subject}
-    to_encode += extra_data
+    if extra_data:
+        to_encode.update(extra_data)
     encoded_jwt = jwt.encode(
         to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )

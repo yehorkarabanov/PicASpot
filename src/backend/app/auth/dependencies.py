@@ -21,7 +21,7 @@ def get_auth_service(
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 
 # OAuth2 scheme
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"https:{settings.DOMAIN}/api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/access-token")
 
 
 async def get_current_user(

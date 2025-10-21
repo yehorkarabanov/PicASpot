@@ -15,7 +15,7 @@ async def get_current_user(
     current_user: CurrentUserDep,
 ) -> UserResponse:
     """Get the current user's profile."""
-    return await user_service.get_current_user(current_user)
+    return await user_service.get_user(current_user.id)
 
 
 @router.put("/me", response_model=UserReturn, response_model_exclude_none=True)

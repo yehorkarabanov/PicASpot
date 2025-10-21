@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Form
 
 from app.auth.dependencies import AuthServiceDep
 from app.auth.schemas import (
@@ -8,6 +8,8 @@ from app.auth.schemas import (
     UserCreate,
     UserLogin,
     UserLoginResponse,
+    UserLoginReturn,
+    AccessToken,
 )
 
 router = APIRouter(tags=["auth"], prefix="/auth")
@@ -37,15 +39,25 @@ async def resend_verification_token(
     return AuthReturn(message="Verification email resent successfully.")
 
 
-@router.post(
-    "/login", response_model=UserLoginResponse, response_model_exclude_none=True
-)
-async def login(
-    user_data: UserLogin,
-    auth_service: AuthServiceDep,
-) -> Token:
+@router.post("/login", response_model=UserLoginReturn, response_model_exclude_none=True)
+async def login(login_data: UserLogin, auth_service: AuthServiceDep) -> UserLoginReturn:
     """Login a user and return an access token."""
-    return await auth_service.login(user_data)
+    data = await auth_service.login(login_data)
+    return UserLoginReturn(data=data, message="Login successful.")
+
+
+@router.post(
+    "/access-token", response_model=AccessToken, response_model_exclude_none=True
+)
+async def get_access_token(
+    auth_service: AuthServiceDep,
+    username: str = Form(...),
+    password: str = Form(...),
+) -> AccessToken:
+    """Get access token using form data."""
+    login_data = UserLogin(username=username, password=password)
+    user_login_response: UserLoginResponse = await auth_service.login(login_data)
+    return user_login_response.token
 
 
 @router.post("/verify", response_model=AuthReturn, response_model_exclude_none=True)
