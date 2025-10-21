@@ -30,8 +30,8 @@ export default function Screen() {
   const mapRef = React.useRef<MapView>(null);
 
   const [region, setRegion] = React.useState<Region>({
-    latitude: 37.78825,
-    longitude: -122.4324,
+    latitude: 50.054343,
+    longitude: 19.936744,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
@@ -81,8 +81,8 @@ export default function Screen() {
           >
             <Marker
               coordinate={{
-                latitude: 37.78825,
-                longitude: -122.4324,
+                latitude: 50.054343,
+                longitude: 19.936744,
               }}
               title="Example Location"
               description="This is a sample marker"
@@ -96,14 +96,12 @@ export default function Screen() {
             onLocate={handleLocate}
           />
 
-          <MapLegend
-            position="bottom-left"
-            items={[
-              { label: 'Point of Interest', color: '#ef4444' },
-              { label: 'Your Location', color: '#3b82f6' },
-              { label: 'Selected Area', color: '#22c55e' },
-            ]}
-          />
+          {/*<MapLegend*/}
+          {/*  position="bottom-left"*/}
+          {/*  items={[*/}
+          {/*    { label: 'Haha', color: '#ef4444' },*/}
+          {/*  ]}*/}
+          {/*/>*/}
         </View>
       </View>
     </>
