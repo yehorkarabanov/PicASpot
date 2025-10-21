@@ -9,7 +9,6 @@ from app.user.models import User
 
 from .security import decode_token
 from .service import AuthService
-from app.settings import settings
 
 
 def get_auth_service(

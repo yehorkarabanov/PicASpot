@@ -2,6 +2,7 @@ from fastapi import APIRouter, Form
 
 from app.auth.dependencies import AuthServiceDep
 from app.auth.schemas import (
+    AccessToken,
     AuthReturn,
     EmailRequest,
     Token,
@@ -9,7 +10,6 @@ from app.auth.schemas import (
     UserLogin,
     UserLoginResponse,
     UserLoginReturn,
-    AccessToken,
 )
 
 router = APIRouter(tags=["auth"], prefix="/auth")

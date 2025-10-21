@@ -1,6 +1,6 @@
 from pydantic import EmailStr
 
-from app.auth.schemas import UserCreate, UserLogin, UserLoginResponse, AccessToken
+from app.auth.schemas import AccessToken, UserCreate, UserLogin, UserLoginResponse
 from app.auth.security import (
     TokenType,
     create_access_token,
