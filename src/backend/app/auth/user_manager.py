@@ -20,7 +20,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         self, user: User, token: str, _request: Request | None = None
     ):
         """Send password reset email via Celery task"""
-        reset_link = f"{settings.DOMAIN}/auth/reset-password?token={token}"
+        reset_link = f"{settings.EMAIL_RESET_PASSWORD_URL}?token={token}"
         user_password_reset_mail.delay(
             recipient=user.email,
             link=reset_link,
@@ -31,7 +31,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         self, user: User, token: str, _request: Request | None = None
     ):
         """Send email verification via Celery task"""
-        verification_link = f"{settings.DOMAIN}/auth/verify?token={token}"
+        verification_link = f"{settings.EMAIL_VERIFY_URL}?token={token}"
         user_verify_mail_event.delay(
             recipient=user.email,
             link=verification_link,

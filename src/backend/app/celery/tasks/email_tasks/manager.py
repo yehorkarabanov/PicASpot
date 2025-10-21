@@ -1,6 +1,7 @@
-from typing import Any, Dict, List  # noqa: I001
+from typing import Any, Dict, List
 
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
+from pydantic import SecretStr  # noqa: F401
 
 from app.settings import settings
 

@@ -37,6 +37,17 @@ class Settings(BaseSettings):
     SMTP_HOST: str
     EMAIL_FROM_NAME: str
 
+    EMAIL_VERIFY_PATH: str
+    EMAIL_RESET_PASSWORD_PATH: str
+
+    @property
+    def EMAIL_VERIFY_URL(self) -> str:  # noqa: N802
+        return f"{self.DOMAIN}{self.EMAIL_VERIFY_PATH}"
+
+    @property
+    def EMAIL_RESET_PASSWORD_URL(self) -> str:  # noqa: N802
+        return f"{self.DOMAIN}{self.EMAIL_RESET_PASSWORD_PATH}"
+
     # Redis
     REDIS_HOST: str
     REDIS_PORT: int
