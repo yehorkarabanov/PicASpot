@@ -50,7 +50,7 @@ export const authService = {
 
   async logout(): Promise<void> {
     try {
-      await api.post('/auth/jwt/logout');
+      await api.post('/v1/auth/jwt/logout');
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
