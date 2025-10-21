@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
 from app.core.schemas import BaseReturn
 
 
@@ -33,6 +34,10 @@ class UserResponse(UserBase):
 
 class Token(BaseModel):
     token: str
+
+
+class UserLoginResponse(UserResponse, Token):
+    pass
 
 
 class EmailRequest(BaseModel):

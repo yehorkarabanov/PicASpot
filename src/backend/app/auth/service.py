@@ -1,8 +1,14 @@
 from pydantic import EmailStr
 
 from app.auth.repository import UserRepository
-from app.auth.schemas import UserCreate
-from app.auth.security import TokenType, create_verification_token, get_password_hash
+from app.auth.schemas import Token, UserCreate, UserLogin, UserLoginResponse
+from app.auth.security import (
+    TokenType,
+    create_access_token,
+    create_verification_token,
+    get_password_hash,
+    verify_password,
+)
 from app.celery.tasks.email_tasks.tasks import user_verify_mail_event
 from app.core.exceptions import BadRequestError
 from app.settings import settings
@@ -47,4 +53,17 @@ class AuthService:
         link = f"{settings.VERIFY_EMAIL_URL}/{verification_token}"
         user_verify_mail_event.delay(email, link, user.username)
 
+    async def login(self, user_data: UserLogin) -> Token:
+        user = await self.user_repository.get_by_field("email", user_data.email)
+        if not user:
+            raise BadRequestError("Invalid email or password")
 
+        if not verify_password(user_data.password, user.hashed_password):
+            raise BadRequestError("Invalid email or password")
+
+        if not user.is_verified:
+            raise BadRequestError("Please verify your email before logging in")
+
+        access_token = create_access_token(subject=str(user.id))
+        user.access_token = access_token
+        return UserLoginResponse.model_validate(user)

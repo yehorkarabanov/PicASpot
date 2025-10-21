@@ -4,9 +4,10 @@ from typing import Any, Dict, Optional
 
 import bcrypt
 import jwt
+from itsdangerous import URLSafeTimedSerializer
+
 from app.database.redis import get_redis_client
 from app.settings import settings
-from itsdangerous import URLSafeTimedSerializer
 
 # Create serializer for URL-safe tokens (for email verification)
 serializer = URLSafeTimedSerializer(
@@ -36,7 +37,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(
-    subject: str, role: str, expires_delta: Optional[timedelta] = None
+    subject: str, extra_data: dict, expires_delta: Optional[timedelta] = None
 ) -> str:
     """Create JWT access token for authentication"""
     if expires_delta:
@@ -46,7 +47,8 @@ def create_access_token(
             minutes=settings.ACCESS_TOKEN_EXPIRE_SECONDS
         )
 
-    to_encode = {"exp": expire, "sub": subject, "role": role}
+    to_encode = {"exp": expire, "sub": subject}
+    to_encode += extra_data
     encoded_jwt = jwt.encode(
         to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
