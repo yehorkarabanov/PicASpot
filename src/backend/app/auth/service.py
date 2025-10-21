@@ -114,7 +114,7 @@ class AuthService:
         reset_token = await create_verification_token(
             user_id=str(user.id), token_type=TokenType.PASSWORD_RESET
         )
-        link = f"{settings.PASSWORD_RESET_URL}/{reset_token}"
+        link = f"{settings.EMAIL_RESET_PASSWORD_URL}/{reset_token}"
         user_password_reset_mail.delay(
             user.email,
             link,
@@ -137,8 +137,7 @@ class AuthService:
             raise NotFoundError("User not found")
 
         # Update user's password
-        hashed_password = get_password_hash(new_password)
-        user.hashed_password = hashed_password
+        user.hashed_password = get_password_hash(new_password)
         await self.user_repository.save(user)
 
         await delete_verification_token(token)
