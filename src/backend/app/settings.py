@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     )
 
 
+    # Email settings
+    SMTP_USER: str
+    SMTP_PASSWORD: str
+    EMAILS_FROM_EMAIL: str
+    SMTP_PORT: int
+    SMTP_HOST: str
+    EMAIL_FROM_NAME: str
+
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
