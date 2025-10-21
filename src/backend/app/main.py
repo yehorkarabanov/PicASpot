@@ -1,12 +1,26 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .database import create_db_and_tables, dispose_engine
+from .router import router
 from .settings import settings
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Create tables
+    await create_db_and_tables()
+    yield
+    # Shutdown: Dispose engine
+    await dispose_engine()
+
 
 app = FastAPI(
     title=f"{settings.PROJECT_NAME} API",
     root_path="/api",
-    # lifespan=lifespan,
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -16,6 +30,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(router, prefix="/v1")
 
 
 @app.get("/")
