@@ -1,9 +1,11 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List  # noqa: I001
+from pydantic import SecretStr
 
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 
 from app.settings import settings
 
+ConnectionConfig.model_rebuild()
 mail_config = ConnectionConfig(
     MAIL_USERNAME=settings.SMTP_USER,
     MAIL_PASSWORD=settings.SMTP_PASSWORD,
