@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     EMAIL_RESET_PASSWORD_PATH: str
 
     @property
-    def EMAIL_VERIFY_URL(self) -> str:  # noqa: N802
+    def VERIFY_EMAIL_URL(self) -> str:  # noqa: N802
         return f"{self.DOMAIN}{self.EMAIL_VERIFY_PATH}"
 
     @property

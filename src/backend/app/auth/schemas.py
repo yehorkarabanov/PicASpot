@@ -1,16 +1,22 @@
-from pydantic import BaseModel, Field, ConfigDict
-
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from app.core.schemas import BaseReturn
 
 
 class UserBase(BaseModel):
-    username: str
+    username: EmailStr
     email: str
 
 
 class UserCreate(UserBase):
+    # Password must be at least 8 characters, contain at least one uppercase letter and one number
     password: str = Field(min_length=8)
-    password2: str
+
+    # @field_validator('password')
+    # @classmethod
+    # def validate_password(cls, v):
+    #     if not re.match(r'^(?=.*[A-Z])(?=.*\d).{8,}$', v):
+    #         raise ValueError('Password must be at least 8 characters, contain at least one uppercase letter and one number')
+    #     return v
 
 
 class UserLogin(UserBase):
@@ -38,7 +44,7 @@ class Token(BaseModel):
 
 
 class EmailRequest(BaseModel):
-    email: str
+    email: EmailStr
 
 
 class AuthReturn(BaseReturn):
