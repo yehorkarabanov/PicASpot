@@ -44,3 +44,9 @@ class EmailRequest(BaseModel):
 
 class AuthReturn(BaseReturn):
     data: UserResponse | None = None
+
+
+class UserResetPassword(BaseModel):
+    password: str = Field(..., min_length=8)
+    token: str
+

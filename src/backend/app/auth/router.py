@@ -10,6 +10,7 @@ from app.auth.schemas import (
     UserLogin,
     UserLoginResponse,
     UserLoginReturn,
+    UserResetPassword,
 )
 
 router = APIRouter(tags=["auth"], prefix="/auth")
@@ -61,7 +62,37 @@ async def get_access_token(
 
 
 @router.post("/verify", response_model=AuthReturn, response_model_exclude_none=True)
-async def verify_token(token: Token, auth_service: AuthServiceDep):
+async def verify_token(token: Token, auth_service: AuthServiceDep) -> AuthReturn:
     """Verify email using the provided token."""
     await auth_service.verify_token(token.token)
     return AuthReturn(message="Email verified successfully.")
+
+
+@router.post(
+    "/send-password-reset", response_model=AuthReturn, response_model_exclude_none=True
+)
+async def send_password_reset_token(
+    email_request: EmailRequest,
+    auth_service: AuthServiceDep,
+) -> AuthReturn:
+    """
+    Send password reset token to user email
+    """
+    await auth_service.send_password_reset_token(email_request.email)
+    return AuthReturn(message="Password reset email sent. Please check your inbox.")
+
+
+@router.post(
+    "/reset-password", response_model=AuthReturn, response_model_exclude_none=True
+)
+async def reset_password(
+    data: UserResetPassword,
+    auth_service: AuthServiceDep,
+) -> AuthReturn:
+    """
+    Reset password using the token
+
+    This endpoint would be accessed via a link in the password reset email
+    """
+    await auth_service.reset_password(data.token, data.password)
+    return AuthReturn(message="Password reset successfully.")
