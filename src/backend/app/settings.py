@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import List
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -11,7 +10,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str
     DOMAIN: str
     DEBUG: bool = Field(..., alias="BACKEND_DEBUG")
-    CORS_ORIGINS: List[str] = Field(..., alias="BACKEND_CORS_ORIGINS")
+    CORS_ORIGINS: list[str] = Field(..., alias="BACKEND_CORS_ORIGINS")
 
     POSTGRES_PORT: int
     POSTGRES_DB: str

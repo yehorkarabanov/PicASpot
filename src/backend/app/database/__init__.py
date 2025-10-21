@@ -4,8 +4,8 @@ from .manager import create_db_and_tables, dispose_engine, get_async_session
 
 __all__ = [
     "Base",
-    "get_async_session",
+    "SessionDep",
     "create_db_and_tables",
     "dispose_engine",
-    "SessionDep",
+    "get_async_session",
 ]
