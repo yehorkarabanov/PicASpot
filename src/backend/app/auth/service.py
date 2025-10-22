@@ -60,7 +60,7 @@ class AuthService:
         user_verify_mail_event.delay(email, link, user.username)
 
     async def login(self, user_data: UserLogin) -> UserLoginResponse:
-        if user_data.username is EmailStr:
+        if '@' in user_data.username:
             user = await self.user_repository.get_by_field("email", user_data.username)
         else:
             user = await self.user_repository.get_by_field(
