@@ -23,6 +23,7 @@ class AuthService:
     def __init__(self, user_repository: UserRepository):
         self.user_repository = user_repository
 
+    # TODO: add opt flow
     async def register(self, user_data: UserCreate) -> None:
         exising_user = await self.user_repository.get_by_field("email", user_data.email)
         if exising_user:
@@ -45,6 +46,7 @@ class AuthService:
         link = f"{settings.VERIFY_EMAIL_URL}{verification_token}"
         user_verify_mail_event.delay(user_data.email, link, user.username)
 
+    # TODO: redo to send otp
     async def resend_verification_token(self, email: EmailStr) -> None:
         user = await self.user_repository.get_by_field("email", email)
         if not user:
@@ -85,6 +87,8 @@ class AuthService:
             token=AccessToken(access_token=access_token),
         )
 
+        
+    # TODO: redo to verify otp
     async def verify_token(self, token: str) -> None:
         token_data = await decode_verification_token(token, use_redis=False)
         if not token_data:
