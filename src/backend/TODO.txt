@@ -1,2 +1,1 @@
 #TODO: Email verification is disabled for now. For future - we will use OTP
-#TODO: Login doesn't work??? (Registered new user but can't login with those credentials)
