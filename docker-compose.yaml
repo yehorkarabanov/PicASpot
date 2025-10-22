@@ -103,6 +103,20 @@ services:
     networks:
       - app-network
 
+  backup:
+    image: postgis/postgis:18-3.6-alpine
+    container_name: backup
+    depends_on:
+      - postgres
+    env_file:
+      - ./.env
+    volumes:
+      - ./src/backup:/backup
+      - ./backups:/backups
+    entrypoint: [ "sh", "-c", "chmod +x /backup/backup.sh 2>/dev/null || true; tail -f /dev/null" ]
+    networks:
+      - app-network
+
 volumes:
   postgres_data:
   redis-data:
