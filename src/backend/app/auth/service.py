@@ -25,18 +25,21 @@ class AuthService:
 
     # TODO: add opt flow
     async def register(self, user_data: UserCreate) -> None:
-        exising_user = await self.user_repository.get_by_field("email", user_data.email)
-        if exising_user:
-            raise BadRequestError(
-                "User with email {email} already exists".format(email=user_data.email)
-            )
+        existing_user = await self.user_repository.get_by_email_or_username(
+            user_data.email, user_data.username
+        )
+        if existing_user:
+            if existing_user.email == user_data.email:
+                raise BadRequestError("User with this email already exists")
+            else:
+                raise BadRequestError("User with this username already exists")
 
         hashed_password = get_password_hash(user_data.password)
         user_dict = {
             "username": user_data.username,
             "email": user_data.email,
             "hashed_password": hashed_password,
-            "is_verified": True, # TODO: Set to False when OTP will be done
+            "is_verified": True,  # TODO: Set to False when OTP will be done
         }
         user = await self.user_repository.create(user_dict)
 
@@ -62,7 +65,7 @@ class AuthService:
         user_verify_mail_event.delay(email, link, user.username)
 
     async def login(self, user_data: UserLogin) -> UserLoginResponse:
-        if '@' in user_data.username:
+        if "@" in user_data.username:
             user = await self.user_repository.get_by_field("email", user_data.username)
         else:
             user = await self.user_repository.get_by_field(
@@ -87,7 +90,6 @@ class AuthService:
             token=AccessToken(access_token=access_token),
         )
 
-        
     # TODO: redo to verify otp
     async def verify_token(self, token: str) -> None:
         token_data = await decode_verification_token(token, use_redis=False)
