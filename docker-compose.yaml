@@ -104,15 +104,19 @@ services:
       - app-network
 
   backup:
-    image: postgis/postgis:18-3.6-alpine
+    image: postgis/postgis:18-3.6
     container_name: backup
     depends_on:
       - postgres
-    env_file:
-      - ./.env
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT_INTERNAL=${POSTGRES_PORT_INTERNAL}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - BACKUP_DIR=/backup
     volumes:
       - ./src/backup:/backup
-      - ./backups:/backups
     entrypoint: [ "sh", "-c", "chmod +x /backup/backup.sh 2>/dev/null || true; tail -f /dev/null" ]
     networks:
       - app-network
