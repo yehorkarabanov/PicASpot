@@ -8,13 +8,14 @@ import { AlertCircle, CheckCircle } from 'lucide-react-native';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
 export default function RegisterScreen() {
+  const [username, setUsername] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState('');
 
-  const { register } = useAuth();
+  const { register, needsEmailVerification } = useAuth();
   const router = useRouter();
 
   const validatePassword = (pwd: string) => {
@@ -25,7 +26,7 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
+    if (!username || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
       return;
     }
@@ -45,7 +46,15 @@ export default function RegisterScreen() {
     setError('');
 
     try {
-      await register({ email, password });
+      await register({ username, email, password });
+
+      // If registration requires email verification, redirect to verify screen
+      if (needsEmailVerification) {
+        router.replace({ pathname: '/verify-email' });
+        return;
+      }
+
+      // otherwise go to home
       router.replace('/');
     } catch (err: any) {
       console.error('Registration error:', err);
@@ -57,7 +66,7 @@ export default function RegisterScreen() {
         message = 'Cannot connect to server. Please check your network connection and API URL.';
       } else if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
-        message = typeof detail === 'string' ? detail : 'Email already registered';
+        message = typeof detail === 'string' ? detail : 'Email or username already registered';
       }
 
       setError(message);
@@ -93,6 +102,18 @@ export default function RegisterScreen() {
                   <Text className="flex-1 text-destructive">{error}</Text>
                 </View>
               ) : null}
+
+              <View className="gap-2">
+                <Text className="text-sm font-medium">Username</Text>
+                <Input
+                  placeholder="Choose a username"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoComplete="username"
+                  editable={!isLoading}
+                />
+              </View>
 
               <View className="gap-2">
                 <Text className="text-sm font-medium">Email</Text>

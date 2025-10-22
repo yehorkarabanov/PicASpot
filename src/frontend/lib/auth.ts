@@ -1,12 +1,14 @@
+// typescript
 import * as SecureStore from 'expo-secure-store';
 import api from './api';
 
 export interface User {
   id: string;
-  email: string;
-  is_active: boolean;
-  is_superuser: boolean;
-  is_verified: boolean;
+  username: string;
+  email?: string;
+  // backend returns these flags; keep optional to remain compatible
+  is_superuser?: boolean;
+  is_verified?: boolean;
 }
 
 export interface LoginCredentials {
@@ -15,46 +17,101 @@ export interface LoginCredentials {
 }
 
 export interface RegisterCredentials {
+  username: string;
   email: string;
   password: string;
 }
 
-export interface AuthResponse {
+export interface Token {
   access_token: string;
   token_type: string;
 }
 
-export const authService = {
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const formData = new URLSearchParams();
-    formData.append('username', credentials.username);
-    formData.append('password', credentials.password);
+export interface LoginData {
+  id: string;
+  username: string;
+  email: string;
+  is_superuser: boolean;
+  is_verified: boolean;
+  token?: Token;
+}
 
-    const response = await api.post<AuthResponse>('/v1/auth/jwt/login', formData, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+export interface ApiResponse<T> {
+  message: string;
+  data: T;
+}
+
+const ACCESS_KEY = 'access_token';
+
+function setAuthHeader(token?: string | null) {
+  if (token) {
+    api.defaults.headers = api.defaults.headers || {};
+    api.defaults.headers.common = api.defaults.headers.common || {};
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    if (api.defaults.headers && api.defaults.headers.common) {
+      delete api.defaults.headers.common['Authorization'];
+    }
+  }
+}
+
+async function saveToken(token: string) {
+  await SecureStore.setItemAsync(ACCESS_KEY, token);
+  setAuthHeader(token);
+}
+
+export const authService = {
+  async initAuth(): Promise<void> {
+    const token = await SecureStore.getItemAsync(ACCESS_KEY);
+    if (token) setAuthHeader(token);
+  },
+
+  async login(credentials: LoginCredentials): Promise<ApiResponse<LoginData>> {
+    const response = await api.post<ApiResponse<LoginData>>('/v1/auth/login', {
+      username: credentials.username,
+      password: credentials.password,
     });
 
-    if (response.data.access_token) {
-      await SecureStore.setItemAsync('access_token', response.data.access_token);
+    const access = response.data?.data?.token?.access_token;
+    if (access) {
+      await saveToken(access);
     }
 
     return response.data;
   },
 
-  async register(credentials: RegisterCredentials): Promise<User> {
-    const response = await api.post<User>('/v1/auth/register', credentials);
+  async register(
+    credentials: RegisterCredentials
+  ): Promise<ApiResponse<LoginData> | ApiResponse<User>> {
+    // backend accepts only username, email and password
+    const payload = {
+      username: credentials.username,
+      email: credentials.email,
+      password: credentials.password,
+    };
+
+    const response = await api.post<ApiResponse<LoginData> | ApiResponse<User>>(
+      '/v1/auth/register',
+      payload
+    );
+
+    // store access token if returned with registration response
+    const maybeData: any = response.data?.data;
+    const access = maybeData?.token?.access_token;
+    if (access) {
+      await saveToken(access);
+    }
+
     return response.data;
   },
 
   async logout(): Promise<void> {
     try {
-      await api.post('/v1/auth/jwt/logout');
+      await api.post('/v1/auth/logout');
     } catch (error) {
-      console.error('Logout error:', error);
     } finally {
-      await SecureStore.deleteItemAsync('access_token');
+      await SecureStore.deleteItemAsync(ACCESS_KEY);
+      setAuthHeader(null);
     }
   },
 
@@ -64,12 +121,10 @@ export const authService = {
   },
 
   async hasToken(): Promise<boolean> {
-    const token = await SecureStore.getItemAsync('access_token');
+    const token = await SecureStore.getItemAsync(ACCESS_KEY);
     return !!token;
-  },
-
-  async getToken(): Promise<string | null> {
-    return await SecureStore.getItemAsync('access_token');
   },
 };
 
+export const initAuth = authService.initAuth;
+export const hasToken = authService.hasToken;
