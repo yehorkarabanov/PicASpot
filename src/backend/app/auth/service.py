@@ -41,13 +41,13 @@ class AuthService:
             "hashed_password": hashed_password,
             "is_verified": True,  # TODO: Set to False when OTP will be done
         }
-        user = await self.user_repository.create(user_dict)
+        user = await self.user_repository.create(user_dict)  # noqa: F841
 
-        verification_token = await create_verification_token(
-            user_id=str(user.id), token_type=TokenType.VERIFICATION, use_redis=False
-        )
-        link = f"{settings.VERIFY_EMAIL_URL}{verification_token}"
-        user_verify_mail_event.delay(user_data.email, link, user.username)
+        # verification_token = await create_verification_token(
+        #     user_id=str(user.id), token_type=TokenType.VERIFICATION, use_redis=False
+        # )
+        # link = f"{settings.VERIFY_EMAIL_URL}{verification_token}"
+        # user_verify_mail_event.delay(user_data.email, link, user.username)
 
     # TODO: redo to send otp
     async def resend_verification_token(self, email: EmailStr) -> None:
@@ -59,7 +59,7 @@ class AuthService:
             raise BadRequestError("User is already verified")
 
         verification_token = await create_verification_token(
-            user_id=str(user.id), token_type=TokenType.VERIFICATION, use_redis=False
+            user_id=str(user.id), token_type=TokenType.VERIFICATION, use_redis=True
         )
         link = f"{settings.VERIFY_EMAIL_URL}{verification_token}"
         user_verify_mail_event.delay(email, link, user.username)
@@ -82,7 +82,7 @@ class AuthService:
 
         access_token = create_access_token(subject=str(user.id))
         return UserLoginResponse(
-            id=str(user.id),
+            id=user.id,
             username=user.username,
             email=user.email,
             is_superuser=user.is_superuser,
@@ -92,7 +92,7 @@ class AuthService:
 
     # TODO: redo to verify otp
     async def verify_token(self, token: str) -> None:
-        token_data = await decode_verification_token(token, use_redis=False)
+        token_data = await decode_verification_token(token, use_redis=True)
         if not token_data:
             raise AuthenticationError("Invalid or expired verification token")
 
@@ -148,5 +148,3 @@ class AuthService:
         await self.user_repository.save(user)
 
         await delete_verification_token(token)
-
-
