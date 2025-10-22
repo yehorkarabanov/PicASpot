@@ -31,7 +31,7 @@ GRAY='\033[0;90m'
 NC='\033[0m'
 BOLD='\033[1m'
 
-VERSION="1.2.0"
+VERSION="1.3.0"
 TIMESTAMP_FMT="%Y%m%d_%H%M%S"
 TIMESTAMP() { date +"$TIMESTAMP_FMT"; }
 
@@ -51,10 +51,8 @@ fi
 PGDATABASE=${PGDATABASE:-${DEFAULT_DB}}
 export PGDATABASE
 
-# Ensure backup dir exists
 mkdir -p "$BACKUP_DIR"
 
-# Call the command checks early so failures are reported immediately
 check_cmds() {
   local miss=()
   for c in psql pg_dump pg_dumpall pg_restore gzip tar du find date; do
@@ -69,7 +67,6 @@ check_cmds() {
   fi
 }
 
-# Run checks right away
 check_cmds
 
 # Utilities
@@ -440,82 +437,6 @@ cleanup_backups() {
   read -r -p "Press Enter to return to main menu..."
 }
 
-drop_database() {
-  # Ensure DB is up
-  if ! wait_for_db; then
-    return 1
-  fi
-
-  print_header
-  printf "%b\n" "${RED}${BOLD} WARNING: Drop Database  ${NC}\n"
-  divider
-
-  # List available databases
-  printf "%b\n" "${YELLOW}${BOLD}Available Databases:${NC}\n"
-  local dbs
-  dbs=$(list_databases)
-  if [ -z "$dbs" ]; then
-    show_status error "No databases found or unable to connect"
-    sleep 2
-    return 1
-  fi
-
-  printf "%b\n" "${CYAN}$dbs${NC}"
-  divider
-
-  printf "%b" "\n${YELLOW}Enter database name to drop (or 'cancel' to abort): ${NC}"
-  read -r dbname
-
-  if [ -z "$dbname" ] || [ "$dbname" = "cancel" ]; then
-    show_status info "Operation canceled"
-    sleep 1
-    return
-  fi
-
-  # Check if database exists
-  if ! echo "$dbs" | grep -q "^${dbname}$"; then
-    show_status error "Database '$dbname' not found"
-    sleep 2
-    return 1
-  fi
-
-  # Prevent dropping system databases
-  if [ "$dbname" = "postgres" ] || [ "$dbname" = "template0" ] || [ "$dbname" = "template1" ]; then
-    show_status error "Cannot drop system database '$dbname'"
-    sleep 2
-    return 1
-  fi
-
-  print_header
-  printf "%b\n" "${RED}${BOLD}⚠  FINAL WARNING: DROP DATABASE  ⚠${NC}\n"
-  divider
-  printf "%b\n" "${RED}${BOLD}This will permanently delete ALL data in database: ${dbname}${NC}"
-  printf "%b\n" "${RED}${BOLD}This operation CANNOT be undone!${NC}"
-  divider
-
-  local options=("Yes, DROP database '$dbname' permanently (ALL DATA WILL BE LOST)" "No, cancel operation (return to main menu)")
-  show_menu "Please confirm this IRREVERSIBLE action:" "${options[@]}"
-  local choice=$?
-
-  if [ $choice -eq 0 ]; then
-    show_status info "Terminating active connections to database '$dbname'..."
-    psql -h "$PGHOST" -U "$PGUSER" -p "$PGPORT" -d "$PGDATABASE" -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$dbname' AND pid <> pg_backend_pid();" >/dev/null 2>&1 || true
-
-    show_status info "Dropping database '$dbname'..."
-    if psql -h "$PGHOST" -U "$PGUSER" -p "$PGPORT" -d "$PGDATABASE" -c "DROP DATABASE \"$dbname\";" 2>/dev/null; then
-      show_status success "Database '$dbname' has been dropped successfully"
-    else
-      show_status error "Failed to drop database '$dbname'. It may have active connections or other dependencies."
-    fi
-    printf "\n"
-    read -r -p "Press Enter to return to main menu..."
-  else
-    show_status info "Operation canceled"
-    printf "\n"
-    read -r -p "Press Enter to return to main menu..."
-  fi
-}
-
 # Interactive create flow
 create_backup_interactive() {
   print_header
@@ -538,7 +459,6 @@ main_menu() {
       "Create a new backup"
       "View/Manage existing backups"
       "Cleanup old backups"
-      "Drop database"
       "Exit"
       )
     show_menu "Main Menu" "${options[@]}"
@@ -547,8 +467,7 @@ main_menu() {
       0) create_backup_interactive ;;
       1) list_backups ;;
       2) cleanup_backups ;;
-      3) drop_database ;;
-      4) clear_screen; printf "\n${BLUE}┌─────────────────────────────────────────────┐${NC}\n"; printf "${BLUE}│        Thank you for using Hell-App         │${NC}\n"; printf "${BLUE}│         Postgres Backup Manager             │${NC}\n"; printf "${BLUE}└─────────────────────────────────────────────┘${NC}\n\n"; exit 0 ;;
+      3) clear_screen; printf "\n${BLUE}┌─────────────────────────────────────────────┐${NC}\n"; printf "${BLUE}│        Thank you for using Hell-App         │${NC}\n"; printf "${BLUE}│         Postgres Backup Manager             │${NC}\n"; printf "${BLUE}└─────────────────────────────────────────────┘${NC}\n\n"; exit 0 ;;
     esac
   done
 }
@@ -578,11 +497,8 @@ if [ "$#" -gt 0 ]; then
     cleanup)
       cleanup_backups
       ;;
-    drop)
-      drop_database
-      ;;
     *)
-      printf "%b\n" "Usage: $0 {backup [dbname]|list|restore <file>|cleanup|drop}"
+      printf "%b\n" "Usage: $0 {backup [dbname]|list|restore <file>|cleanup}"
       exit 1
       ;;
   esac
