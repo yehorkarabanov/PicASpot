@@ -5,10 +5,10 @@ import { Text } from '@/components/ui/text';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, Stack, useRouter } from 'expo-router';
 import { AlertCircle } from 'lucide-react-native';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
 export default function LoginScreen() {
-  const [email, setEmail] = React.useState('');
+  const [identifier, setIdentifier] = React.useState(''); // username or email
   const [password, setPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -17,7 +17,7 @@ export default function LoginScreen() {
   const router = useRouter();
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!identifier || !password) {
       setError('Please fill in all fields');
       return;
     }
@@ -26,19 +26,20 @@ export default function LoginScreen() {
     setError('');
 
     try {
-      await login({ username: email, password });
+      await login({ username: identifier, password });
+      // Verification is disabled for now — always go to home after login
       router.replace('/');
     } catch (err: any) {
       console.error('Login error:', err);
 
       // Better error handling
-      let message = 'Invalid email or password';
+      let message = 'Invalid username or password';
 
       if (err.code === 'ECONNABORTED' || err.message === 'Network Error') {
         message =
           'Cannot connect to server. Please check your network connection and API URL.';
       } else if (err.response?.status === 400) {
-        message = 'Invalid email or password';
+        message = 'Invalid username or password';
       } else if (err.response?.data?.detail) {
         message = err.response.data.detail;
       }
@@ -80,14 +81,14 @@ export default function LoginScreen() {
               ) : null}
 
               <View className="gap-2">
-                <Text className="text-sm font-medium">Email</Text>
+                <Text className="text-sm font-medium">Username or Email</Text>
                 <Input
-                  placeholder="Enter your email"
-                  value={email}
-                  onChangeText={setEmail}
+                  placeholder="Enter your username or email"
+                  value={identifier}
+                  onChangeText={setIdentifier}
                   autoCapitalize="none"
                   keyboardType="email-address"
-                  autoComplete="email"
+                  autoComplete="username"
                   editable={!isLoading}
                 />
               </View>

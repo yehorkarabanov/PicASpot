@@ -35,13 +35,14 @@ class AuthService:
             "username": user_data.username,
             "email": user_data.email,
             "hashed_password": hashed_password,
+            "is_verified": True, # TODO: Set to False when OTP will be done
         }
         user = await self.user_repository.create(user_dict)
 
         verification_token = await create_verification_token(
             user_id=str(user.id), token_type=TokenType.VERIFICATION, use_redis=False
         )
-        link = f"{settings.VERIFY_EMAIL_URL}/{verification_token}"
+        link = f"{settings.VERIFY_EMAIL_URL}{verification_token}"
         user_verify_mail_event.delay(user_data.email, link, user.username)
 
     async def resend_verification_token(self, email: EmailStr) -> None:
@@ -55,7 +56,7 @@ class AuthService:
         verification_token = await create_verification_token(
             user_id=str(user.id), token_type=TokenType.VERIFICATION, use_redis=False
         )
-        link = f"{settings.VERIFY_EMAIL_URL}/{verification_token}"
+        link = f"{settings.VERIFY_EMAIL_URL}{verification_token}"
         user_verify_mail_event.delay(email, link, user.username)
 
     async def login(self, user_data: UserLogin) -> UserLoginResponse:

@@ -8,11 +8,13 @@ import { AlertCircle, CheckCircle } from 'lucide-react-native';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
 export default function RegisterScreen() {
+  const [username, setUsername] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState('');
+  const [verificationSent, setVerificationSent] = React.useState(false);
 
   const { register } = useAuth();
   const router = useRouter();
@@ -25,7 +27,7 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
+    if (!username || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
       return;
     }
@@ -45,8 +47,11 @@ export default function RegisterScreen() {
     setError('');
 
     try {
-      await register({ email, password });
-      router.replace('/');
+      await register({ username, email, password });
+
+      // Don't auto-login; show instructions sent message.
+      setVerificationSent(true);
+      return;
     } catch (err: any) {
       console.error('Registration error:', err);
 
@@ -57,7 +62,7 @@ export default function RegisterScreen() {
         message = 'Cannot connect to server. Please check your network connection and API URL.';
       } else if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
-        message = typeof detail === 'string' ? detail : 'Email already registered';
+        message = typeof detail === 'string' ? detail : 'Email or username already registered';
       }
 
       setError(message);
@@ -93,6 +98,18 @@ export default function RegisterScreen() {
                   <Text className="flex-1 text-destructive">{error}</Text>
                 </View>
               ) : null}
+
+              <View className="gap-2">
+                <Text className="text-sm font-medium">Username</Text>
+                <Input
+                  placeholder="Choose a username"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoComplete="username"
+                  editable={!isLoading}
+                />
+              </View>
 
               <View className="gap-2">
                 <Text className="text-sm font-medium">Email</Text>
@@ -149,9 +166,19 @@ export default function RegisterScreen() {
                 />
               </View>
 
-              <Button onPress={handleRegister} disabled={isLoading} className="mt-2">
-                <Text>{isLoading ? 'Creating account...' : 'Sign Up'}</Text>
-              </Button>
+              {verificationSent ? (
+                <View className="rounded-lg border border-primary/20 bg-primary/10 p-4">
+                  <Text className="text-primary font-medium">Verification instructions sent</Text>
+                  <Text className="text-sm text-muted-foreground">Check your email for a verification link — after verifying, you can log in.</Text>
+                  <Button onPress={() => router.replace('/login')} className="mt-3">
+                    <Text>Go to Login</Text>
+                  </Button>
+                </View>
+              ) : (
+                <Button onPress={handleRegister} disabled={isLoading} className="mt-2">
+                  <Text>{isLoading ? 'Creating account...' : 'Sign Up'}</Text>
+                </Button>
+              )}
 
               <View className="mt-4 flex-row items-center justify-center gap-2">
                 <Text className="text-muted-foreground">Already have an account?</Text>

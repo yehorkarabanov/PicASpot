@@ -43,11 +43,11 @@ class Settings(BaseSettings):
 
     @property
     def VERIFY_EMAIL_URL(self) -> str:  # noqa: N802
-        return f"{self.DOMAIN}{self.EMAIL_VERIFY_PATH}"
+        return f"{self.EMAIL_VERIFY_PATH}"
 
     @property
     def EMAIL_RESET_PASSWORD_URL(self) -> str:  # noqa: N802
-        return f"{self.DOMAIN}{self.EMAIL_RESET_PASSWORD_PATH}"
+        return f"{self.EMAIL_RESET_PASSWORD_PATH}"
 
     # Redis
     REDIS_HOST: str
