@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/contexts/AuthContext';
-import { authService } from '@/lib/auth';
 import { Link, Stack, useRouter } from 'expo-router';
 import { AlertCircle } from 'lucide-react-native';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
@@ -28,18 +27,8 @@ export default function LoginScreen() {
 
     try {
       await login({ username: identifier, password });
-      // fetch the current user to determine verification status and redirect accordingly
-      try {
-        const currentUser = await authService.getCurrentUser();
-        if (!currentUser?.is_verified) {
-          router.replace({ pathname: '/verify-email' });
-        } else {
-          router.replace('/');
-        }
-      } catch (e) {
-        // If fetching user fails, proceed to home — login succeeded but we couldn't confirm verification
-        router.replace('/');
-      }
+      // Verification is disabled for now — always go to home after login
+      router.replace('/');
     } catch (err: any) {
       console.error('Login error:', err);
 

@@ -1,4 +1,3 @@
-// typescript
 import * as SecureStore from 'expo-secure-store';
 import api from './api';
 
@@ -95,12 +94,8 @@ export const authService = {
       payload
     );
 
-    // store access token if returned with registration response
-    const maybeData: any = response.data?.data;
-    const access = maybeData?.token?.access_token;
-    if (access) {
-      await saveToken(access);
-    }
+    // Do NOT store access token on register (don't auto-login users after registering).
+    // The backend may return a token, but for now we intentionally avoid saving it here.
 
     return response.data;
   },

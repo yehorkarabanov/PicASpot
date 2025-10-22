@@ -14,8 +14,9 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState('');
+  const [verificationSent, setVerificationSent] = React.useState(false);
 
-  const { register, needsEmailVerification } = useAuth();
+  const { register } = useAuth();
   const router = useRouter();
 
   const validatePassword = (pwd: string) => {
@@ -48,14 +49,9 @@ export default function RegisterScreen() {
     try {
       await register({ username, email, password });
 
-      // If registration requires email verification, redirect to verify screen
-      if (needsEmailVerification) {
-        router.replace({ pathname: '/verify-email' });
-        return;
-      }
-
-      // otherwise go to home
-      router.replace('/');
+      // Don't auto-login; show instructions sent message.
+      setVerificationSent(true);
+      return;
     } catch (err: any) {
       console.error('Registration error:', err);
 
@@ -170,9 +166,19 @@ export default function RegisterScreen() {
                 />
               </View>
 
-              <Button onPress={handleRegister} disabled={isLoading} className="mt-2">
-                <Text>{isLoading ? 'Creating account...' : 'Sign Up'}</Text>
-              </Button>
+              {verificationSent ? (
+                <View className="rounded-lg border border-primary/20 bg-primary/10 p-4">
+                  <Text className="text-primary font-medium">Verification instructions sent</Text>
+                  <Text className="text-sm text-muted-foreground">Check your email for a verification link — after verifying, you can log in.</Text>
+                  <Button onPress={() => router.replace('/login')} className="mt-3">
+                    <Text>Go to Login</Text>
+                  </Button>
+                </View>
+              ) : (
+                <Button onPress={handleRegister} disabled={isLoading} className="mt-2">
+                  <Text>{isLoading ? 'Creating account...' : 'Sign Up'}</Text>
+                </Button>
+              )}
 
               <View className="mt-4 flex-row items-center justify-center gap-2">
                 <Text className="text-muted-foreground">Already have an account?</Text>
