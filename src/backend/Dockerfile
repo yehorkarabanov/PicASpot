@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     make \
     libc-dev \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 ENV UV_COMPILE_BYTECODE=1 \
@@ -26,4 +27,11 @@ WORKDIR /code/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --extra "test" --frozen --no-dev
 
-RUN uv run alembic upgrade head
+# Copy and set up entrypoint script for running migrations at startup
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Don't run migrations at build time - they need env vars and a running database
+# Migrations run at container startup via entrypoint.sh
