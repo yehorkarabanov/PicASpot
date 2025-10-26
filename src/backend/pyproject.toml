@@ -5,7 +5,9 @@ description = "PicASpot backend"
 requires-python = ">=3.14"
 dependencies = [
     "alembic>=1.17.0",
-    "asyncpg>=0.30.0",
+    # asyncpg is not compiled on Windows (for now, waiting for wheels).
+    # We compile it on Docker Linux containers instead
+    "asyncpg>=0.30.0; sys_platform != 'win32'",
     "asgiref>=3.10.0",
     "bcrypt>=5.0.0",
     "celery>=5.5.3",
