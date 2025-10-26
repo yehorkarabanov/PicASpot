@@ -38,13 +38,17 @@ RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-# Don't run migrations at build time - they need env vars and a running database
-# Migrations run at container startup via entrypoint.sh
+CMD ["sh", "-c", "uv run fastapi dev --port ${BACKEND_PORT_INTERNAL} --host 0.0.0.0 --reload --proxy-headers"]
 
 
-# Worker stage - for Celery and Flower (no migrations needed)
+# Worker stage - for Celery worker (no migrations needed)
 FROM base AS worker
 
-# No entrypoint script needed - workers don't run migrations
-# Command will be specified in docker-compose.yaml
+CMD ["uv", "run", "celery", "--app", "app.celery.worker", "worker", "--loglevel=info", "--uid=nobody", "--gid=nogroup"]
+
+
+# Flower stage - for Celery monitoring UI (no migrations needed)
+FROM base AS flower
+
+CMD ["sh", "-c", "uv run celery --broker=redis://:${REDIS_PASSWORD}@redis:${REDIS_PORT_INTERNAL}/0 flower --port=${FLOWER_PORT_INTERNAL} --url-prefix=/dev/flower"]
 
