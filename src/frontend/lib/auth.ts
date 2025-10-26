@@ -94,20 +94,12 @@ export const authService = {
       payload
     );
 
-    // Do NOT store access token on register (don't auto-login users after registering).
-    // The backend may return a token, but for now we intentionally avoid saving it here.
-
     return response.data;
   },
 
   async logout(): Promise<void> {
-    try {
-      await api.post('/v1/auth/logout');
-    } catch (error) {
-    } finally {
-      await SecureStore.deleteItemAsync(ACCESS_KEY);
-      setAuthHeader(null);
-    }
+    await SecureStore.deleteItemAsync(ACCESS_KEY);
+    setAuthHeader(null);
   },
 
   async getCurrentUser(): Promise<User> {
