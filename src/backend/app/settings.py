@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal, Union
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,6 +20,13 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_HOST: str
+
+
+    ADMIN_EMAIL: Union[str, Literal[False]] = Field(False, alias="ADMIN_EMAIL")
+    ADMIN_PASSWORD: Union[str, Literal[False]] = Field(False, alias="ADMIN_PASSWORD")
+    USER_EMAIL: Union[str, Literal[False]] = Field(False, alias="USER_EMAIL")
+    USER_PASSWORD: Union[str, Literal[False]] = Field(False, alias="USER_PASSWORD")
+
 
     @property
     def DATABASE_URL(self) -> str:  # noqa: N802

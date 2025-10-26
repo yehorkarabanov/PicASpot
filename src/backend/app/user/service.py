@@ -1,5 +1,6 @@
 from app.auth.security import get_password_hash, verify_password
 from app.core.exceptions import BadRequestError, NotFoundError
+from app.settings import settings
 from app.user.repository import UserRepository
 from app.user.schemas import UserResponse, UserUpdate, UserUpdatePassword
 
@@ -59,3 +60,36 @@ class UserService:
 
         user.hashed_password = get_password_hash(password_data.new_password)
         await self.user_repository.save(user)
+
+    async def create_default_users(self):
+        # Create an admin user if not exists
+        if settings.ADMIN_EMAIL and settings.ADMIN_PASSWORD:
+            existing_admin = await self.user_repository.get_by_field(
+                "email", settings.ADMIN_EMAIL
+            )
+            if not existing_admin:
+                admin_dict = {
+                    "email": settings.ADMIN_EMAIL,
+                    "username": settings.ADMIN_EMAIL.strip().split("@")[0],
+                    "hashed_password": get_password_hash(settings.ADMIN_PASSWORD),
+                    "is_verified": True,
+                    "is_superuser": True,
+                }
+                admin_user = await self.user_repository.create(admin_dict)
+                print(f"Created default admin user: {admin_user.email}")
+
+        # Create a regular user if not exists
+        if settings.USER_EMAIL and settings.USER_PASSWORD:
+            existing_user = await self.user_repository.get_by_field(
+                "email", settings.USER_EMAIL
+            )
+            if not existing_user:
+                user_dict = {
+                    "email": settings.USER_EMAIL,
+                    "username": settings.USER_EMAIL.strip().split("@")[0],
+                    "hashed_password": get_password_hash(settings.USER_PASSWORD),
+                    "is_verified": True,
+                    "is_superuser": False,
+                }
+                regular_user = await self.user_repository.create(user_dict)
+                print(f"Created default regular user: {regular_user.email}")
