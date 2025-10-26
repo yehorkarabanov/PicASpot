@@ -10,11 +10,11 @@ from app.core.utils import generate_users
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    # Startup: Create tables
-    await create_db_and_tables()
-
-    # Startup: Create default users
-    await generate_users()
+    # # Startup: Create tables
+    # await create_db_and_tables()
+    #
+    # # Startup: Create default users
+    # await generate_users()
 
     yield
     # Shutdown: Dispose engine
