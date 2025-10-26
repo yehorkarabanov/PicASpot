@@ -20,6 +20,7 @@ services:
     build:
       context: ./src/backend
       dockerfile: Dockerfile
+      target: backend
     volumes:
       - ./src/backend/:/code
       - /code/.venv
@@ -37,6 +38,7 @@ services:
     build:
       context: ./src/backend
       dockerfile: Dockerfile
+      target: worker
     command: uv run celery --app app.celery.worker worker --loglevel=info --uid=nobody  --gid=nogroup
     volumes:
       - ./src/backend/:/code
@@ -59,6 +61,7 @@ services:
     build:
       context: ./src/backend
       dockerfile: Dockerfile
+      target: worker
     command: uv run celery --broker=redis://:${REDIS_PASSWORD}@redis:${REDIS_PORT_INTERNAL}/0 flower --port=${FLOWER_PORT_INTERNAL} --url-prefix=/dev/flower
     networks:
       - app-network
