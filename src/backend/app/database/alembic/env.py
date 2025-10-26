@@ -1,5 +1,6 @@
 import asyncio
 from logging.config import fileConfig
+from typing import Any
 
 from alembic import context
 from geoalchemy2 import alembic_helpers
@@ -35,6 +36,70 @@ target_metadata = Base.metadata
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 
+def include_object(
+    object: Any,
+    name: str | None,
+    type_: str,
+    reflected: bool,
+    compare_to: Any
+) -> bool:
+    """
+    Exclude PostGIS system tables and schemas from Alembic autogeneration.
+    This prevents Alembic from trying to drop PostGIS extension tables.
+    """
+    # Exclude PostGIS Tiger Geocoder tables
+    if type_ == "table":
+        # List of PostGIS system tables to exclude
+        postgis_tables = [
+            'spatial_ref_sys',
+            'geocode_settings',
+            'geocode_settings_default',
+            'pagc_gaz',
+            'pagc_lex',
+            'pagc_rules',
+            'addr',
+            'addrfeat',
+            'bg',
+            'county',
+            'county_lookup',
+            'countysub_lookup',
+            'cousub',
+            'direction_lookup',
+            'edges',
+            'faces',
+            'featnames',
+            'place',
+            'place_lookup',
+            'secondary_unit_lookup',
+            'state',
+            'state_lookup',
+            'street_type_lookup',
+            'tabblock',
+            'tabblock20',
+            'tract',
+            'zcta5',
+            'zip_lookup',
+            'zip_lookup_all',
+            'zip_lookup_base',
+            'zip_state',
+            'zip_state_loc',
+            'loader_lookuptables',
+            'loader_platform',
+            'loader_variables',
+            'topology',
+            'layer',
+        ]
+        if name in postgis_tables:
+            return False
+
+    # Exclude PostGIS schemas
+    if hasattr(object, 'schema') and object.schema in ['tiger', 'tiger_data', 'topology']:
+        return False
+
+    # Use GeoAlchemy2's include_object for geometry-related filtering
+    return alembic_helpers.include_object(object, name, type_, reflected, compare_to)
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -55,7 +120,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
         compare_server_default=True,
-        include_object=alembic_helpers.include_object,
+        include_object=include_object,
         process_revision_directives=alembic_helpers.writer,
         render_item=alembic_helpers.render_item,
     )
@@ -70,7 +135,7 @@ def do_run_migrations(connection: Connection) -> None:
         target_metadata=target_metadata,
         compare_type=True,
         compare_server_default=True,
-        include_object=alembic_helpers.include_object,
+        include_object=include_object,
         process_revision_directives=alembic_helpers.writer,
         render_item=alembic_helpers.render_item,
     )
