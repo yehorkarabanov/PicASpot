@@ -22,5 +22,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Installing separately from its dependencies allows optimal layer caching
 COPY . /code/
 WORKDIR /code/
+
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --extra "test" --frozen --no-dev
+
+RUN uv run alembic upgrade head
