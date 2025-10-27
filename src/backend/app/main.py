@@ -1,6 +1,7 @@
+import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -10,6 +11,8 @@ from app.database.manager import check_database_health
 from app.database.redis import check_redis_health, close_redis, init_redis
 from app.router import router
 from app.settings import settings
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -39,6 +42,20 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/v1")
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error("Unhandled exception", exc_info=exc, extra={
+        "path": request.url.path,
+        "method": request.method
+    })
+    if settings.DEBUG:
+        raise exc
+    return JSONResponse(
+        status_code=500,
+        content={"message": "Internal server error"}
+    )
 
 
 @app.get("/")

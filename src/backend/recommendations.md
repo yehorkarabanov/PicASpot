@@ -244,7 +244,7 @@ logger.info("User login successful", extra={
 
 ---
 
-### 3.2 Global Exception Handler
+### 3.2 Global Exception Handler - DONE
 **Priority: HIGH**
 
 **Current State:**
