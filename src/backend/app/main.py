@@ -3,15 +3,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .database import create_db_and_tables, dispose_engine
-from .router import router
-from .settings import settings
+from app.core.utils import generate_users
+from app.database import dispose_engine
+from app.router import router
+from app.settings import settings
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup: Create tables
-    await create_db_and_tables()
+async def lifespan(_app: FastAPI):
+    # Startup: Create default users
+    await generate_users()
+
     yield
     # Shutdown: Dispose engine
     await dispose_engine()
@@ -27,8 +29,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 app.include_router(router, prefix="/v1")
@@ -36,4 +38,4 @@ app.include_router(router, prefix="/v1")
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Welcome to the picASpot API!"}
