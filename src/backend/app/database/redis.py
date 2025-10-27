@@ -8,7 +8,14 @@ redis_client: redis.Redis | None = None
 async def init_redis():
     """Initialize Redis client at startup"""
     global redis_client
-    redis_client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=True)
+    # Create connection pool with reconnection and pooling settings
+    pool = redis.ConnectionPool.from_url(
+        settings.REDIS_URL,
+        max_connections=10,  # Limit connections to prevent exhaustion
+        retry_on_timeout=True,  # Auto-retry on timeouts
+        decode_responses=True,
+    )
+    redis_client = redis.Redis(connection_pool=pool)
 
 
 async def close_redis():
