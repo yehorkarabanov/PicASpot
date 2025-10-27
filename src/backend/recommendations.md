@@ -32,7 +32,7 @@ This document provides comprehensive recommendations for improving the PicASpot 
 
 ---
 
-### 1.2 Add Database Indexes
+### 1.2 Add Database Indexes - DONE
 **Priority: HIGH**
 
 **Current State:**
@@ -244,7 +244,7 @@ logger.info("User login successful", extra={
 
 ---
 
-### 3.2 Global Exception Handler
+### 3.2 Global Exception Handler - DONE
 **Priority: HIGH**
 
 **Current State:**
@@ -529,7 +529,7 @@ class PageResponse[T]:
 
 ## 7. Performance & Scalability
 
-### 7.1 Redis Connection Management
+### 7.1 Redis Connection Management - DONE
 **Priority: HIGH**
 
 **Current State:**
@@ -1035,7 +1035,7 @@ async def health_check():
 
 ## 16. Specific Code Issues
 
-### 16.1 Fix Token Expiry Bug
+### 16.1 Fix Token Expiry Bug - DONE
 **Priority: CRITICAL**
 
 **Location:** `auth/security.py`, line 52-55
@@ -1056,7 +1056,7 @@ expire = datetime.now(timezone.utc) + timedelta(
 
 ---
 
-### 16.2 Redis Connection Leak
+### 16.2 Redis Connection Leak - DONE
 **Priority: HIGH**
 
 **Location:** `database/redis.py` and all usages

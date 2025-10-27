@@ -1,5 +1,6 @@
 from collections.abc import AsyncGenerator
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -51,3 +52,13 @@ async def create_db_and_tables():
 # Optional: Dispose engine on shutdown
 async def dispose_engine():
     await engine.dispose()
+
+
+async def check_database_health() -> bool:
+    """Check if database is healthy"""
+    try:
+        async with engine.begin() as conn:
+            await conn.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False
