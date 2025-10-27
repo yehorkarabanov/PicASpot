@@ -1035,7 +1035,7 @@ async def health_check():
 
 ## 16. Specific Code Issues
 
-### 16.1 Fix Token Expiry Bug
+### 16.1 Fix Token Expiry Bug - DONE
 **Priority: CRITICAL**
 
 **Location:** `auth/security.py`, line 52-55
@@ -1056,7 +1056,7 @@ expire = datetime.now(timezone.utc) + timedelta(
 
 ---
 
-### 16.2 Redis Connection Leak
+### 16.2 Redis Connection Leak - DONE
 **Priority: HIGH**
 
 **Location:** `database/redis.py` and all usages

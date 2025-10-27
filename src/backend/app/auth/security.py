@@ -46,7 +46,7 @@ def create_access_token(
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_SECONDS
+            seconds=settings.ACCESS_TOKEN_EXPIRE_SECONDS
         )
 
     to_encode = {"exp": expire, "sub": subject}
