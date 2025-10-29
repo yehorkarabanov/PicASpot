@@ -13,6 +13,7 @@ from app.settings import settings
 
 # Import all models here for autogenerate to detect them
 from app.user.models import User  # noqa: F401
+from app.area.models import Area  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
