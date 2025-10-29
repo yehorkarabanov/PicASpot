@@ -103,7 +103,7 @@ export const authService = {
   },
 
   async getCurrentUser(): Promise<User> {
-    const response = await api.get<User>('/v1/users/me');
+    const response = await api.get<User>('/v1/user/me');
     return response.data;
   },
 
