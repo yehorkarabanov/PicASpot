@@ -1,4 +1,4 @@
-from app.unlock.repository import UnlockRepository
+from .repository import UnlockRepository
 
 
 class UnlockService:

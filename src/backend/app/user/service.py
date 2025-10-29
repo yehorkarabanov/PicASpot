@@ -1,8 +1,9 @@
 from app.auth.security import get_password_hash, verify_password
 from app.core.exceptions import BadRequestError, NotFoundError
 from app.settings import settings
-from app.user.repository import UserRepository
-from app.user.schemas import UserResponse, UserUpdate, UserUpdatePassword
+
+from .repository import UserRepository
+from .schemas import UserResponse, UserUpdate, UserUpdatePassword
 
 
 class UserService:

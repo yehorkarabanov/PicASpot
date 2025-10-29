@@ -2,10 +2,11 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from app.area.models import Area
-from app.area.repository import AreaRepository
-from app.area.service import AreaService
 from app.database import SessionDep
+
+from .models import Area
+from .repository import AreaRepository
+from .service import AreaService
 
 
 def get_area_repository(session: SessionDep) -> AreaRepository:

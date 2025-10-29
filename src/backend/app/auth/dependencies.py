@@ -3,11 +3,12 @@ from typing import Annotated
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
-from app.auth.security import decode_token
-from app.auth.service import AuthService
 from app.core.exceptions import UnauthorizedError
 from app.user.dependencies import UserRepDep
 from app.user.models import User
+
+from .security import decode_token
+from .service import AuthService
 
 
 def get_auth_service(

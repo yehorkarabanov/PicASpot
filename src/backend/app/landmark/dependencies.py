@@ -3,9 +3,10 @@ from typing import Annotated
 from fastapi import Depends
 
 from app.database import SessionDep
-from app.landmark.models import Landmark
-from app.landmark.repository import LandmarkRepository
-from app.landmark.service import LandmarkService
+
+from .models import Landmark
+from .repository import LandmarkRepository
+from .service import LandmarkService
 
 
 def get_landmark_repository(session: SessionDep) -> LandmarkRepository:

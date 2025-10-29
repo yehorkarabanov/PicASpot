@@ -1,4 +1,4 @@
-from app.area.repository import AreaRepository
+from .repository import AreaRepository
 
 
 class AreaService:

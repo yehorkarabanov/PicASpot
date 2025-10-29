@@ -1,7 +1,15 @@
 from pydantic import EmailStr
 
-from app.auth.schemas import AccessToken, UserCreate, UserLogin, UserLoginResponse
-from app.auth.security import (
+from app.celery.tasks.email_tasks.tasks import (
+    user_password_reset_mail,
+    user_verify_mail_event,
+)
+from app.core.exceptions import AuthenticationError, BadRequestError, NotFoundError
+from app.settings import settings
+from app.user.repository import UserRepository
+
+from .schemas import AccessToken, UserCreate, UserLogin, UserLoginResponse
+from .security import (
     TokenType,
     create_access_token,
     create_verification_token,
@@ -10,13 +18,6 @@ from app.auth.security import (
     get_password_hash,
     verify_password,
 )
-from app.celery.tasks.email_tasks.tasks import (
-    user_password_reset_mail,
-    user_verify_mail_event,
-)
-from app.core.exceptions import AuthenticationError, BadRequestError, NotFoundError
-from app.settings import settings
-from app.user.repository import UserRepository
 
 
 class AuthService:

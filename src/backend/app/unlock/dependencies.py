@@ -3,9 +3,10 @@ from typing import Annotated
 from fastapi import Depends
 
 from app.database import SessionDep
-from app.unlock.models import Unlock
-from app.unlock.repository import UnlockRepository
-from app.unlock.service import UnlockService
+
+from .models import Unlock
+from .repository import UnlockRepository
+from .service import UnlockService
 
 
 def get_unlock_repository(session: SessionDep) -> UnlockRepository:

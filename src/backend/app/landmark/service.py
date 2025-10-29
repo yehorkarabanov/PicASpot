@@ -1,4 +1,4 @@
-from app.landmark.repository import LandmarkRepository
+from .repository import LandmarkRepository
 
 
 class LandmarkService:

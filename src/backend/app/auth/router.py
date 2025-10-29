@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Form
 
-from app.auth.dependencies import AuthServiceDep
-from app.auth.schemas import (
+from .dependencies import AuthServiceDep
+from .schemas import (
     AccessToken,
     AuthReturn,
     EmailRequest,
