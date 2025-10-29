@@ -1,1 +1,3 @@
 #TODO: Email verification is disabled for now. For future - we will use OTP
+
+#TODO: In area add point to center and radius, and in scheme add user cords to load areas near user
