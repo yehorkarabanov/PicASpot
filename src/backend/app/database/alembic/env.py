@@ -8,12 +8,14 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from app.area.models import Area  # noqa: F401
 from app.database.base import Base
+from app.landmark.models import Landmark  # noqa: F401
 from app.settings import settings
+from app.unlock.models import Unlock  # noqa: F401
+from app.user.models import User  # noqa: F401
 
 # Import all models here for autogenerate to detect them
-from app.user.models import User  # noqa: F401
-from app.area.models import Area  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -38,11 +40,7 @@ config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 
 def include_object(
-    object: Any,
-    name: str | None,
-    type_: str,
-    reflected: bool,
-    compare_to: Any
+    object: Any, name: str | None, type_: str, reflected: bool, compare_to: Any
 ) -> bool:
     """
     Exclude PostGIS system tables and schemas from Alembic autogeneration.
@@ -52,49 +50,53 @@ def include_object(
     if type_ == "table":
         # List of PostGIS system tables to exclude
         postgis_tables = [
-            'spatial_ref_sys',
-            'geocode_settings',
-            'geocode_settings_default',
-            'pagc_gaz',
-            'pagc_lex',
-            'pagc_rules',
-            'addr',
-            'addrfeat',
-            'bg',
-            'county',
-            'county_lookup',
-            'countysub_lookup',
-            'cousub',
-            'direction_lookup',
-            'edges',
-            'faces',
-            'featnames',
-            'place',
-            'place_lookup',
-            'secondary_unit_lookup',
-            'state',
-            'state_lookup',
-            'street_type_lookup',
-            'tabblock',
-            'tabblock20',
-            'tract',
-            'zcta5',
-            'zip_lookup',
-            'zip_lookup_all',
-            'zip_lookup_base',
-            'zip_state',
-            'zip_state_loc',
-            'loader_lookuptables',
-            'loader_platform',
-            'loader_variables',
-            'topology',
-            'layer',
+            "spatial_ref_sys",
+            "geocode_settings",
+            "geocode_settings_default",
+            "pagc_gaz",
+            "pagc_lex",
+            "pagc_rules",
+            "addr",
+            "addrfeat",
+            "bg",
+            "county",
+            "county_lookup",
+            "countysub_lookup",
+            "cousub",
+            "direction_lookup",
+            "edges",
+            "faces",
+            "featnames",
+            "place",
+            "place_lookup",
+            "secondary_unit_lookup",
+            "state",
+            "state_lookup",
+            "street_type_lookup",
+            "tabblock",
+            "tabblock20",
+            "tract",
+            "zcta5",
+            "zip_lookup",
+            "zip_lookup_all",
+            "zip_lookup_base",
+            "zip_state",
+            "zip_state_loc",
+            "loader_lookuptables",
+            "loader_platform",
+            "loader_variables",
+            "topology",
+            "layer",
         ]
         if name in postgis_tables:
             return False
 
     # Exclude PostGIS schemas
-    if hasattr(object, 'schema') and object.schema in ['tiger', 'tiger_data', 'topology']:
+    if hasattr(object, "schema") and object.schema in [
+        "tiger",
+        "tiger_data",
+        "topology",
+    ]:
         return False
 
     # Use GeoAlchemy2's include_object for geometry-related filtering
