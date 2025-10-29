@@ -15,10 +15,16 @@ class Area(Base):
         types.Uuid, primary_key=True, default=uuid.uuid4
     )
     parent_area_id: Mapped[uuid.UUID | None] = mapped_column(
-        types.Uuid, ForeignKey("areas.id", ondelete="CASCADE"), nullable=True, index=True
+        types.Uuid,
+        ForeignKey("areas.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
     )
     created_by: Mapped[uuid.UUID] = mapped_column(
-        types.Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        types.Uuid,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     name: Mapped[str] = mapped_column(nullable=False)
@@ -37,6 +43,6 @@ class Area(Base):
 
 # Composite indexes for common query patterns
 # Get verified child areas of a parent
-Index('idx_area_parent_verified', Area.parent_area_id, Area.is_verified)
+Index("idx_area_parent_verified", Area.parent_area_id, Area.is_verified)
 # Get verified areas created by a user
-Index('idx_area_creator_verified', Area.created_by, Area.is_verified)
+Index("idx_area_creator_verified", Area.created_by, Area.is_verified)

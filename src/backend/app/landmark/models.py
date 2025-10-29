@@ -16,10 +16,16 @@ class Landmark(Base):
         types.Uuid, primary_key=True, default=uuid.uuid4
     )
     area_id: Mapped[uuid.UUID] = mapped_column(
-        types.Uuid, ForeignKey("areas.id", ondelete="CASCADE"), nullable=False, index=True
+        types.Uuid,
+        ForeignKey("areas.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     created_by: Mapped[uuid.UUID] = mapped_column(
-        types.Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        types.Uuid,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     name: Mapped[str] = mapped_column(nullable=False)
@@ -38,6 +44,6 @@ class Landmark(Base):
 
 # Composite indexes for common query patterns
 # GIST index for geospatial queries (nearby landmarks)
-Index('idx_landmark_location', Landmark.location, postgresql_using='gist')
+Index("idx_landmark_location", Landmark.location, postgresql_using="gist")
 # Get landmarks in an area
-Index('idx_landmark_area_creator', Landmark.area_id, Landmark.created_by)
+Index("idx_landmark_area_creator", Landmark.area_id, Landmark.created_by)

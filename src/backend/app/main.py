@@ -46,16 +46,14 @@ app.include_router(router, prefix="/v1")
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error("Unhandled exception", exc_info=exc, extra={
-        "path": request.url.path,
-        "method": request.method
-    })
+    logger.error(
+        "Unhandled exception",
+        exc_info=exc,
+        extra={"path": request.url.path, "method": request.method},
+    )
     if settings.DEBUG:
         raise exc
-    return JSONResponse(
-        status_code=500,
-        content={"message": "Internal server error"}
-    )
+    return JSONResponse(status_code=500, content={"message": "Internal server error"})
 
 
 @app.get("/")
@@ -73,5 +71,5 @@ async def health_check():
     all_healthy = all(checks.values())
     return JSONResponse(
         status_code=200 if all_healthy else 503,
-        content={"status": "healthy" if all_healthy else "unhealthy", "checks": checks}
+        content={"status": "healthy" if all_healthy else "unhealthy", "checks": checks},
     )
