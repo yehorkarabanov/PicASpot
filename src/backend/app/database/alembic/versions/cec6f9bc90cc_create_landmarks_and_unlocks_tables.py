@@ -7,8 +7,8 @@ Create Date: 2025-10-29 09:44:37.304847
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from geoalchemy2 import Geography
 
 # revision identifiers, used by Alembic.

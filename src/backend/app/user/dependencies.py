@@ -3,10 +3,9 @@ from typing import Annotated
 from fastapi import Depends
 
 from app.database import SessionDep
-
-from .models import User
-from .repository import UserRepository
-from .service import UserService
+from app.user.models import User
+from app.user.repository import UserRepository
+from app.user.service import UserService
 
 
 def get_user_repository(session: SessionDep) -> UserRepository:
