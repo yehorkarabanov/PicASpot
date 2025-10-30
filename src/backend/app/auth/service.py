@@ -21,11 +21,36 @@ from .security import (
 
 
 class AuthService:
+    """
+    Service layer for managing authentication operations.
+
+    This service handles user registration, login, email verification,
+    password reset, and token management.
+    """
+
     def __init__(self, user_repository: UserRepository):
+        """
+        Initialize the AuthService.
+
+        Args:
+            user_repository: Repository instance for user data access.
+        """
         self.user_repository = user_repository
 
     # TODO: add opt flow
     async def register(self, user_data: UserCreate) -> None:
+        """
+        Register a new user account.
+
+        Creates a new user with hashed password. Email verification is currently
+        bypassed (is_verified=True) but should be implemented with OTP flow.
+
+        Args:
+            user_data: User registration data including username, email, and password.
+
+        Raises:
+            BadRequestError: If email or username already exists.
+        """
         existing_user = await self.user_repository.get_by_email_or_username(
             user_data.email, user_data.username
         )
@@ -52,6 +77,15 @@ class AuthService:
 
     # TODO: redo to send otp
     async def resend_verification_token(self, email: EmailStr) -> None:
+        """
+        Resend email verification token to a user.
+
+        Args:
+            email: The email address of the user requesting verification token.
+
+        Raises:
+            BadRequestError: If user does not exist or is already verified.
+        """
         user = await self.user_repository.get_by_field("email", email)
         if not user:
             raise BadRequestError("User with this email does not exist")
@@ -66,6 +100,21 @@ class AuthService:
         user_verify_mail_event.delay(email, link, user.username)
 
     async def login(self, user_data: UserLogin) -> UserLoginResponse:
+        """
+        Authenticate a user and generate access token.
+
+        Accepts either email or username for login. Validates password and
+        ensures user's email is verified before allowing login.
+
+        Args:
+            user_data: Login credentials (username/email and password).
+
+        Returns:
+            UserLoginResponse: User information and access token.
+
+        Raises:
+            BadRequestError: If credentials are invalid or user is not verified.
+        """
         if "@" in user_data.username:
             user = await self.user_repository.get_by_field("email", user_data.username)
         else:
@@ -93,6 +142,16 @@ class AuthService:
 
     # TODO: redo to verify otp
     async def verify_token(self, token: str) -> None:
+        """
+        Verify an email verification token and activate user account.
+
+        Args:
+            token: The verification token sent to user's email.
+
+        Raises:
+            AuthenticationError: If token is invalid, expired, or has wrong type.
+            NotFoundError: If user associated with token does not exist.
+        """
         token_data = await decode_verification_token(token, use_redis=True)
         if not token_data:
             raise AuthenticationError("Invalid or expired verification token")
@@ -115,6 +174,17 @@ class AuthService:
         await self.user_repository.save(user)
 
     async def send_password_reset_token(self, email: EmailStr) -> None:
+        """
+        Send a password reset token to user's email.
+
+        Generates a time-limited token and sends it via email for password reset.
+
+        Args:
+            email: The email address of the user requesting password reset.
+
+        Raises:
+            BadRequestError: If user with this email does not exist.
+        """
         user = await self.user_repository.get_by_field("email", email)
         if not user:
             raise BadRequestError("User with this email does not exist")
@@ -130,6 +200,20 @@ class AuthService:
         )
 
     async def reset_password(self, token: str, new_password: str) -> None:
+        """
+        Reset user's password using a valid reset token.
+
+        Validates the reset token, updates the user's password, and invalidates
+        the token to prevent reuse.
+
+        Args:
+            token: The password reset token sent to user's email.
+            new_password: The new password to set for the user.
+
+        Raises:
+            AuthenticationError: If token is invalid, expired, or has wrong type.
+            NotFoundError: If user associated with token does not exist.
+        """
         token_data = await decode_verification_token(token)
         if not token_data:
             raise AuthenticationError("Invalid or expired password reset token")
