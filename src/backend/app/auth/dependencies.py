@@ -42,6 +42,7 @@ async def get_current_user(
 
     return user
 
+
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
 
 
@@ -52,5 +53,6 @@ async def get_current_superuser(
     if not current_user.is_superuser:
         raise UnauthorizedError("The user doesn't have enough privileges")
     return current_user
+
 
 CurrentSuperuserDep = Annotated[User, Depends(get_current_superuser)]

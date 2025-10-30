@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import APIRouter
 
-from app.auth.dependencies import CurrentUserDep, CurrentSuperuserDep
+from app.auth.dependencies import CurrentSuperuserDep, CurrentUserDep
 
 from .dependencies import AreaServiceDep
 from .schemas import AreaCreate, AreaReturn, AreaUpdate

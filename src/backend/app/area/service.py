@@ -49,31 +49,24 @@ class AreaService:
             parent_area_id: The UUID of the proposed parent area.
 
         Raises:
-            BadRequestError: If a circular reference would be created.
+            BadRequestError: If a circular reference would be created or if
+                the hierarchy is too deep to safely validate.
         """
         if area_id == parent_area_id:
             raise BadRequestError("An area cannot be its own parent")
 
-        # Walk up the parent chain to detect cycles
-        current_id = parent_area_id
-        visited = {area_id}
-        max_depth = 100  # Prevent infinite loops
+        (
+            has_circular_ref,
+            hit_depth_limit,
+        ) = await self.area_repository.check_circular_reference(area_id, parent_area_id)
 
-        for _ in range(max_depth):
-            if current_id in visited:
-                raise BadRequestError(
-                    "Setting this parent would create a circular reference"
-                )
+        if has_circular_ref:
+            raise BadRequestError(
+                "Setting this parent would create a circular reference"
+            )
 
-            parent = await self.area_repository.get_by_id(current_id)
-            if not parent:
-                break
-
-            if not parent.parent_area_id:
-                break
-
-            visited.add(current_id)
-            current_id = parent.parent_area_id
+        if hit_depth_limit:
+            raise BadRequestError("Cannot set parent: hierarchy depth limit reached. ")
 
     async def create_area(
         self, area_data: AreaCreate, created_by: uuid.UUID
@@ -171,7 +164,9 @@ class AreaService:
             raise ForbiddenError("You do not have permission to update this area")
 
         if area_data.parent_area_id is not None:
-            await self._check_circular_parent_reference(area_id, area_data.parent_area_id)
+            await self._check_circular_parent_reference(
+                area_id, area_data.parent_area_id
+            )
             await self._validate_parent_area_exists(area_data.parent_area_id)
 
         area_dict = area_data.model_dump(exclude_unset=True)
