@@ -34,11 +34,6 @@ class Area(Base):
     badge_url: Mapped[str | None] = mapped_column(nullable=True)
     is_verified: Mapped[bool] = mapped_column(default=False, nullable=False, index=True)
 
-    center_location = mapped_column(
-        Geography(geometry_type="POINT", srid=4326), nullable=False
-    )
-    radius_meters: Mapped[int] = mapped_column(default=1000, nullable=False)
-
     created_at: Mapped[datetime.datetime] = mapped_column(
         server_default=func.now(), nullable=False
     )
