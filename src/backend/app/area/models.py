@@ -1,7 +1,6 @@
 import datetime
 import uuid
 
-from geoalchemy2 import Geography
 from sqlalchemy import ForeignKey, Index, types
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
