@@ -35,7 +35,10 @@ async def get_area(
 
 
 @router.delete(
-    "/{area_id}", response_model=AreaReturn, response_model_exclude_none=True
+    "/{area_id}",
+    response_model=AreaReturn,
+    response_model_exclude_none=True,
+    description="Be careful, this will also delete all child areas!",
 )
 async def delete_area(
     area_id: uuid.UUID,

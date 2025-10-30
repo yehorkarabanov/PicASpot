@@ -47,7 +47,6 @@ class AreaResponse(AreaBase):
 
     id: UUID = Field(..., description="Unique area identifier")
     parent_area_id: UUID | None = Field(None, description="Parent area ID")
-    created_by: UUID = Field(..., description="User ID who created this area")
     is_verified: bool = Field(False, description="Whether area is verified")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
