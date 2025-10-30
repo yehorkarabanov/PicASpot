@@ -16,3 +16,8 @@ class AreaService:
         area_dict["created_by"] = created_by
         area = await self.area_repository.create(area_dict)
         return AreaResponse.model_validate(area)
+
+    async def get_area(self, area_id: uuid.UUID) -> AreaResponse:
+        """Retrieve an area by its ID."""
+        area = await self.area_repository.get_by_id(area_id)
+        return AreaResponse.model_validate(area)
