@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from app.auth.dependencies import CurrentUserDep
 
 from .dependencies import AreaServiceDep
-from .schemas import AreaCreate, AreaReturn
+from .schemas import AreaCreate, AreaReturn, AreaUpdate
 
 router = APIRouter(tags=["area"], prefix="/area")
 
@@ -32,3 +32,30 @@ async def get_area(
     """Get area by ID."""
     area_response = await area_service.get_area(area_id=area_id)
     return AreaReturn(message="Area retrieved successfully", data=area_response)
+
+
+@router.delete(
+    "/{area_id}", response_model=AreaReturn, response_model_exclude_none=True
+)
+async def delete_area(
+    area_id: uuid.UUID,
+    area_service: AreaServiceDep,
+    current_user: CurrentUserDep,
+) -> AreaReturn:
+    """Delete area by ID."""
+    await area_service.delete_area(area_id=area_id, user=current_user)
+    return AreaReturn(message="Area deleted successfully")
+
+
+@router.patch("/{area_id}", response_model=AreaReturn, response_model_exclude_none=True)
+async def update_area(
+    area_id: uuid.UUID,
+    area_data: AreaUpdate,
+    area_service: AreaServiceDep,
+    current_user: CurrentUserDep,
+) -> AreaReturn:
+    """Update area by ID."""
+    area_response = await area_service.update_area(
+        area_id=area_id, area_data=area_data, user=current_user
+    )
+    return AreaReturn(message="Area updated successfully", data=area_response)
