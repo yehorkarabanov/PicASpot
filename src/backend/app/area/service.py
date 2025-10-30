@@ -50,3 +50,12 @@ class AreaService:
 
         area = await self.area_repository.update(area_id, area_dict)
         return AreaResponse.model_validate(area)
+
+    async def verify_area(self, area_id: uuid.UUID, super_user: User) -> AreaResponse:
+        """Verify an area by its ID."""
+        if not super_user.is_superuser:
+            raise PermissionError("Only superusers can verify areas.")
+
+        area_dict = {"is_verified": True}
+        updated_area = await self.area_repository.update(area_id, area_dict)
+        return AreaResponse.model_validate(updated_area)

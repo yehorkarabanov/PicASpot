@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import APIRouter
 
-from app.auth.dependencies import CurrentUserDep
+from app.auth.dependencies import CurrentUserDep, CurrentSuperuserDep
 
 from .dependencies import AreaServiceDep
 from .schemas import AreaCreate, AreaReturn, AreaUpdate
@@ -62,3 +62,18 @@ async def update_area(
         area_id=area_id, area_data=area_data, user=current_user
     )
     return AreaReturn(message="Area updated successfully", data=area_response)
+
+
+@router.post(
+    "/verify/{area_id}", response_model=AreaReturn, response_model_exclude_none=True
+)
+async def verify_area(
+    area_id: uuid.UUID,
+    area_service: AreaServiceDep,
+    current_super_user: CurrentSuperuserDep,
+) -> AreaReturn:
+    """Verify area by ID."""
+    area_response = await area_service.verify_area(
+        area_id=area_id, super_user=current_super_user
+    )
+    return AreaReturn(message="Area verified successfully", data=area_response)
