@@ -49,4 +49,3 @@ class AuthReturn(BaseReturn):
 class UserResetPassword(BaseModel):
     password: str = Field(..., min_length=8)
     token: str
-

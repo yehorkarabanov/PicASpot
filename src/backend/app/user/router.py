@@ -2,11 +2,11 @@ from fastapi import APIRouter
 
 from app.auth.dependencies import CurrentUserDep
 from app.core.schemas import BaseReturn
-from app.user.schemas import UserReturn, UserUpdate, UserUpdatePassword
 
 from .dependencies import UserServiceDep
+from .schemas import UserReturn, UserUpdate, UserUpdatePassword
 
-router = APIRouter(tags=["users"], prefix="/users")
+router = APIRouter(tags=["user"], prefix="/user")
 
 
 @router.get("/me", response_model=UserReturn, response_model_exclude_none=True)

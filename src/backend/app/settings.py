@@ -21,12 +21,10 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_HOST: str
 
-
     ADMIN_EMAIL: Union[str, Literal[False]] = Field(False, alias="ADMIN_EMAIL")
     ADMIN_PASSWORD: Union[str, Literal[False]] = Field(False, alias="ADMIN_PASSWORD")
     USER_EMAIL: Union[str, Literal[False]] = Field(False, alias="USER_EMAIL")
     USER_PASSWORD: Union[str, Literal[False]] = Field(False, alias="USER_PASSWORD")
-
 
     @property
     def DATABASE_URL(self) -> str:  # noqa: N802

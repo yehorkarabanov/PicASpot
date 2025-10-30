@@ -10,6 +10,7 @@ class UserBase(BaseModel):
     username: str
     email: EmailStr
 
+
 class UserResponse(BaseModel):
     id: UUID
     username: str
