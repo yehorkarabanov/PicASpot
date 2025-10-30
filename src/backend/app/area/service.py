@@ -1,8 +1,9 @@
 import uuid
 
-from .repository import AreaRepository
-from .schemas import AreaCreate, AreaResponse
 from app.user.models import User
+
+from .repository import AreaRepository
+from .schemas import AreaCreate, AreaResponse, AreaUpdate
 
 
 class AreaService:
@@ -35,7 +36,7 @@ class AreaService:
         await self.area_repository.delete(area_id)
 
     async def update_area(
-        self, area_id: uuid.UUID, area_data: AreaCreate, user: User
+        self, area_id: uuid.UUID, area_data: AreaUpdate, user: User
     ) -> AreaResponse:
         """Update an area by its ID with the given data."""
         area_dict = area_data.model_dump(exclude_unset=True)
