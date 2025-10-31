@@ -18,7 +18,7 @@ async def create_area(
 ) -> AreaReturn:
     """Create a new area."""
     area_response = await area_service.create_area(
-        area_data=area_data, created_by=current_user.id
+        area_data=area_data, creator_id=current_user.id
     )
     return AreaReturn(message="Area created successfully", data=area_response)
 

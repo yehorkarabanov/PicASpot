@@ -69,14 +69,14 @@ class AreaService:
             raise BadRequestError("Cannot set parent: hierarchy depth limit reached. ")
 
     async def create_area(
-        self, area_data: AreaCreate, created_by: uuid.UUID
+        self, area_data: AreaCreate, creator_id: uuid.UUID
     ) -> AreaResponse:
         """
         Create a new area with the given data and creator ID.
 
         Args:
             area_data: The area creation data containing name, description, etc.
-            created_by: The UUID of the user creating the area.
+            creator_id: The UUID of the user creating the area.
 
         Returns:
             AreaResponse: The created area data.
@@ -88,7 +88,7 @@ class AreaService:
             await self._validate_parent_area_exists(area_data.parent_area_id)
 
         area_dict = area_data.model_dump()
-        area_dict["created_by"] = created_by
+        area_dict["creator_id"] = creator_id
         area = await self.area_repository.create(area_dict)
         return AreaResponse.model_validate(area)
 
@@ -128,7 +128,7 @@ class AreaService:
         if not area:
             raise NotFoundError(f"Area with ID {area_id} not found")
 
-        if not user.is_superuser and area.created_by != user.id:
+        if not user.is_superuser and area.creator_id != user.id:
             raise ForbiddenError("You do not have permission to delete this area")
 
         deleted = await self.area_repository.delete(area_id)
@@ -160,7 +160,7 @@ class AreaService:
         if not area:
             raise NotFoundError(f"Area with ID {area_id} not found")
 
-        if area.created_by != user.id and not user.is_superuser:
+        if area.creator_id != user.id and not user.is_superuser:
             raise ForbiddenError("You do not have permission to update this area")
 
         if area_data.parent_area_id is not None:

@@ -26,7 +26,7 @@ class Area(Base):
         nullable=True,
         index=True,
     )
-    created_by: Mapped[uuid.UUID] = mapped_column(
+    creator_id: Mapped[uuid.UUID] = mapped_column(
         types.Uuid,
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
@@ -50,7 +50,7 @@ class Area(Base):
     # lazy="raise" prevents accidental lazy loading in async context
     # Use selectinload() or joinedload() in queries to explicitly load relationships
     creator: Mapped["User"] = relationship(
-        "User", back_populates="created_areas", foreign_keys=[created_by], lazy="raise"
+        "User", back_populates="created_areas", foreign_keys=[creator_id], lazy="raise"
     )
     parent_area: Mapped["Area | None"] = relationship(
         "Area", remote_side=[id], back_populates="child_areas", foreign_keys=[parent_area_id], lazy="raise"
@@ -70,4 +70,4 @@ class Area(Base):
 # Get verified child areas of a parent
 Index("idx_area_parent_verified", Area.parent_area_id, Area.is_verified)
 # Get verified areas created by a user
-Index("idx_area_creator_verified", Area.created_by, Area.is_verified)
+Index("idx_area_creator_verified", Area.creator_id, Area.is_verified)

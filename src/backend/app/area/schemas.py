@@ -23,7 +23,6 @@ class AreaCreate(AreaBase):
     parent_area_id: UUID | None = Field(
         None, description="Parent area ID for hierarchical structure"
     )
-    # created_by will be injected from authenticated user, not from request body
 
 
 class AreaUpdate(BaseModel):

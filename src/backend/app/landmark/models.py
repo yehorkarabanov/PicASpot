@@ -27,7 +27,7 @@ class Landmark(Base):
         nullable=False,
         index=True,
     )
-    created_by: Mapped[uuid.UUID] = mapped_column(
+    creator_id: Mapped[uuid.UUID] = mapped_column(
         types.Uuid,
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
@@ -46,6 +46,9 @@ class Landmark(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         server_default=func.now(), nullable=False
     )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     # Relationships
     # lazy="raise" prevents accidental lazy loading in async context
@@ -54,7 +57,7 @@ class Landmark(Base):
         "Area", back_populates="landmarks", foreign_keys=[area_id], lazy="raise"
     )
     creator: Mapped["User"] = relationship(
-        "User", back_populates="created_landmarks", foreign_keys=[created_by], lazy="raise"
+        "User", back_populates="created_landmarks", foreign_keys=[creator_id], lazy="raise"
     )
     unlocks: Mapped[list["Unlock"]] = relationship(
         "Unlock", back_populates="landmark", lazy="raise"
@@ -65,4 +68,4 @@ class Landmark(Base):
 # GIST index for geospatial queries (nearby landmarks)
 Index("idx_landmark_location", Landmark.location, postgresql_using="gist")
 # Get landmarks in an area
-Index("idx_landmark_area_creator", Landmark.area_id, Landmark.created_by)
+Index("idx_landmark_area_creator", Landmark.area_id, Landmark.creator_id)

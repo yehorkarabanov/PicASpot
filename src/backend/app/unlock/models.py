@@ -37,7 +37,7 @@ class Unlock(Base):
     )
 
     photo_url: Mapped[str] = mapped_column(nullable=False)
-    posted_to_feed: Mapped[bool] = mapped_column(default=False, nullable=False)
+    is_posted_to_feed: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     unlocked_at: Mapped[datetime.datetime] = mapped_column(
         server_default=func.now(), nullable=False
