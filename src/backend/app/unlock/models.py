@@ -44,14 +44,16 @@ class Unlock(Base):
     )
 
     # Relationships
+    # lazy="raise" prevents accidental lazy loading in async context
+    # Use selectinload() or joinedload() in queries to explicitly load relationships
     user: Mapped["User"] = relationship(
-        "User", back_populates="unlocks", foreign_keys=[user_id]
+        "User", back_populates="unlocks", foreign_keys=[user_id], lazy="raise"
     )
     area: Mapped["Area"] = relationship(
-        "Area", back_populates="unlocks", foreign_keys=[area_id]
+        "Area", back_populates="unlocks", foreign_keys=[area_id], lazy="raise"
     )
     landmark: Mapped["Landmark"] = relationship(
-        "Landmark", back_populates="unlocks", foreign_keys=[landmark_id]
+        "Landmark", back_populates="unlocks", foreign_keys=[landmark_id], lazy="raise"
     )
 
 

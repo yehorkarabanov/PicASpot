@@ -27,14 +27,16 @@ class User(Base):
     is_verified: Mapped[bool] = mapped_column(default=False, nullable=False, index=True)
 
     # Relationships - back references from foreign keys
+    # lazy="raise" prevents accidental lazy loading in async context
+    # Use selectinload() or joinedload() in queries to explicitly load relationships
     created_areas: Mapped[list["Area"]] = relationship(
-        "Area", back_populates="creator", foreign_keys="Area.created_by"
+        "Area", back_populates="creator", foreign_keys="Area.created_by", lazy="raise"
     )
     created_landmarks: Mapped[list["Landmark"]] = relationship(
-        "Landmark", back_populates="creator", foreign_keys="Landmark.created_by"
+        "Landmark", back_populates="creator", foreign_keys="Landmark.created_by", lazy="raise"
     )
     unlocks: Mapped[list["Unlock"]] = relationship(
-        "Unlock", back_populates="user"
+        "Unlock", back_populates="user", lazy="raise"
     )
 
 

@@ -47,20 +47,22 @@ class Area(Base):
     )
 
     # Relationships
+    # lazy="raise" prevents accidental lazy loading in async context
+    # Use selectinload() or joinedload() in queries to explicitly load relationships
     creator: Mapped["User"] = relationship(
-        "User", back_populates="created_areas", foreign_keys=[created_by]
+        "User", back_populates="created_areas", foreign_keys=[created_by], lazy="raise"
     )
     parent_area: Mapped["Area | None"] = relationship(
-        "Area", remote_side=[id], back_populates="child_areas", foreign_keys=[parent_area_id]
+        "Area", remote_side=[id], back_populates="child_areas", foreign_keys=[parent_area_id], lazy="raise"
     )
     child_areas: Mapped[list["Area"]] = relationship(
-        "Area", back_populates="parent_area", foreign_keys=[parent_area_id]
+        "Area", back_populates="parent_area", foreign_keys=[parent_area_id], lazy="raise"
     )
     landmarks: Mapped[list["Landmark"]] = relationship(
-        "Landmark", back_populates="area"
+        "Landmark", back_populates="area", lazy="raise"
     )
     unlocks: Mapped[list["Unlock"]] = relationship(
-        "Unlock", back_populates="area"
+        "Unlock", back_populates="area", lazy="raise"
     )
 
 
