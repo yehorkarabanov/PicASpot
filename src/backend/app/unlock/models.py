@@ -1,11 +1,17 @@
 import datetime
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Index, types
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.area.models import Area
+    from app.landmark.models import Landmark
+    from app.user.models import User
 
 
 class Unlock(Base):
@@ -35,6 +41,17 @@ class Unlock(Base):
 
     unlocked_at: Mapped[datetime.datetime] = mapped_column(
         server_default=func.now(), nullable=False
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship(
+        "User", back_populates="unlocks", foreign_keys=[user_id]
+    )
+    area: Mapped["Area"] = relationship(
+        "Area", back_populates="unlocks", foreign_keys=[area_id]
+    )
+    landmark: Mapped["Landmark"] = relationship(
+        "Landmark", back_populates="unlocks", foreign_keys=[landmark_id]
     )
 
 

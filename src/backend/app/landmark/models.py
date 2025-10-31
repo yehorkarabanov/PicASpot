@@ -1,12 +1,18 @@
 import datetime
 import uuid
+from typing import TYPE_CHECKING
 
 from geoalchemy2 import Geography
 from sqlalchemy import ForeignKey, Index, types
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.area.models import Area
+    from app.unlock.models import Unlock
+    from app.user.models import User
 
 
 class Landmark(Base):
@@ -39,6 +45,17 @@ class Landmark(Base):
 
     created_at: Mapped[datetime.datetime] = mapped_column(
         server_default=func.now(), nullable=False
+    )
+
+    # Relationships
+    area: Mapped["Area"] = relationship(
+        "Area", back_populates="landmarks", foreign_keys=[area_id]
+    )
+    creator: Mapped["User"] = relationship(
+        "User", back_populates="created_landmarks", foreign_keys=[created_by]
+    )
+    unlocks: Mapped[list["Unlock"]] = relationship(
+        "Unlock", back_populates="landmark"
     )
 
 
