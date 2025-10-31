@@ -65,8 +65,6 @@ class LandmarkResponse(LandmarkBase):
     id: UUID = Field(..., description="Unique landmark identifier")
     area_id: UUID = Field(..., description="Area ID where landmark is located")
     creator_id: UUID = Field(..., description="User ID who created the landmark")
-    created_at: datetime = Field(..., description="Creation timestamp")
-    updated_at: datetime = Field(..., description="Last update timestamp")
 
 
 class LandmarkListResponse(BaseModel):
