@@ -53,10 +53,17 @@ class Area(Base):
         "User", back_populates="created_areas", foreign_keys=[creator_id], lazy="raise"
     )
     parent_area: Mapped["Area | None"] = relationship(
-        "Area", remote_side=[id], back_populates="child_areas", foreign_keys=[parent_area_id], lazy="raise"
+        "Area",
+        remote_side=[id],
+        back_populates="child_areas",
+        foreign_keys=[parent_area_id],
+        lazy="raise",
     )
     child_areas: Mapped[list["Area"]] = relationship(
-        "Area", back_populates="parent_area", foreign_keys=[parent_area_id], lazy="raise"
+        "Area",
+        back_populates="parent_area",
+        foreign_keys=[parent_area_id],
+        lazy="raise",
     )
     landmarks: Mapped[list["Landmark"]] = relationship(
         "Landmark", back_populates="area", lazy="raise"

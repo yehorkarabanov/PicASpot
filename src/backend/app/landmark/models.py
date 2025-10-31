@@ -57,7 +57,10 @@ class Landmark(Base):
         "Area", back_populates="landmarks", foreign_keys=[area_id], lazy="raise"
     )
     creator: Mapped["User"] = relationship(
-        "User", back_populates="created_landmarks", foreign_keys=[creator_id], lazy="raise"
+        "User",
+        back_populates="created_landmarks",
+        foreign_keys=[creator_id],
+        lazy="raise",
     )
     unlocks: Mapped[list["Unlock"]] = relationship(
         "Unlock", back_populates="landmark", lazy="raise"
