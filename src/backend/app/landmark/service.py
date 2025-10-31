@@ -1,4 +1,7 @@
+import uuid
+
 from .repository import LandmarkRepository
+from .schemas import LandmarkCreate
 
 
 class LandmarkService:
@@ -19,3 +22,16 @@ class LandmarkService:
             landmark_repository: Repository instance for landmark data access.
         """
         self.landmark_repository = landmark_repository
+
+    async def create_landmark(self, landmark_data:LandmarkCreate, creator_id:uuid.UUID) -> LandmarkResponse:
+        """
+        Create a new landmark.
+
+        Args:
+            landmark_data: Data for the new landmark.
+            creator_id: ID of the user creating the landmark.
+
+        Returns:
+            The created landmark response.
+        """
+
