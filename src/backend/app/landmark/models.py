@@ -66,6 +66,22 @@ class Landmark(Base):
         "Unlock", back_populates="landmark", lazy="raise"
     )
 
+    @property
+    def latitude(self) -> float:
+        """Extract latitude from the location Geography field."""
+        from geoalchemy2.shape import to_shape
+
+        point = to_shape(self.location)
+        return point.y
+
+    @property
+    def longitude(self) -> float:
+        """Extract longitude from the location Geography field."""
+        from geoalchemy2.shape import to_shape
+
+        point = to_shape(self.location)
+        return point.x
+
 
 # Composite indexes for common query patterns
 # GIST index for geospatial queries (nearby landmarks)

@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from app.area.dependencies import AreaRepDep
 from app.database import SessionDep
 
 from .models import Landmark
@@ -17,9 +18,13 @@ def get_landmark_repository(session: SessionDep) -> LandmarkRepository:
 LandmarkRepDep = Annotated[LandmarkRepository, Depends(get_landmark_repository)]
 
 
-def get_landmark_service(landmark_repository: LandmarkRepDep) -> LandmarkService:
+def get_landmark_service(
+    landmark_repository: LandmarkRepDep, area_repository: AreaRepDep
+) -> LandmarkService:
     """Get an instance of LandmarkService."""
-    return LandmarkService(landmark_repository=landmark_repository)
+    return LandmarkService(
+        landmark_repository=landmark_repository, area_repository=area_repository
+    )
 
 
 LandmarkServiceDep = Annotated[LandmarkService, Depends(get_landmark_service)]
