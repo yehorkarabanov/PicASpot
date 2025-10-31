@@ -1,6 +1,9 @@
 async def generate_users() -> None:
+    from app.area.models import Area  # noqa: F401
     from app.database.manager import async_session_maker
-    from app.user.models import User
+    from app.landmark.models import Landmark  # noqa: F401
+    from app.unlock.models import Unlock  # noqa: F401
+    from app.user.models import User  # noqa: F401
     from app.user.repository import UserRepository
     from app.user.service import UserService
 
