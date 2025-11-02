@@ -13,7 +13,10 @@ export default function MapScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Map' }} />
+      <Stack.Screen options={{
+        title: 'Map',
+        headerShown: false,
+      }}/>
       <View className="flex-1">
         <MainMap
           ref={mapRef}

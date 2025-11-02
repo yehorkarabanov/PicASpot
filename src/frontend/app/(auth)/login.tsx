@@ -28,7 +28,7 @@ export default function LoginScreen() {
     try {
       await login({ username: identifier, password });
       // Verification is disabled for now — always go to home after login
-      router.replace('/');
+      router.replace('/Map');
     } catch (err: any) {
       console.error('Login error:', err);
 
@@ -55,6 +55,7 @@ export default function LoginScreen() {
       <Stack.Screen
         options={{
           title: 'Login',
+          animation: 'slide_from_left',
           headerShown: false,
         }}
       />

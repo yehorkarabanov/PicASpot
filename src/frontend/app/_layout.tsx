@@ -20,7 +20,9 @@ export default function RootLayout() {
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       <AuthProvider>
         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-        <Stack />
+        <Stack>
+          <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
+        </Stack>
         <PortalHost />
       </AuthProvider>
     </ThemeProvider>
