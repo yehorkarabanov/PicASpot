@@ -7,7 +7,11 @@ from app.core.exceptions import ForbiddenError, NotFoundError
 from app.user.models import User
 
 from .repository import LandmarkRepository
-from .schemas import LandmarkCreate, LandmarkResponse, LandmarkUpdate
+from .schemas import (
+    LandmarkCreate,
+    LandmarkResponse,
+    LandmarkUpdate,
+)
 
 
 class LandmarkService:

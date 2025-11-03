@@ -5,7 +5,13 @@ from fastapi import APIRouter
 from app.auth.dependencies import CurrentUserDep
 
 from .dependencies import LandmarkServiceDep
-from .schemas import LandmarkCreate, LandmarkReturn, LandmarkUpdate
+from .schemas import (
+    LandmarkCreate,
+    LandmarkListReturn,
+    LandmarkNearbyRequest,
+    LandmarkReturn,
+    LandmarkUpdate,
+)
 
 router = APIRouter(prefix="/landmark", tags=["landmark"])
 
@@ -71,3 +77,25 @@ async def update_landmark(
     return LandmarkReturn(
         message="Landmark updated successfully", data=landmark_response
     )
+
+
+@router.get(
+    "/nearby", response_model=LandmarkListReturn, response_model_exclude_none=True
+)
+async def get_nearby_landmarks(
+    request_data: LandmarkNearbyRequest,
+    landmark_service: LandmarkServiceDep,
+    current_user: CurrentUserDep,
+) -> LandmarkListReturn:
+    """Get nearby landmarks based on coordinates and optional filters."""
+    pass
+
+
+@router.get("/nearby-area")
+async def get_nearby_landmarks_grouped_by_area(
+    request_data: LandmarkNearbyRequest,
+    landmark_service: LandmarkServiceDep,
+    current_user: CurrentUserDep,
+) -> LandmarkListReturn:
+    """Get nearby landmarks grouped by area based on coordinates and optional filters."""
+    pass

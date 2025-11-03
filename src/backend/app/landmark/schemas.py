@@ -1,4 +1,3 @@
-from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -100,4 +99,11 @@ class LandmarkNearbyRequest(BaseModel):
     )
     area_id: UUID | None = Field(
         None, description="Optional area ID to filter landmarks"
+    )
+    only_verified: bool = Field(
+        default=False, description="Only return landmarks from verified areas"
+    )
+    load_from_same_area: bool = Field(
+        default=False,
+        description="Load all landmarks from same areas as found landmarks, even outside radius",
     )
