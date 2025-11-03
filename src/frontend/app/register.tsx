@@ -7,6 +7,8 @@ import { Link, Stack, useRouter } from 'expo-router';
 import { AlertCircle, CheckCircle } from 'lucide-react-native';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
+const KEYBOARD_VERTICAL_OFFSET = 30;
+
 export default function RegisterScreen() {
   const [username, setUsername] = React.useState('');
   const [email, setEmail] = React.useState('');
@@ -82,9 +84,9 @@ export default function RegisterScreen() {
         }}
       />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1">
-        <ScrollView contentContainerClassName="flex-1" keyboardShouldPersistTaps="handled">
+        behavior='padding'
+        className="flex-1 bg-background">
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
           <View className="flex-1 justify-center px-6 py-12">
             <View className="mb-8">
               <Text className="mb-2 text-4xl font-bold">Create Account</Text>
@@ -99,9 +101,11 @@ export default function RegisterScreen() {
                 </View>
               ) : null}
 
+            <View className='bg-card rounded-md shadow-md border border-border p-4 gap-3'>
               <View className="gap-2">
                 <Text className="text-sm font-medium">Username</Text>
                 <Input
+                  className='bg-primary-foreground'
                   placeholder="Choose a username"
                   value={username}
                   onChangeText={setUsername}
@@ -114,6 +118,7 @@ export default function RegisterScreen() {
               <View className="gap-2">
                 <Text className="text-sm font-medium">Email</Text>
                 <Input
+                  className='bg-primary-foreground'
                   placeholder="Enter your email"
                   value={email}
                   onChangeText={setEmail}
@@ -127,6 +132,7 @@ export default function RegisterScreen() {
               <View className="gap-2">
                 <Text className="text-sm font-medium">Password</Text>
                 <Input
+                  className='bg-primary-foreground'
                   placeholder="Create a password"
                   value={password}
                   onChangeText={setPassword}
@@ -156,6 +162,7 @@ export default function RegisterScreen() {
               <View className="gap-2">
                 <Text className="text-sm font-medium">Confirm Password</Text>
                 <Input
+                  className='bg-primary-foreground'
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
@@ -188,6 +195,7 @@ export default function RegisterScreen() {
                   </Button>
                 </Link>
               </View>
+            </View>
             </View>
           </View>
         </ScrollView>
