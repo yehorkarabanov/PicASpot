@@ -114,13 +114,6 @@ def setup_logging() -> None:
     log_dir = settings.ROOT_DIR / "logs"
     log_dir.mkdir(exist_ok=True)
 
-    # Determine formatters based on environment
-    console_formatter_class = logging.Formatter if settings.DEBUG else JSONFormatter
-    console_format = (
-        "%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d - %(message)s"
-        if settings.DEBUG
-        else None
-    )
 
     # Console Handler - Human-readable in dev, JSON in prod
     console_handler = logging.StreamHandler(sys.stdout)
@@ -128,7 +121,7 @@ def setup_logging() -> None:
     if settings.DEBUG:
         console_handler.setFormatter(
             logging.Formatter(
-                console_format,
+                "%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d - %(message)s",
                 datefmt="%Y-%m-%d %H:%M:%S",
             )
         )

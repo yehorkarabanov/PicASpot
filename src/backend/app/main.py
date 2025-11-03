@@ -5,26 +5,36 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.core.logging import setup_logging
 from app.core.utils import generate_users
 from app.database import dispose_engine
 from app.database.manager import check_database_health
 from app.database.redis import check_redis_health, close_redis, init_redis
+from app.middleware.logging_middleware import RequestLoggingMiddleware
 from app.router import router
 from app.settings import settings
 
+setup_logging()
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    # Startup: Initialize Redis and create default users
+    logger.info("Application startup initiated", extra={"debug_mode": settings.DEBUG})
     await init_redis()
+    logger.info("Redis connection initialized")
     await generate_users()
+    logger.info("Default users created/verified")
+    logger.info("Application startup completed")
 
     yield
     # Shutdown: Dispose engine and close Redis
+    logger.info("Application shutdown initiated")
     await dispose_engine()
+    logger.info("Database engine disposed")
     await close_redis()
+    logger.info("Redis connection closed")
+    logger.info("Application shutdown completed")
 
 
 app = FastAPI(
@@ -32,6 +42,9 @@ app = FastAPI(
     root_path="/api",
     lifespan=lifespan,
 )
+
+# Add request/response logging middleware (after CORS to log actual requests)
+app.add_middleware(RequestLoggingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
