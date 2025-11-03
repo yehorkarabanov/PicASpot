@@ -46,7 +46,13 @@ app.add_middleware(
     RateLimiterMiddleware,
     max_requests=5,
     time_window=60,
-    paths=["/v1/auth/login", "/v1/auth/register"],
+    paths=[
+        "/v1/auth/login",
+        "/v1/auth/access-token",
+        "/v1/auth/register",
+        "/v1/auth/send-password-reset",
+        "/v1/auth/verify",
+    ],
 )
 
 app.include_router(router, prefix="/v1")
