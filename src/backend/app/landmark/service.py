@@ -7,7 +7,11 @@ from app.core.exceptions import ForbiddenError, NotFoundError
 from app.user.models import User
 
 from .repository import LandmarkRepository
-from .schemas import LandmarkCreate, LandmarkResponse, LandmarkUpdate
+from .schemas import (
+    LandmarkCreate,
+    LandmarkResponse,
+    LandmarkUpdate,
+)
 
 
 class LandmarkService:
@@ -145,9 +149,7 @@ class LandmarkService:
             raise NotFoundError(f"Landmark with ID {landmark_id} not found")
 
         if landmark.creator_id != user.id and not user.is_superuser:
-            raise ForbiddenError(
-                "You do not have permission to update this landmark"
-            )
+            raise ForbiddenError("You do not have permission to update this landmark")
 
         # Validate area exists if area_id is being updated
         if landmark_data.area_id is not None:
@@ -176,4 +178,3 @@ class LandmarkService:
 
         landmark = await self.landmark_repository.update(landmark_id, landmark_dict)
         return LandmarkResponse.model_validate(landmark)
-
