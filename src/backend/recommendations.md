@@ -54,7 +54,7 @@ Index('idx_user_created_at', 'created_at')  # For time-based queries
 
 ---
 
-### 1.3 Add Timestamps to Models
+### 1.3 Add Timestamps to Models - DONE
 **Priority: MEDIUM**
 
 **Current State:**
