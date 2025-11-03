@@ -51,9 +51,7 @@ async def delete_landmark(
     current_user: CurrentUserDep,
 ) -> LandmarkReturn:
     """Delete landmark by ID."""
-    await landmark_service.delete_landmark(
-        landmark_id=landmark_id, user=current_user
-    )
+    await landmark_service.delete_landmark(landmark_id=landmark_id, user=current_user)
     return LandmarkReturn(message="Landmark deleted successfully")
 
 
@@ -73,4 +71,3 @@ async def update_landmark(
     return LandmarkReturn(
         message="Landmark updated successfully", data=landmark_response
     )
-

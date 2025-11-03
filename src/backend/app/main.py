@@ -9,6 +9,7 @@ from app.core.utils import generate_users
 from app.database import dispose_engine
 from app.database.manager import check_database_health
 from app.database.redis import check_redis_health, close_redis, init_redis
+from app.middleware.ratelimiter_middleware import RateLimiterMiddleware
 from app.router import router
 from app.settings import settings
 
@@ -39,6 +40,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
+)
+
+app.add_middleware(
+    RateLimiterMiddleware,
+    max_requests=5,
+    time_window=60,
+    paths=["/v1/auth/login", "/api/v1/auth/register"],
 )
 
 app.include_router(router, prefix="/v1")
