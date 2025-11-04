@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.core.logging import setup_logging
+from app.core.logging import setup_logging, shutdown_logging
 from app.core.utils import generate_users
 from app.database import dispose_engine
 from app.database.manager import check_database_health
@@ -34,6 +34,7 @@ async def lifespan(_app: FastAPI):
     logger.info("Database engine disposed")
     await close_redis()
     logger.info("Redis connection closed")
+    shutdown_logging()
     logger.info("Application shutdown completed")
 
 

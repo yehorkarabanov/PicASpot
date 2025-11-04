@@ -16,6 +16,8 @@ from typing import Callable
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.core.logging import correlation_id_var
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,6 +42,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
         # Add correlation ID to request state for use in route handlers
         request.state.correlation_id = correlation_id
+
+        # Set correlation ID in contextvars for automatic propagation to all logs
+        correlation_id_var.set(correlation_id)
 
         # Skip detailed logging for excluded paths
         skip_logging = request.url.path in self.EXCLUDED_PATHS
@@ -168,18 +173,3 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         else:
             return logging.INFO
 
-
-class CorrelationIdFilter(logging.Filter):
-    """
-    Logging filter to add correlation ID to log records.
-
-    This allows correlation IDs set in middleware to be automatically
-    included in all log messages within the request context.
-    """
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        # Try to get correlation ID from context
-        # This requires contextvars integration (see below)
-        if not hasattr(record, "correlation_id"):
-            record.correlation_id = None
-        return True

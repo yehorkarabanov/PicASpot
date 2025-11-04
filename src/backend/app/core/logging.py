@@ -12,10 +12,15 @@ This module provides a production-ready logging setup with:
 
 import logging
 import sys
-from logging.handlers import RotatingFileHandler
+from contextvars import ContextVar
+from logging.handlers import QueueHandler, QueueListener, RotatingFileHandler
+from queue import Queue
 from typing import Any
 
 from app.settings import settings
+
+# Context variable for correlation ID propagation
+correlation_id_var: ContextVar[str | None] = ContextVar("correlation_id", default=None)
 
 
 class JSONFormatter(logging.Formatter):
@@ -40,9 +45,10 @@ class JSONFormatter(logging.Formatter):
             "line": record.lineno,
         }
 
-        # Add correlation ID if present (set by middleware)
-        if hasattr(record, "correlation_id"):
-            log_data["correlation_id"] = record.correlation_id
+        # Add correlation ID from context or record
+        correlation_id = getattr(record, "correlation_id", None) or correlation_id_var.get()
+        if correlation_id:
+            log_data["correlation_id"] = correlation_id
 
         # Add extra context fields
         if hasattr(record, "user_id"):
@@ -101,19 +107,25 @@ def get_log_level() -> str:
     return "INFO"
 
 
+# Global queue listener for async-safe logging
+_queue_listener: QueueListener | None = None
+
+
 def setup_logging() -> None:
     """
     Configure logging for the entire application.
 
     This should be called once at application startup.
     Sets up handlers, formatters, and loggers for all components.
+    Uses QueueHandler/QueueListener for async-safe file I/O.
     """
+    global _queue_listener
+
     log_level = get_log_level()
 
     # Create logs directory if it doesn't exist
     log_dir = settings.ROOT_DIR / "logs"
     log_dir.mkdir(exist_ok=True)
-
 
     # Console Handler - Human-readable in dev, JSON in prod
     console_handler = logging.StreamHandler(sys.stdout)
@@ -154,13 +166,26 @@ def setup_logging() -> None:
     file_handler.addFilter(sensitive_filter)
     error_file_handler.addFilter(sensitive_filter)
 
+    # Create queue for async-safe file logging
+    log_queue: Queue = Queue(-1)  # Unlimited queue size
+    queue_handler = QueueHandler(log_queue)
+
+    # Start queue listener in a separate thread for file handlers
+    # This prevents blocking the async event loop
+    _queue_listener = QueueListener(
+        log_queue,
+        file_handler,
+        error_file_handler,
+        respect_handler_level=True
+    )
+    _queue_listener.start()
+
     # Configure root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
     root_logger.handlers.clear()  # Clear any existing handlers
     root_logger.addHandler(console_handler)
-    root_logger.addHandler(file_handler)
-    root_logger.addHandler(error_file_handler)
+    root_logger.addHandler(queue_handler)  # Use queue for file logging
 
     # Configure application logger
     app_logger = logging.getLogger("app")
@@ -202,3 +227,20 @@ def setup_logging() -> None:
 
     # Email
     logging.getLogger("fastapi_mail").setLevel("INFO")
+
+
+def shutdown_logging() -> None:
+    """
+    Shutdown logging gracefully.
+
+    Should be called during application shutdown to:
+    - Stop the queue listener
+    - Flush any pending log messages
+    - Close file handlers properly
+    """
+    global _queue_listener
+    if _queue_listener:
+        _queue_listener.stop()
+        _queue_listener = None
+
+
