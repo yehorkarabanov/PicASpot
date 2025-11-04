@@ -103,7 +103,7 @@ is_deleted: Mapped[bool] = mapped_column(default=False)
 
 ## 2. Security
 
-### 2.1 Add Rate Limiting
+### 2.1 Add Rate Limiting - DONE
 **Priority: HIGH**
 
 **Current State:**
@@ -130,7 +130,7 @@ is_deleted: Mapped[bool] = mapped_column(default=False)
 
 ---
 
-### 2.2 Improve Password Security
+### 2.2 Improve Password Security - DONE
 **Priority: HIGH**
 
 **Current State:**
