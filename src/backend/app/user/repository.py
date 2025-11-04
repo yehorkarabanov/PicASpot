@@ -14,5 +14,4 @@ class UserRepository(BaseRepository[User]):
             or_(self.model.email == email, self.model.username == username)
         )
         result = await self.session.execute(query)
-        entity = result.scalar_one_or_none()
-        return self._convert_timestamps(entity) if entity else None
+        return result.scalar_one_or_none()

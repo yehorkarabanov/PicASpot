@@ -4,15 +4,19 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.utils import convert_utc_to_timezone
-
 from .abstract_repository import AbstractRepository
 
 T = TypeVar("T")
 
 
 class BaseRepository(AbstractRepository[T]):
-    """Base repository implementation using SQLAlchemy"""
+    """
+    Base repository implementation using SQLAlchemy.
+
+    Note: Timezone handling is done at the serialization layer (Pydantic schemas),
+    not in the repository. The repository returns raw database entities with UTC
+    timestamps, and schemas handle timezone conversion during JSON serialization.
+    """
 
     def __init__(
         self,
@@ -24,38 +28,16 @@ class BaseRepository(AbstractRepository[T]):
         self.session = session
         self.model = model
         self.pk_attr = pk_attr
+        # Keep timezone for backward compatibility and potential future use
         self.timezone = timezone or ZoneInfo("UTC")
 
-    def _convert_timestamps(self, entity: T) -> T:
-        """
-        Convert UTC timestamps to the repository's timezone.
-        Only converts if timezone is not UTC and entity has timestamp fields.
-
-        Args:
-            entity: The entity to convert timestamps for
-
-        Returns:
-            The entity with converted timestamps (modified in place)
-        """
-        if self.timezone.key == "UTC":
-            return entity
-
-        # Check for common timestamp fields and convert them
-        for field_name in ["created_at", "updated_at"]:
-            if hasattr(entity, field_name):
-                utc_value = getattr(entity, field_name)
-                if utc_value:
-                    converted_value = convert_utc_to_timezone(utc_value, self.timezone)
-                    setattr(entity, field_name, converted_value)
-
-        return entity
 
     async def create(self, data: dict[str, Any]) -> T:
         obj = self.model(**data)
         self.session.add(obj)
         await self.session.commit()
         await self.session.refresh(obj)
-        return self._convert_timestamps(obj)
+        return obj
 
     async def get_by_id(
         self, entity_id: Any, load_options: list[Any] | None = None
@@ -67,8 +49,7 @@ class BaseRepository(AbstractRepository[T]):
         if load_options:
             query = query.options(*load_options)
         result = await self.session.execute(query)
-        entity = result.scalar_one_or_none()
-        return self._convert_timestamps(entity) if entity else None
+        return result.scalar_one_or_none()
 
     async def get_by_field(
         self,
@@ -83,8 +64,7 @@ class BaseRepository(AbstractRepository[T]):
         if load_options:
             query = query.options(*load_options)
         result = await self.session.execute(query)
-        entity = result.scalar_one_or_none()
-        return self._convert_timestamps(entity) if entity else None
+        return result.scalar_one_or_none()
 
     async def get_all(
         self,
@@ -101,8 +81,7 @@ class BaseRepository(AbstractRepository[T]):
         if load_options:
             query = query.options(*load_options)
         result = await self.session.execute(query)
-        entities = list(result.scalars().all())
-        return [self._convert_timestamps(entity) for entity in entities]
+        return list(result.scalars().all())
 
     async def update(self, entity_id: Any, data: dict[str, Any]) -> T | None:
         obj = await self.get_by_id(entity_id)
@@ -112,7 +91,7 @@ class BaseRepository(AbstractRepository[T]):
             setattr(obj, key, value)
         await self.session.commit()
         await self.session.refresh(obj)
-        return self._convert_timestamps(obj)
+        return obj
 
     async def delete(self, entity_id: Any) -> bool:
         obj = await self.get_by_id(entity_id)
@@ -126,4 +105,4 @@ class BaseRepository(AbstractRepository[T]):
         self.session.add(entity)
         await self.session.commit()
         await self.session.refresh(entity)
-        return self._convert_timestamps(entity)
+        return entity

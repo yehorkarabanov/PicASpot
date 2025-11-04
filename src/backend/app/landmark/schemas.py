@@ -1,8 +1,9 @@
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from app.core.schemas import BaseReturn
+from app.core.schemas_base import TimezoneAwareSchema
 
 
 class LandmarkBase(BaseModel):
@@ -56,20 +57,16 @@ class LandmarkUpdate(BaseModel):
     area_id: UUID | None = Field(None, description="Area ID where landmark is located")
 
 
-class LandmarkResponse(LandmarkBase):
-    """Schema for landmark responses - includes all read-only fields"""
-
-    model_config = ConfigDict(from_attributes=True)
+class LandmarkResponse(LandmarkBase, TimezoneAwareSchema):
+    """Schema for landmark responses - includes all read-only fields with timezone-aware timestamps"""
 
     id: UUID = Field(..., description="Unique landmark identifier")
     area_id: UUID = Field(..., description="Area ID where landmark is located")
     creator_id: UUID = Field(..., description="User ID who created the landmark")
 
 
-class LandmarkListResponse(BaseModel):
-    """Schema for paginated list of landmarks"""
-
-    model_config = ConfigDict(from_attributes=True)
+class LandmarkListResponse(TimezoneAwareSchema):
+    """Schema for paginated list of landmarks with timezone-aware timestamps"""
 
     landmarks: list[LandmarkResponse] = Field(
         default_factory=list, description="List of landmarks"

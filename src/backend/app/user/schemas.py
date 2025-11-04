@@ -1,9 +1,10 @@
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from app.core.schemas import BaseReturn
+from app.core.schemas_base import TimezoneAwareSchema
 
 
 class UserBase(BaseModel):
@@ -11,14 +12,14 @@ class UserBase(BaseModel):
     email: EmailStr
 
 
-class UserResponse(BaseModel):
+class UserResponse(TimezoneAwareSchema):
+    """User response schema with timezone-aware timestamp handling"""
     id: UUID
     username: str
     email: EmailStr
     is_superuser: bool
     is_verified: bool
 
-    model_config = ConfigDict(from_attributes=True)
 
 
 class UserUpdatePassword(BaseModel):
