@@ -55,4 +55,3 @@ class TimezoneAwareRoute(APIRoute):
                 return response
 
         return custom_route_handler
-

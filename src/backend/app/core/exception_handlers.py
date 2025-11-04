@@ -2,6 +2,7 @@
 Custom exception handlers for the FastAPI application.
 Provides consistent error response formats across the API.
 """
+
 import logging
 
 from fastapi import Request
@@ -40,32 +41,22 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
         errors.append(
             ValidationErrorDetail(
-                field=field_path,
-                message=msg,
-                type=error["type"]
+                field=field_path, message=msg, type=error["type"]
             ).model_dump()
         )
 
     logger.warning(
         "Validation error",
-        extra={
-            "path": request.url.path,
-            "method": request.method,
-            "errors": errors
-        }
+        extra={"path": request.url.path, "method": request.method, "errors": errors},
     )
 
     # Use ValidationErrorReturn schema which fits BaseReturn structure
     error_details = [ValidationErrorDetail(**error) for error in errors]
     response = ValidationErrorReturn(
-        message="Validation failed",
-        data=ValidationErrorData(errors=error_details)
+        message="Validation failed", data=ValidationErrorData(errors=error_details)
     )
 
-    return JSONResponse(
-        status_code=422,
-        content=response.model_dump()
-    )
+    return JSONResponse(status_code=422, content=response.model_dump())
 
 
 async def global_exception_handler(request: Request, exc: Exception):
@@ -81,4 +72,3 @@ async def global_exception_handler(request: Request, exc: Exception):
     if settings.DEBUG:
         raise exc
     return JSONResponse(status_code=500, content={"message": "Internal server error"})
-

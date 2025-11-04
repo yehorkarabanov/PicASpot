@@ -30,7 +30,9 @@ LandmarkRepDep = Annotated[LandmarkRepository, Depends(get_landmark_repository)]
 
 
 def get_landmark_service(
-    landmark_repository: LandmarkRepDep, area_repository: AreaRepDep, timezone: TimeZoneDep
+    landmark_repository: LandmarkRepDep,
+    area_repository: AreaRepDep,
+    timezone: TimeZoneDep,
 ) -> LandmarkService:
     """Get an instance of LandmarkService with timezone support."""
     return LandmarkService(

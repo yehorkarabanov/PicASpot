@@ -69,4 +69,3 @@ class TimezoneAwareJSONResponse(JSONResponse):
             indent=None,
             separators=(",", ":"),
         ).encode("utf-8")
-

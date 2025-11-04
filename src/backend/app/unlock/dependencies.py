@@ -18,7 +18,9 @@ def get_timezone(request: Request) -> ZoneInfo:
 TimeZoneDep = Annotated[ZoneInfo, Depends(get_timezone)]
 
 
-def get_unlock_repository(session: SessionDep, timezone: TimeZoneDep) -> UnlockRepository:
+def get_unlock_repository(
+    session: SessionDep, timezone: TimeZoneDep
+) -> UnlockRepository:
     """Get an instance of UnlockRepository with timezone support."""
     return UnlockRepository(session=session, model=Unlock, timezone=timezone)
 

@@ -31,7 +31,6 @@ class BaseRepository(AbstractRepository[T]):
         # Keep timezone for backward compatibility and potential future use
         self.timezone = timezone or ZoneInfo("UTC")
 
-
     async def create(self, data: dict[str, Any]) -> T:
         obj = self.model(**data)
         self.session.add(obj)

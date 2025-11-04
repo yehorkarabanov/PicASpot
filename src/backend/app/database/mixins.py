@@ -26,9 +26,5 @@ class TimestampMixin:
         server_default=func.now(), nullable=False, index=True
     )
     updated_at: Mapped[datetime.datetime] = mapped_column(
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False,
-        index=True
+        server_default=func.now(), onupdate=func.now(), nullable=False, index=True
     )
-

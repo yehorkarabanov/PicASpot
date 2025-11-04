@@ -20,11 +20,13 @@ class TimezoneAwareSchema(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
         # Serialize datetimes as ISO 8601 strings with timezone
-        json_encoders={datetime.datetime: lambda v: v.isoformat()}
+        json_encoders={datetime.datetime: lambda v: v.isoformat()},
     )
 
     @staticmethod
-    def convert_timestamps_for_timezone(data: dict[str, Any], timezone: ZoneInfo) -> dict[str, Any]:
+    def convert_timestamps_for_timezone(
+        data: dict[str, Any], timezone: ZoneInfo
+    ) -> dict[str, Any]:
         """
         Convert all datetime fields in data dict to the specified timezone.
 
@@ -54,7 +56,9 @@ class TimezoneAwareSchema(BaseModel):
         return converted
 
     @classmethod
-    def model_validate_with_timezone(cls, obj: Any, timezone: ZoneInfo) -> "TimezoneAwareSchema":
+    def model_validate_with_timezone(
+        cls, obj: Any, timezone: ZoneInfo
+    ) -> "TimezoneAwareSchema":
         """
         Validate a model and convert datetime fields to the specified timezone.
 
@@ -67,8 +71,8 @@ class TimezoneAwareSchema(BaseModel):
         Returns:
             Validated model with converted timestamps
         """
-        if hasattr(obj, '__dict__'):
-            data = {k: v for k, v in obj.__dict__.items() if not k.startswith('_')}
+        if hasattr(obj, "__dict__"):
+            data = {k: v for k, v in obj.__dict__.items() if not k.startswith("_")}
         elif isinstance(obj, dict):
             data = obj
         else:
@@ -87,5 +91,6 @@ class TimestampMixin(BaseModel):
     These fields are automatically converted to the client's timezone
     when the parent schema extends TimezoneAwareSchema.
     """
+
     created_at: datetime.datetime
     updated_at: datetime.datetime

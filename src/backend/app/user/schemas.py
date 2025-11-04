@@ -15,6 +15,7 @@ class UserBase(BaseModel):
 
 class UserResponse(TimezoneAwareSchema):
     """User response schema with timezone-aware timestamp handling"""
+
     id: UUID
     username: str
     email: EmailStr
@@ -23,7 +24,6 @@ class UserResponse(TimezoneAwareSchema):
 
     created_at: datetime.datetime
     updated_at: datetime.datetime
-
 
 
 class UserUpdatePassword(BaseModel):

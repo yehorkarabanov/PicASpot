@@ -11,9 +11,7 @@ from .security import decode_token
 from .service import AuthService
 
 
-def get_auth_service(
-    user_repository: UserRepDep, timezone: TimeZoneDep
-) -> AuthService:
+def get_auth_service(user_repository: UserRepDep, timezone: TimeZoneDep) -> AuthService:
     return AuthService(user_repository=user_repository, timezone=timezone)
 
 

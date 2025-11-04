@@ -20,7 +20,9 @@ class UserService:
     default users for system initialization.
     """
 
-    def __init__(self, user_repository: UserRepository, timezone: ZoneInfo | None = None):
+    def __init__(
+        self, user_repository: UserRepository, timezone: ZoneInfo | None = None
+    ):
         """
         Initialize the UserService.
 

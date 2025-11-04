@@ -12,6 +12,7 @@ class BaseReturn[T](BaseModel):
 
 class ValidationErrorDetail(BaseModel):
     """Standardized validation error detail"""
+
     field: str
     message: str
     type: str
@@ -19,12 +20,11 @@ class ValidationErrorDetail(BaseModel):
 
 class ValidationErrorData(BaseModel):
     """Container for validation errors"""
+
     errors: list[ValidationErrorDetail]
 
 
 class ValidationErrorReturn(BaseReturn[ValidationErrorData]):
     """Response for validation errors - uses BaseReturn structure"""
+
     pass
-
-
-
