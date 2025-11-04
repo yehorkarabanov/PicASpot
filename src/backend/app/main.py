@@ -10,8 +10,7 @@ from app.core.utils import generate_users
 from app.database import dispose_engine
 from app.database.manager import check_database_health
 from app.database.redis import check_redis_health, close_redis, init_redis
-from app.middleware.ratelimiter_middleware import RateLimiterMiddleware
-from app.middleware.logging_middleware import RequestLoggingMiddleware
+from app.middleware import RateLimiterMiddleware, RequestLoggingMiddleware
 from app.router import router
 from app.settings import settings
 
