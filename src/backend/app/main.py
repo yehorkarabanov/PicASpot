@@ -1,18 +1,22 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.core.exception_handlers import (
+    global_exception_handler,
+    validation_exception_handler,
+)
 from app.core.logging import setup_logging, shutdown_logging
 from app.core.utils import generate_users
 from app.database import dispose_engine
 from app.database.manager import check_database_health
 from app.database.redis import check_redis_health, close_redis, init_redis
-from app.middleware import RateLimiterMiddleware
-from app.middleware.timezone_middleware import TimeZoneMiddleware
 from app.middleware import RateLimiterMiddleware, RequestLoggingMiddleware
+from app.middleware.timezone_middleware import TimeZoneMiddleware
 from app.router import router
 from app.settings import settings
 
@@ -48,7 +52,6 @@ app = FastAPI(
 
 app.add_middleware(TimeZoneMiddleware)
 
-# Add request/response logging middleware (after CORS to log actual requests)
 app.add_middleware(RequestLoggingMiddleware)
 
 app.add_middleware(
@@ -72,19 +75,11 @@ app.add_middleware(
     ],
 )
 
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, global_exception_handler)
+
 app.include_router(router, prefix="/v1")
 
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(
-        "Unhandled exception",
-        exc_info=exc,
-        extra={"path": request.url.path, "method": request.method},
-    )
-    if settings.DEBUG:
-        raise exc
-    return JSONResponse(status_code=500, content={"message": "Internal server error"})
 
 
 @app.get("/")
