@@ -47,7 +47,7 @@ class UserService:
         user = await self.user_repository.get_by_id(user_id)
         if not user:
             raise NotFoundError("User not found")
-        return UserResponse.model_validate(user, context={"timezone": self.timezone})
+        return UserResponse.model_validate_with_timezone(user, self.timezone)
 
     async def update_user(self, user_id: str, user_data: UserUpdate) -> UserResponse:
         """
@@ -96,7 +96,7 @@ class UserService:
             setattr(user, key, value)
 
         await self.user_repository.save(user)
-        return UserResponse.model_validate(user, context={"timezone": self.timezone})
+        return UserResponse.model_validate_with_timezone(user, self.timezone)
 
     async def update_password(
         self, user_id: str, password_data: UserUpdatePassword

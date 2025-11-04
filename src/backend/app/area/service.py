@@ -96,10 +96,11 @@ class AreaService:
             await self._validate_parent_area_exists(area_data.parent_area_id)
 
         area_dict = area_data.model_dump()
-        return AreaResponse.model_validate(area, context={"timezone": self.timezone})
+        area_dict["creator_id"] = creator_id
         area = await self.area_repository.create(area_dict)
         logger.info("Area created successfully: %s by user %s", area.name, creator_id)
-        return AreaResponse.model_validate(area)
+
+        return AreaResponse.model_validate_with_timezone(area, self.timezone)
 
     async def get_area(self, area_id: uuid.UUID) -> AreaResponse:
         """
@@ -114,10 +115,11 @@ class AreaService:
         Raises:
             NotFoundError: If the area does not exist.
         """
-        return AreaResponse.model_validate(area, context={"timezone": self.timezone})
+        area = await self.area_repository.get_by_id(area_id)
         if not area:
             raise NotFoundError(f"Area with ID {area_id} not found")
-        return AreaResponse.model_validate(area)
+
+        return AreaResponse.model_validate_with_timezone(area, self.timezone)
 
     async def delete_area(self, area_id: uuid.UUID, user: User) -> None:
         """
@@ -179,9 +181,11 @@ class AreaService:
             )
             await self._validate_parent_area_exists(area_data.parent_area_id)
 
+        area_dict = area_data.model_dump(exclude_unset=True)
         area = await self.area_repository.update(area_id, area_dict)
         logger.info("Area updated: %s by user %s", area.name, user.username)
-        return AreaResponse.model_validate(area, context={"timezone": self.timezone})
+
+        return AreaResponse.model_validate_with_timezone(area, self.timezone)
 
     async def verify_area(self, area_id: uuid.UUID, super_user: User) -> AreaResponse:
         """
@@ -211,4 +215,5 @@ class AreaService:
         logger.info(
             "Area verified: %s by superuser %s", updated_area.name, super_user.username
         )
-        return AreaResponse.model_validate(updated_area, context={"timezone": self.timezone})
+
+        return AreaResponse.model_validate_with_timezone(updated_area, self.timezone)

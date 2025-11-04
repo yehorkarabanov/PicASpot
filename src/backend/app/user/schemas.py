@@ -1,3 +1,4 @@
+import datetime
 from typing import Optional
 from uuid import UUID
 
@@ -19,6 +20,9 @@ class UserResponse(TimezoneAwareSchema):
     email: EmailStr
     is_superuser: bool
     is_verified: bool
+
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 

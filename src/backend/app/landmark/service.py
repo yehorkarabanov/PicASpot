@@ -78,7 +78,7 @@ class LandmarkService:
         logger.info(
             "Landmark created successfully: %s by user %s", landmark.name, creator_id
         )
-        return LandmarkResponse.model_validate(landmark, context={"timezone": self.timezone})
+        return LandmarkResponse.model_validate_with_timezone(landmark, self.timezone)
 
     async def _validate_area_exists(self, area_id: uuid.UUID) -> None:
         """
@@ -110,7 +110,7 @@ class LandmarkService:
         landmark = await self.landmark_repository.get_by_id(landmark_id)
         if not landmark:
             raise NotFoundError(f"Landmark with ID {landmark_id} not found")
-        return LandmarkResponse.model_validate(landmark, context={"timezone": self.timezone})
+        return LandmarkResponse.model_validate_with_timezone(landmark, self.timezone)
 
     async def delete_landmark(self, landmark_id: uuid.UUID, user: User) -> None:
         """
@@ -192,4 +192,4 @@ class LandmarkService:
 
         landmark = await self.landmark_repository.update(landmark_id, landmark_dict)
         logger.info("Landmark updated: %s by user %s", landmark.name, user.username)
-        return LandmarkResponse.model_validate(landmark, context={"timezone": self.timezone})
+        return LandmarkResponse.model_validate_with_timezone(landmark, self.timezone)
