@@ -5,7 +5,6 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Depends, Request
 from fastapi.responses import JSONResponse as FastAPIJSONResponse
-from pydantic import BaseModel
 
 
 def get_timezone(request: Request) -> ZoneInfo:

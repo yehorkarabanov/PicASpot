@@ -4,7 +4,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from app.core.exceptions import UnauthorizedError
-from app.user.dependencies import UserRepDep, TimeZoneDep
+from app.user.dependencies import TimeZoneDep, UserRepDep
 from app.user.models import User
 
 from .security import decode_token
