@@ -95,6 +95,7 @@ services:
     image: nginx:1.29.2-alpine-slim
     depends_on:
       - backend
+      - flower
     volumes:
       - ./src/nginx/conf/nginx.conf:/etc/nginx/nginx.conf.template
       - ./src/nginx/entrypoint.sh:/etc/nginx/entrypoint.sh
