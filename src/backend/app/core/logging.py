@@ -38,6 +38,7 @@ class JSONFormatter(logging.Formatter):
         log_data: dict[str, Any] = {
             "timestamp": datetime.fromtimestamp(record.created).isoformat(),
             "level": record.levelname,
+            "service": settings.SERVICE_NAME,  # Identify which container/service
             "logger": record.name,
             "message": record.getMessage(),
             "module": record.module,
@@ -111,21 +112,22 @@ def get_log_level() -> str:
 _queue_listener: QueueListener | None = None
 
 
-def setup_logging() -> None:
+def setup_logging(use_file_logging: bool = True) -> None:
     """
     Configure logging for the entire application.
 
     This should be called once at application startup.
     Sets up handlers, formatters, and loggers for all components.
     Uses QueueHandler/QueueListener for async-safe file I/O.
+
+    Args:
+        use_file_logging: If False, only logs to stdout (Docker best practice).
+                         If True, logs to both stdout and service-specific files.
     """
     global _queue_listener
 
     log_level = get_log_level()
-
-    # Create logs directory if it doesn't exist
-    log_dir = settings.ROOT_DIR / "logs"
-    log_dir.mkdir(exist_ok=True)
+    service_name = settings.SERVICE_NAME
 
     # Console Handler - Human-readable in dev, JSON in prod
     console_handler = logging.StreamHandler(sys.stdout)
@@ -133,59 +135,73 @@ def setup_logging() -> None:
     if settings.DEBUG:
         console_handler.setFormatter(
             logging.Formatter(
-                "%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d - %(message)s",
+                f"[{service_name}] %(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d - %(message)s",
                 datefmt="%Y-%m-%d %H:%M:%S",
             )
         )
     else:
         console_handler.setFormatter(JSONFormatter())
 
-    # File Handler - Always JSON, with rotation
-    file_handler = RotatingFileHandler(
-        filename=log_dir / "app.log",
-        maxBytes=10 * 1024 * 1024,  # 10 MB
-        backupCount=5,  # Keep 5 backup files
-        encoding="utf-8",
-    )
-    file_handler.setLevel("INFO")  # Always INFO or above for file logs
-    file_handler.setFormatter(JSONFormatter())
-
-    # Error File Handler - Separate file for errors
-    error_file_handler = RotatingFileHandler(
-        filename=log_dir / "error.log",
-        maxBytes=10 * 1024 * 1024,  # 10 MB
-        backupCount=5,
-        encoding="utf-8",
-    )
-    error_file_handler.setLevel("ERROR")
-    error_file_handler.setFormatter(JSONFormatter())
-
-    # Add sensitive data filter to all handlers
+    # Add sensitive data filter to console
     sensitive_filter = SensitiveDataFilter()
     console_handler.addFilter(sensitive_filter)
-    file_handler.addFilter(sensitive_filter)
-    error_file_handler.addFilter(sensitive_filter)
-
-    # Create queue for async-safe file logging
-    log_queue: Queue = Queue(-1)  # Unlimited queue size
-    queue_handler = QueueHandler(log_queue)
-
-    # Start queue listener in a separate thread for file handlers
-    # This prevents blocking the async event loop
-    _queue_listener = QueueListener(
-        log_queue,
-        file_handler,
-        error_file_handler,
-        respect_handler_level=True
-    )
-    _queue_listener.start()
 
     # Configure root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
     root_logger.handlers.clear()  # Clear any existing handlers
     root_logger.addHandler(console_handler)
-    root_logger.addHandler(queue_handler)  # Use queue for file logging
+
+    # Add file logging if enabled (separate files per service to avoid conflicts)
+    if use_file_logging:
+        # Create logs directory if it doesn't exist
+        log_dir = settings.ROOT_DIR / "logs"
+        log_dir.mkdir(exist_ok=True)
+
+        # Service-specific file names to prevent Docker container conflicts
+        # backend container → logs/backend.log
+        # celery_worker container → logs/celery.log
+        # flower container → logs/flower.log
+        service_log_file = log_dir / f"{service_name}.log"
+        service_error_file = log_dir / f"{service_name}-error.log"
+
+        # File Handler - Always JSON, with rotation
+        file_handler = RotatingFileHandler(
+            filename=service_log_file,
+            maxBytes=10 * 1024 * 1024,  # 10 MB
+            backupCount=5,  # Keep 5 backup files
+            encoding="utf-8",
+        )
+        file_handler.setLevel("INFO")  # Always INFO or above for file logs
+        file_handler.setFormatter(JSONFormatter())
+        file_handler.addFilter(sensitive_filter)
+
+        # Error File Handler - Separate file for errors
+        error_file_handler = RotatingFileHandler(
+            filename=service_error_file,
+            maxBytes=10 * 1024 * 1024,  # 10 MB
+            backupCount=5,
+            encoding="utf-8",
+        )
+        error_file_handler.setLevel("ERROR")
+        error_file_handler.setFormatter(JSONFormatter())
+        error_file_handler.addFilter(sensitive_filter)
+
+        # Create queue for async-safe file logging
+        log_queue: Queue = Queue(-1)  # Unlimited queue size
+        queue_handler = QueueHandler(log_queue)
+
+        # Start queue listener in a separate thread for file handlers
+        # This prevents blocking the async event loop
+        _queue_listener = QueueListener(
+            log_queue,
+            file_handler,
+            error_file_handler,
+            respect_handler_level=True
+        )
+        _queue_listener.start()
+
+        root_logger.addHandler(queue_handler)  # Use queue for file logging
 
     # Configure application logger
     app_logger = logging.getLogger("app")

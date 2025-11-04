@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = Field(..., alias="BACKEND_CORS_ORIGINS")
     ACCESS_TOKEN_EXPIRE_SECONDS: int
 
+    # Service identification for logging (backend, celery_worker, flower)
+    SERVICE_NAME: str = "backend"
+
     POSTGRES_PORT: int
     POSTGRES_DB: str
     POSTGRES_USER: str
