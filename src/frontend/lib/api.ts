@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import * as Localization from 'expo-localization';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://192.168.1.108/api';
 console.log (`API URL: ${API_URL}`);
@@ -17,7 +18,12 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+
+    // Falls back to UTC if timezone cannot be determined
+    const timezone = Localization.getCalendars()[0]?.timeZone || 'UTC';
+    config.headers['X-Timezone'] = timezone;
+
+    console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url} [Timezone: ${timezone}]`);
     return config;
   },
   (error) => {

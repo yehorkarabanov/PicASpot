@@ -14,9 +14,7 @@ class UserCreate(UserBase):
     @classmethod
     def validate_password(cls, v):
         if not re.match(r"^(?=.*[A-Z])(?=.*\d).{8,}$", v):
-            raise ValueError(
-                "Password must be at least 8 characters, contain at least one uppercase letter and one number"
-            )
+            raise ValueError("password sucks")
         return v
 
 

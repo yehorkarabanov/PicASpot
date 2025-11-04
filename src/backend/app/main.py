@@ -10,6 +10,8 @@ from app.core.utils import generate_users
 from app.database import dispose_engine
 from app.database.manager import check_database_health
 from app.database.redis import check_redis_health, close_redis, init_redis
+from app.middleware import RateLimiterMiddleware
+from app.middleware.timezone_middleware import TimeZoneMiddleware
 from app.middleware import RateLimiterMiddleware, RequestLoggingMiddleware
 from app.router import router
 from app.settings import settings
@@ -20,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    # Startup: Initialize Redis and create default users
     logger.info("Application startup initiated", extra={"debug_mode": settings.DEBUG})
     await init_redis()
     logger.info("Redis connection initialized")
@@ -43,6 +46,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(TimeZoneMiddleware)
+
 # Add request/response logging middleware (after CORS to log actual requests)
 app.add_middleware(RequestLoggingMiddleware)
 
@@ -51,7 +56,7 @@ app.add_middleware(
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Timezone"],
 )
 
 app.add_middleware(
@@ -84,7 +89,6 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.get("/")
 async def root():
-    logger.info("Root endpoint accessed")
     return {"message": "Welcome to the picASpot API!"}
 
 
