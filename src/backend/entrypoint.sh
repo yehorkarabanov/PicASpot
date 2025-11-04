@@ -9,8 +9,7 @@ until PGPASSWORD=$POSTGRES_PASSWORD psql -h "$POSTGRES_HOST" -U "$POSTGRES_USER"
 done
 
 echo "PostgreSQL is up - running migrations"
-uv run alembic upgrade head
+uv run alembic downgrade base && uv run alembic upgrade head
 
 echo "Starting FastAPI application..."
 exec "$@"
-
