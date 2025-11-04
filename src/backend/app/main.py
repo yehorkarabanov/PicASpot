@@ -25,7 +25,6 @@ async def lifespan(_app: FastAPI):
     logger.info("Redis connection initialized")
     await generate_users()
     logger.info("Default users created/verified")
-    logger.info("Application startup completed")
 
     yield
     # Shutdown: Dispose engine and close Redis

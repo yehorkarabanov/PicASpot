@@ -217,14 +217,16 @@ def setup_logging(use_file_logging: bool = True) -> None:
     logging.getLogger("fastapi").setLevel("INFO")
 
     # SQLAlchemy - Control database query logging
-    if settings.DEBUG:
-        # Show SQL queries in debug mode
-        logging.getLogger("sqlalchemy.engine").setLevel("INFO")
-        logging.getLogger("sqlalchemy.pool").setLevel("DEBUG")
-    else:
-        # Reduce noise in production
-        logging.getLogger("sqlalchemy.engine").setLevel("WARNING")
-        logging.getLogger("sqlalchemy.pool").setLevel("WARNING")
+    # if settings.DEBUG:
+    #     # Show SQL queries in debug mode
+    #     logging.getLogger("sqlalchemy.engine").setLevel("INFO")
+    #     logging.getLogger("sqlalchemy.pool").setLevel("DEBUG")
+    # else:
+    #     # Reduce noise in production
+    #     logging.getLogger("sqlalchemy.engine").setLevel("WARNING")
+    #     logging.getLogger("sqlalchemy.pool").setLevel("WARNING")
+    logging.getLogger("sqlalchemy.engine").setLevel("WARNING")
+    logging.getLogger("sqlalchemy.pool").setLevel("WARNING")
 
     # Celery - Async task processing
     logging.getLogger("celery").setLevel("INFO")
@@ -258,5 +260,3 @@ def shutdown_logging() -> None:
     if _queue_listener:
         _queue_listener.stop()
         _queue_listener = None
-
-
