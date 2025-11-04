@@ -60,7 +60,6 @@ app.add_middleware(
 
 app.include_router(router, prefix="/v1")
 
-
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(
