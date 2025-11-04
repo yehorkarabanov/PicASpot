@@ -10,6 +10,7 @@ from app.database import dispose_engine
 from app.database.manager import check_database_health
 from app.database.redis import check_redis_health, close_redis, init_redis
 from app.middleware.ratelimiter_middleware import RateLimiterMiddleware
+from app.middleware.timezone_middleware import TimeZoneMiddleware
 from app.router import router
 from app.settings import settings
 
@@ -34,12 +35,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(TimeZoneMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Timezone"],
 )
 
 app.add_middleware(
