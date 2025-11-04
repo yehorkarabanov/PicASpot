@@ -26,9 +26,9 @@ def get_user_repository(session: SessionDep, timezone: TimeZoneDep) -> UserRepos
 UserRepDep = Annotated[UserRepository, Depends(get_user_repository)]
 
 
-def get_user_service(user_repository: UserRepDep) -> UserService:
-    """Get an instance of UserService."""
-    return UserService(user_repository=user_repository)
+def get_user_service(user_repository: UserRepDep, timezone: TimeZoneDep) -> UserService:
+    """Get an instance of UserService with timezone support."""
+    return UserService(user_repository=user_repository, timezone=timezone)
 
 
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]

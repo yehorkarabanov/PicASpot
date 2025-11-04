@@ -1,5 +1,6 @@
 import logging
 import uuid
+from zoneinfo import ZoneInfo
 
 from geoalchemy2.elements import WKTElement
 
@@ -28,16 +29,22 @@ class LandmarkService:
     """
 
     def __init__(
-        self, landmark_repository: LandmarkRepository, area_repository: AreaRepository
+        self,
+        landmark_repository: LandmarkRepository,
+        area_repository: AreaRepository,
+        timezone: ZoneInfo | None = None,
     ):
         """
         Initialize the LandmarkService.
 
         Args:
             landmark_repository: Repository instance for landmark data access.
+            area_repository: Repository instance for area data access.
+            timezone: Client's timezone for datetime conversion in responses.
         """
         self.landmark_repository = landmark_repository
         self.area_repository = area_repository
+        self.timezone = timezone or ZoneInfo("UTC")
 
     async def create_landmark(
         self, landmark_data: LandmarkCreate, creator_id: uuid.UUID
@@ -71,7 +78,7 @@ class LandmarkService:
         logger.info(
             "Landmark created successfully: %s by user %s", landmark.name, creator_id
         )
-        return LandmarkResponse.model_validate(landmark)
+        return LandmarkResponse.model_validate_with_timezone(landmark, self.timezone)
 
     async def _validate_area_exists(self, area_id: uuid.UUID) -> None:
         """
@@ -103,7 +110,7 @@ class LandmarkService:
         landmark = await self.landmark_repository.get_by_id(landmark_id)
         if not landmark:
             raise NotFoundError(f"Landmark with ID {landmark_id} not found")
-        return LandmarkResponse.model_validate(landmark)
+        return LandmarkResponse.model_validate_with_timezone(landmark, self.timezone)
 
     async def delete_landmark(self, landmark_id: uuid.UUID, user: User) -> None:
         """
@@ -185,4 +192,4 @@ class LandmarkService:
 
         landmark = await self.landmark_repository.update(landmark_id, landmark_dict)
         logger.info("Landmark updated: %s by user %s", landmark.name, user.username)
-        return LandmarkResponse.model_validate(landmark)
+        return LandmarkResponse.model_validate_with_timezone(landmark, self.timezone)
