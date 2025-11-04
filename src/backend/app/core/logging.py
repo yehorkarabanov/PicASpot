@@ -245,6 +245,10 @@ def setup_logging(use_file_logging: bool = True) -> None:
     # Email
     logging.getLogger("fastapi_mail").setLevel("INFO")
 
+    # Watchfiles - File watching for hot reload
+    logging.getLogger("watchfiles").setLevel("WARNING")
+    logging.getLogger("watchfiles.main").setLevel("WARNING")
+
 
 def shutdown_logging() -> None:
     """
