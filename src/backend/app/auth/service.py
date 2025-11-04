@@ -1,4 +1,5 @@
 import logging
+from zoneinfo import ZoneInfo
 
 from pydantic import EmailStr
 
@@ -32,14 +33,18 @@ class AuthService:
     password reset, and token management.
     """
 
-    def __init__(self, user_repository: UserRepository):
+    def __init__(
+        self, user_repository: UserRepository, timezone: ZoneInfo | None = None
+    ):
         """
         Initialize the AuthService.
 
         Args:
             user_repository: Repository instance for user data access.
+            timezone: Client's timezone for datetime conversion in responses.
         """
         self.user_repository = user_repository
+        self.timezone = timezone or ZoneInfo("UTC")
 
     # TODO: add opt flow
     async def register(self, user_data: UserCreate) -> None:
@@ -138,14 +143,20 @@ class AuthService:
 
         access_token = create_access_token(subject=str(user.id))
         logger.info("User logged in: %s", user.username)
-        return UserLoginResponse(
-            id=user.id,
-            username=user.username,
-            email=user.email,
-            is_superuser=user.is_superuser,
-            is_verified=user.is_verified,
-            token=AccessToken(access_token=access_token),
-        )
+
+        # Create login response data with timezone conversion
+        login_data = {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "is_superuser": user.is_superuser,
+            "is_verified": user.is_verified,
+            "created_at": user.created_at,
+            "updated_at": user.updated_at,
+            "token": AccessToken(access_token=access_token),
+        }
+
+        return UserLoginResponse.model_validate_with_timezone(login_data, self.timezone)
 
     # TODO: redo to verify otp
     async def verify_token(self, token: str) -> None:

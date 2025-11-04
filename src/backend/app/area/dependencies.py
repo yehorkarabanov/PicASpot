@@ -26,9 +26,9 @@ def get_area_repository(session: SessionDep, timezone: TimeZoneDep) -> AreaRepos
 AreaRepDep = Annotated[AreaRepository, Depends(get_area_repository)]
 
 
-def get_area_service(area_repository: AreaRepDep) -> AreaService:
-    """Get an instance of AreaService."""
-    return AreaService(area_repository=area_repository)
+def get_area_service(area_repository: AreaRepDep, timezone: TimeZoneDep) -> AreaService:
+    """Get an instance of AreaService with timezone support."""
+    return AreaService(area_repository=area_repository, timezone=timezone)
 
 
 AreaServiceDep = Annotated[AreaService, Depends(get_area_service)]
