@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from geoalchemy2.elements import WKTElement
@@ -12,6 +13,8 @@ from .schemas import (
     LandmarkResponse,
     LandmarkUpdate,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class LandmarkService:
@@ -65,6 +68,9 @@ class LandmarkService:
 
         landmark = await self.landmark_repository.create(landmark_dict)
 
+        logger.info(
+            "Landmark created successfully: %s by user %s", landmark.name, creator_id
+        )
         return LandmarkResponse.model_validate(landmark)
 
     async def _validate_area_exists(self, area_id: uuid.UUID) -> None:
@@ -123,6 +129,7 @@ class LandmarkService:
         deleted = await self.landmark_repository.delete(landmark_id)
         if not deleted:
             raise NotFoundError(f"Landmark with ID {landmark_id} not found")
+        logger.info("Landmark deleted: %s by user %s", landmark.name, user.username)
 
     async def update_landmark(
         self, landmark_id: uuid.UUID, landmark_data: LandmarkUpdate, user: User
@@ -177,4 +184,5 @@ class LandmarkService:
             landmark_dict["location"] = WKTElement(point_wkt, srid=4326)
 
         landmark = await self.landmark_repository.update(landmark_id, landmark_dict)
+        logger.info("Landmark updated: %s by user %s", landmark.name, user.username)
         return LandmarkResponse.model_validate(landmark)

@@ -5,28 +5,39 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.core.logging import setup_logging, shutdown_logging
 from app.core.utils import generate_users
 from app.database import dispose_engine
 from app.database.manager import check_database_health
 from app.database.redis import check_redis_health, close_redis, init_redis
-from app.middleware.ratelimiter_middleware import RateLimiterMiddleware
+from app.middleware import RateLimiterMiddleware
 from app.middleware.timezone_middleware import TimeZoneMiddleware
+from app.middleware import RateLimiterMiddleware, RequestLoggingMiddleware
 from app.router import router
 from app.settings import settings
 
+setup_logging()
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     # Startup: Initialize Redis and create default users
+    logger.info("Application startup initiated", extra={"debug_mode": settings.DEBUG})
     await init_redis()
+    logger.info("Redis connection initialized")
     await generate_users()
+    logger.info("Default users created/verified")
 
     yield
     # Shutdown: Dispose engine and close Redis
+    logger.info("Application shutdown initiated")
     await dispose_engine()
+    logger.info("Database engine disposed")
     await close_redis()
+    logger.info("Redis connection closed")
+    shutdown_logging()
+    logger.info("Application shutdown completed")
 
 
 app = FastAPI(
@@ -36,6 +47,9 @@ app = FastAPI(
 )
 
 app.add_middleware(TimeZoneMiddleware)
+
+# Add request/response logging middleware (after CORS to log actual requests)
+app.add_middleware(RequestLoggingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -59,6 +73,7 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/v1")
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

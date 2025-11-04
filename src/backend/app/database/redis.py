@@ -1,8 +1,12 @@
+import logging
+
 import redis.asyncio as redis
 
 from app.settings import settings
 
 redis_client: redis.Redis | None = None
+
+logger = logging.getLogger(__name__)
 
 
 async def init_redis():
@@ -16,6 +20,7 @@ async def init_redis():
         decode_responses=True,
     )
     redis_client = redis.Redis(connection_pool=pool)
+    logger.info("Redis client initialized")
 
 
 async def close_redis():
@@ -24,6 +29,7 @@ async def close_redis():
     if redis_client:
         await redis_client.aclose()
         redis_client = None
+        logger.info("Redis connection closed")
 
 
 async def get_redis_client() -> redis.Redis:
@@ -41,4 +47,5 @@ async def check_redis_health() -> bool:
         await redis_client.ping()
         return True
     except Exception:
+        logger.exception("Redis health check failed")
         return False
