@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from asgiref.sync import async_to_sync
@@ -7,9 +8,12 @@ from app.settings import settings
 
 from .manager import create_message, mail
 
+logger = logging.getLogger(__name__)
+
 
 @celery.task
 def user_verify_mail_event(recipient: str, link: str, username: str):
+    logger.info("Sending verification email to %s", recipient)
     message = create_message(
         recipients=[
             recipient,
@@ -23,10 +27,12 @@ def user_verify_mail_event(recipient: str, link: str, username: str):
         },
     )
     async_to_sync(mail.send_message)(message, "verify.html")
+    logger.info("Verification email sent to %s", recipient)
 
 
 @celery.task
 def user_password_reset_mail(recipient: str, link: str, username: str):
+    logger.info("Sending password reset email to %s", recipient)
     message = create_message(
         recipients=[
             recipient,
@@ -40,3 +46,4 @@ def user_password_reset_mail(recipient: str, link: str, username: str):
         },
     )
     async_to_sync(mail.send_message)(message, "password_reset.html")
+    logger.info("Password reset email sent to %s", recipient)

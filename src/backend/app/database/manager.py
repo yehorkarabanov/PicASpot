@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import text
@@ -10,6 +11,8 @@ from sqlalchemy.ext.asyncio import (
 from app.settings import settings
 
 from .base import Base
+
+logger = logging.getLogger(__name__)
 
 # Engine with proper pooling
 engine = create_async_engine(
@@ -47,11 +50,13 @@ async def get_async_session() -> AsyncGenerator[AsyncSession]:
 async def create_db_and_tables():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    logger.info("Database tables created successfully")
 
 
 # Optional: Dispose engine on shutdown
 async def dispose_engine():
     await engine.dispose()
+    logger.info("Database engine disposed")
 
 
 async def check_database_health() -> bool:
@@ -61,4 +66,5 @@ async def check_database_health() -> bool:
             await conn.execute(text("SELECT 1"))
         return True
     except Exception:
+        logger.exception("Database health check failed")
         return False

@@ -1,3 +1,5 @@
+import logging
+
 from pydantic import EmailStr
 
 from app.celery.tasks.email_tasks.tasks import (
@@ -18,6 +20,8 @@ from .security import (
     get_password_hash,
     verify_password,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:
@@ -68,6 +72,8 @@ class AuthService:
             "is_verified": True,  # TODO: Set to False when OTP will be done
         }
         user = await self.user_repository.create(user_dict)  # noqa: F841
+
+        logger.info("User registered successfully: %s", user.email)
 
         # verification_token = await create_verification_token(
         #     user_id=str(user.id), token_type=TokenType.VERIFICATION, use_redis=False
@@ -131,6 +137,7 @@ class AuthService:
             raise BadRequestError("Please verify your email before logging in")
 
         access_token = create_access_token(subject=str(user.id))
+        logger.info("User logged in: %s", user.username)
         return UserLoginResponse(
             id=user.id,
             username=user.username,
@@ -172,6 +179,7 @@ class AuthService:
         # Mark user as verified
         user.is_verified = True
         await self.user_repository.save(user)
+        logger.info("User verified: %s", user.email)
 
     async def send_password_reset_token(self, email: EmailStr) -> None:
         """
@@ -198,6 +206,7 @@ class AuthService:
             link,
             user.username,
         )
+        logger.info("Password reset email sent to %s", email)
 
     async def reset_password(self, token: str, new_password: str) -> None:
         """
@@ -233,3 +242,4 @@ class AuthService:
         await self.user_repository.save(user)
 
         await delete_verification_token(token)
+        logger.info("Password reset for user: %s", user.email)

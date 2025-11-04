@@ -47,7 +47,9 @@ class JSONFormatter(logging.Formatter):
         }
 
         # Add correlation ID from context or record
-        correlation_id = getattr(record, "correlation_id", None) or correlation_id_var.get()
+        correlation_id = (
+            getattr(record, "correlation_id", None) or correlation_id_var.get()
+        )
         if correlation_id:
             log_data["correlation_id"] = correlation_id
 
@@ -194,10 +196,7 @@ def setup_logging(use_file_logging: bool = True) -> None:
         # Start queue listener in a separate thread for file handlers
         # This prevents blocking the async event loop
         _queue_listener = QueueListener(
-            log_queue,
-            file_handler,
-            error_file_handler,
-            respect_handler_level=True
+            log_queue, file_handler, error_file_handler, respect_handler_level=True
         )
         _queue_listener.start()
 

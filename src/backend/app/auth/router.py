@@ -19,7 +19,9 @@ router = APIRouter(
     responses={
         429: {
             "description": "Rate limit exceeded. Too many requests.",
-            "content": {"application/json": {"example": {"detail": "Too Many Requests"}}},
+            "content": {
+                "application/json": {"example": {"detail": "Too Many Requests"}}
+            },
         }
     },
 )

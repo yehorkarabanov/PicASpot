@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
@@ -5,6 +6,8 @@ from app.user.models import User
 
 from .repository import AreaRepository
 from .schemas import AreaCreate, AreaResponse, AreaUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class AreaService:
@@ -90,6 +93,7 @@ class AreaService:
         area_dict = area_data.model_dump()
         area_dict["creator_id"] = creator_id
         area = await self.area_repository.create(area_dict)
+        logger.info("Area created successfully: %s by user %s", area.name, creator_id)
         return AreaResponse.model_validate(area)
 
     async def get_area(self, area_id: uuid.UUID) -> AreaResponse:
@@ -134,6 +138,7 @@ class AreaService:
         deleted = await self.area_repository.delete(area_id)
         if not deleted:
             raise NotFoundError(f"Area with ID {area_id} not found")
+        logger.info("Area deleted: %s by user %s", area.name, user.username)
 
     async def update_area(
         self, area_id: uuid.UUID, area_data: AreaUpdate, user: User
@@ -171,6 +176,7 @@ class AreaService:
 
         area_dict = area_data.model_dump(exclude_unset=True)
         area = await self.area_repository.update(area_id, area_dict)
+        logger.info("Area updated: %s by user %s", area.name, user.username)
         return AreaResponse.model_validate(area)
 
     async def verify_area(self, area_id: uuid.UUID, super_user: User) -> AreaResponse:
@@ -198,4 +204,7 @@ class AreaService:
         updated_area = await self.area_repository.update(area_id, area_dict)
         if not updated_area:
             raise NotFoundError(f"Area with ID {area_id} not found")
+        logger.info(
+            "Area verified: %s by superuser %s", updated_area.name, super_user.username
+        )
         return AreaResponse.model_validate(updated_area)

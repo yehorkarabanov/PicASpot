@@ -172,4 +172,3 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             return logging.WARNING
         else:
             return logging.INFO
-
