@@ -1,6 +1,7 @@
 from typing import Annotated
+from zoneinfo import ZoneInfo
 
-from fastapi import Depends
+from fastapi import Depends, Request
 
 from app.database import SessionDep
 
@@ -9,9 +10,17 @@ from .repository import UserRepository
 from .service import UserService
 
 
-def get_user_repository(session: SessionDep) -> UserRepository:
-    """Get an instance of UserRepository."""
-    return UserRepository(session=session, model=User)
+def get_timezone(request: Request) -> ZoneInfo:
+    """Extract timezone from request state set by TimeZoneMiddleware."""
+    return getattr(request.state, "timezone", ZoneInfo("UTC"))
+
+
+TimeZoneDep = Annotated[ZoneInfo, Depends(get_timezone)]
+
+
+def get_user_repository(session: SessionDep, timezone: TimeZoneDep) -> UserRepository:
+    """Get an instance of UserRepository with timezone support."""
+    return UserRepository(session=session, model=User, timezone=timezone)
 
 
 UserRepDep = Annotated[UserRepository, Depends(get_user_repository)]
