@@ -1,4 +1,5 @@
 import * as React from 'react';
+import '../global.css';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -8,7 +9,7 @@ import { Container, LogOut, MoonStarIcon, StarIcon, SunIcon } from 'lucide-react
 import { DARK_MAP, LIGHT_MAP } from '@/components/map-components/main_map/styles'
 import MapView, { Region } from 'react-native-maps';
 import { useColorScheme } from 'nativewind';
-import { ActivityIndicator, Image, type ImageStyle, View } from 'react-native';
+import { ActivityIndicator, Image, type ImageStyle, View} from 'react-native';
 
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -66,24 +67,23 @@ export default function Screen() {
   return (
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
-      <View className="flex-1 items-center justify-center gap-8 p-4">
+      <View className="flex-1 items-center justify-center gap-8 p-4 bg-background">
         <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" />
-
         <View className="items-center gap-2">
           <Text className="text-2xl font-bold">Welcome to PicASpot!</Text>
           {user && (
-            <Text className="text-muted-foreground">
+            <Text className="text-foreground">
               Logged in as: {user.email}
             </Text>
           )}
-          </View>
+        </View>
 
         <View className="flex-row justify-center gap-4 mt-4">
-          <Button variant="outline" onPress={handleLogout}>
+          <Button variant="default" onPress={handleLogout}>
             <Icon as={LogOut} className="mr-2" />
             <Text>Logout</Text>
           </Button>
-          <Button variant="outline" onPress={handleViewMap}>
+          <Button variant="default" onPress={handleViewMap}>
             <Icon as={Container} className="mr-2" />
             <Text>View Map</Text>
           </Button>

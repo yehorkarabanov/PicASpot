@@ -44,3 +44,15 @@ async def get_current_user(
 
 
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
+
+
+async def get_current_superuser(
+    current_user: CurrentUserDep,
+) -> User:
+    """Get the current superuser."""
+    if not current_user.is_superuser:
+        raise UnauthorizedError("The user doesn't have enough privileges")
+    return current_user
+
+
+CurrentSuperuserDep = Annotated[User, Depends(get_current_superuser)]

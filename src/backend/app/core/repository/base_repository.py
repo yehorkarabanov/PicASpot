@@ -68,7 +68,7 @@ class BaseRepository(AbstractRepository[T]):
         return list(result.scalars().all())
 
     async def update(self, entity_id: Any, data: dict[str, Any]) -> T | None:
-        obj = await self.session.get(self.model, entity_id)
+        obj = await self.get_by_id(entity_id)
         if not obj:
             return None
         for key, value in data.items():
@@ -78,7 +78,7 @@ class BaseRepository(AbstractRepository[T]):
         return obj
 
     async def delete(self, entity_id: Any) -> bool:
-        obj = await self.session.get(self.model, entity_id)
+        obj = await self.get_by_id(entity_id)
         if not obj:
             return False
         await self.session.delete(obj)

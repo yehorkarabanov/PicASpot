@@ -8,4 +8,3 @@ async def generate_users() -> None:
         user_repo = UserRepository(session=session, model=User)
         user_service = UserService(user_repository=user_repo)
         await user_service.create_default_users()
-

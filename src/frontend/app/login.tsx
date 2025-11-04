@@ -59,8 +59,8 @@ export default function LoginScreen() {
         }}
       />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1">
+        behavior='padding'
+        className="flex-1 bg-background">
         <ScrollView
           contentContainerClassName="flex-1"
           keyboardShouldPersistTaps="handled">
@@ -79,49 +79,52 @@ export default function LoginScreen() {
                   <Text className="text-destructive flex-1">{error}</Text>
                 </View>
               ) : null}
+              <View className='bg-card rounded-md shadow-md border border-border p-4 gap-3'>
+                <View className="gap-2">
+                  <Text className="text-sm font-medium">Username or Email</Text>
+                  <Input
+                    className='bg-primary-foreground'
+                    placeholder="Enter your username or email"
+                    value={identifier}
+                    onChangeText={setIdentifier}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    autoComplete="username"
+                    editable={!isLoading}
+                  />
+                </View>
 
-              <View className="gap-2">
-                <Text className="text-sm font-medium">Username or Email</Text>
-                <Input
-                  placeholder="Enter your username or email"
-                  value={identifier}
-                  onChangeText={setIdentifier}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  autoComplete="username"
-                  editable={!isLoading}
-                />
-              </View>
+                <View className="gap-2">
+                  <Text className="text-sm font-medium">Password</Text>
+                  <Input
+                    className='bg-primary-foreground'
+                    placeholder="Enter your password"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoComplete="password"
+                    editable={!isLoading}
+                  />
+                </View>
 
-              <View className="gap-2">
-                <Text className="text-sm font-medium">Password</Text>
-                <Input
-                  placeholder="Enter your password"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoComplete="password"
-                  editable={!isLoading}
-                />
-              </View>
+                <Button
+                  onPress={handleLogin}
+                  disabled={isLoading}
+                  className="mt-2">
+                  <Text>{isLoading ? 'Signing in...' : 'Sign In'}</Text>
+                </Button>
 
-              <Button
-                onPress={handleLogin}
-                disabled={isLoading}
-                className="mt-2">
-                <Text>{isLoading ? 'Signing in...' : 'Sign In'}</Text>
-              </Button>
-
-              <View className="flex-row justify-center items-center gap-2 mt-4">
-                <Text className="text-muted-foreground">
-                  Don't have an account?
-                </Text>
-                <Link href="/register" asChild>
-                  <Button variant="ghost" size="sm">
-                    <Text>Sign Up</Text>
-                  </Button>
-                </Link>
+                <View className="flex-row justify-center items-center gap-2 mt-4">
+                  <Text className="text-muted-foreground">
+                    Don't have an account?
+                  </Text>
+                  <Link href="/register" asChild>
+                    <Button variant="ghost" size="sm">
+                      <Text>Sign Up</Text>
+                    </Button>
+                  </Link>
+                </View>
               </View>
             </View>
           </View>
