@@ -216,14 +216,6 @@ def setup_logging(use_file_logging: bool = True) -> None:
     logging.getLogger("fastapi").setLevel("INFO")
 
     # SQLAlchemy - Control database query logging
-    # if settings.DEBUG:
-    #     # Show SQL queries in debug mode
-    #     logging.getLogger("sqlalchemy.engine").setLevel("INFO")
-    #     logging.getLogger("sqlalchemy.pool").setLevel("DEBUG")
-    # else:
-    #     # Reduce noise in production
-    #     logging.getLogger("sqlalchemy.engine").setLevel("WARNING")
-    #     logging.getLogger("sqlalchemy.pool").setLevel("WARNING")
     logging.getLogger("sqlalchemy.engine").setLevel("WARNING")
     logging.getLogger("sqlalchemy.pool").setLevel("WARNING")
 

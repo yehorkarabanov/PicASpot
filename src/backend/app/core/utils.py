@@ -69,8 +69,6 @@ def convert_timezone_to_utc(
 
 
 async def generate_users() -> None:
-    import logging
-
     from app.area.models import Area  # noqa: F401
     from app.database.manager import async_session_maker
     from app.landmark.models import Landmark  # noqa: F401

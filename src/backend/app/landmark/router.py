@@ -87,8 +87,8 @@ async def get_nearby_landmarks(
     landmark_service: LandmarkServiceDep,
     current_user: CurrentUserDep,
 ) -> LandmarkListReturn:
-    """Get nearby landmarks based on coordinates and optional filters."""
-    pass
+    """[WIP] Get nearby landmarks based on coordinates and optional filters."""
+    return None
 
 
 @router.get("/nearby-area")
@@ -97,5 +97,5 @@ async def get_nearby_landmarks_grouped_by_area(
     landmark_service: LandmarkServiceDep,
     current_user: CurrentUserDep,
 ) -> LandmarkListReturn:
-    """Get nearby landmarks grouped by area based on coordinates and optional filters."""
-    pass
+    """[WIP] Get nearby landmarks grouped by area based on coordinates and optional filters."""
+    return None
