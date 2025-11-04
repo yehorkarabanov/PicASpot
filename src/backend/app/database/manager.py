@@ -13,8 +13,8 @@ from .base import Base
 
 # Engine with proper pooling
 engine = create_async_engine(
-    # url=settings.DATABASE_URL,
-    echo=settings.DEBUG,  # SQL logging in debug mode
+    url=settings.DATABASE_URL,
+    # echo=settings.DEBUG,  # SQL logging in debug mode
     # Connection pool settings (defaults are good, but here's explicit config):
     pool_size=5,  # Min connections kept alive
     max_overflow=10,  # Max extra connections during load spikes
