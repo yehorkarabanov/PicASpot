@@ -31,6 +31,8 @@ services:
       - /code/.venv
     env_file:
       - ./.env
+    environment:
+      - SERVICE_NAME=backend
     networks:
       - app-network
 
@@ -48,6 +50,8 @@ services:
       - /code/.venv
     env_file:
       - ./.env
+    environment:
+      - SERVICE_NAME=celery
     networks:
       - app-network
 
@@ -64,6 +68,8 @@ services:
       target: flower
     env_file:
       - ./.env
+    environment:
+      - SERVICE_NAME=flower
     networks:
       - app-network
 

@@ -4,17 +4,15 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from app.core.exceptions import UnauthorizedError
-from app.user.dependencies import UserRepDep
+from app.user.dependencies import TimeZoneDep, UserRepDep
 from app.user.models import User
 
 from .security import decode_token
 from .service import AuthService
 
 
-def get_auth_service(
-    user_repository: UserRepDep,
-) -> AuthService:
-    return AuthService(user_repository=user_repository)
+def get_auth_service(user_repository: UserRepDep, timezone: TimeZoneDep) -> AuthService:
+    return AuthService(user_repository=user_repository, timezone=timezone)
 
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]

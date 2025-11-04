@@ -1,4 +1,5 @@
 from typing import Any, TypeVar
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,12 +10,26 @@ T = TypeVar("T")
 
 
 class BaseRepository(AbstractRepository[T]):
-    """Base repository implementation using SQLAlchemy"""
+    """
+    Base repository implementation using SQLAlchemy.
 
-    def __init__(self, session: AsyncSession, model: type[T], pk_attr: str = "id"):
+    Note: Timezone handling is done at the serialization layer (Pydantic schemas),
+    not in the repository. The repository returns raw database entities with UTC
+    timestamps, and schemas handle timezone conversion during JSON serialization.
+    """
+
+    def __init__(
+        self,
+        session: AsyncSession,
+        model: type[T],
+        pk_attr: str = "id",
+        timezone: ZoneInfo | None = None,
+    ):
         self.session = session
         self.model = model
         self.pk_attr = pk_attr
+        # Keep timezone for backward compatibility and potential future use
+        self.timezone = timezone or ZoneInfo("UTC")
 
     async def create(self, data: dict[str, Any]) -> T:
         obj = self.model(**data)

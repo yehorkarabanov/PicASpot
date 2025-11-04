@@ -1,6 +1,10 @@
 from celery import Celery
 
+from app.core.logging import setup_logging
 from app.settings import settings
+
+# Initialize logging for Celery worker
+setup_logging(use_file_logging=True)
 
 celery = Celery(
     "worker",
