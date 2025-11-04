@@ -15,9 +15,11 @@ from app.core.utils import generate_users
 from app.database import dispose_engine
 from app.database.manager import check_database_health
 from app.database.redis import check_redis_health, close_redis, init_redis
-from app.middleware import RateLimiterMiddleware, RequestLoggingMiddleware, TimeZoneMiddleware
-from app.middleware import RateLimiterMiddleware, RequestLoggingMiddleware
-from app.middleware.timezone_middleware import TimeZoneMiddleware
+from app.middleware import (
+    RateLimiterMiddleware,
+    RequestLoggingMiddleware,
+    TimeZoneMiddleware,
+)
 from app.router import router
 from app.settings import settings
 
@@ -80,7 +82,6 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, global_exception_handler)
 
 app.include_router(router, prefix="/v1")
-
 
 
 @app.get("/")
