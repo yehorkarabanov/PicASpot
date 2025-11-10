@@ -1,0 +1,118 @@
+export const lightTheme = {
+  background: 'hsl(24 100% 98.0392%)',
+  foreground: 'hsl(346.6667 7.9646% 22.1569%)',
+  card: 'hsl(0 0% 100%)',
+  cardForeground: 'hsl(346.6667 7.9646% 22.1569%)',
+  popover: 'hsl(0 0% 100%)',
+  popoverForeground: 'hsl(346.6667 7.9646% 22.1569%)',
+  primary: 'hsl(11.625 100% 68.6275%)',
+  primaryForeground: 'hsl(0 0% 100%)',
+  secondary: 'hsl(8.5714 100% 95.8824%)',
+  secondaryForeground: 'hsl(9.913 47.3251% 47.6471%)',
+  muted: 'hsl(15 100% 96.0784%)',
+  mutedForeground: 'hsl(25 5.2632% 44.7059%)',
+  accent: 'hsl(26.1069 98.4962% 73.9216%)',
+  accentForeground: 'hsl(346.6667 7.9646% 22.1569%)',
+  destructive: 'hsl(355.4913 77.5785% 56.2745%)',
+  destructiveForeground: 'hsl(0 0% 100%)',
+  border: 'hsl(14.6341 100% 91.9608%)',
+  input: 'hsl(14.6341 100% 91.9608%)',
+  ring: 'hsl(11.625 100% 68.6275%)',
+
+  chart1: 'hsl(11.625 100% 68.6275%)',
+  chart2: 'hsl(26.1069 98.4962% 73.9216%)',
+  chart3: 'hsl(23.8636 100% 82.7451%)',
+  chart4: 'hsl(16.0714 100% 78.0392%)',
+  chart5: 'hsl(9.5798 54.8387% 57.451%)',
+
+  sidebar: 'hsl(15 100% 96.0784%)',
+  sidebarForeground: 'hsl(346.6667 7.9646% 22.1569%)',
+  sidebarPrimary: 'hsl(11.625 100% 68.6275%)',
+  sidebarPrimaryForeground: 'hsl(0 0% 100%)',
+  sidebarAccent: 'hsl(26.1069 98.4962% 73.9216%)',
+  sidebarAccentForeground: 'hsl(346.6667 7.9646% 22.1569%)',
+  sidebarBorder: 'hsl(14.6341 100% 91.9608%)',
+  sidebarRing: 'hsl(11.625 100% 68.6275%)',
+
+  fontSans: 'Montserrat, sans-serif',
+  fontSerif: 'Merriweather, serif',
+  fontMono: 'Ubuntu Mono, monospace',
+
+  radius: 10, // 0.625rem ≈ 10px
+  spacing: 4, // 0.25rem ≈ 4px
+  shadow: {
+    x: 0,
+    y: 6,
+    blur: 12,
+    spread: -3,
+    opacity: 0.09,
+    color: 'hsl(0 0% 0%)',
+    sm: '0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09)',
+    md: '0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 2px 4px -4px hsl(0 0% 0% / 0.09)',
+    lg: '0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 4px 6px -4px hsl(0 0% 0% / 0.09)',
+    xl: '0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 8px 10px -4px hsl(0 0% 0% / 0.09)',
+  },
+};
+
+
+export const darkTheme = {
+  background: 'hsl(336 13.5135% 14.5098%)',
+  foreground: 'hsl(21.4286 35% 92.1569%)',
+  card: 'hsl(324 9.6154% 20.3922%)',
+  cardForeground: 'hsl(21.4286 35% 92.1569%)',
+  popover: 'hsl(324 9.6154% 20.3922%)',
+  popoverForeground: 'hsl(21.4286 35% 92.1569%)',
+  primary: 'hsl(11.625 100% 68.6275%)',
+  primaryForeground: 'hsl(0 0% 100%)',
+  secondary: 'hsl(325 9.375% 25.098%)',
+  secondaryForeground: 'hsl(21.4286 35% 92.1569%)',
+  muted: 'hsl(326.6667 10.3448% 17.0588%)',
+  mutedForeground: 'hsl(22.2222 25.2336% 79.0196%)',
+  accent: 'hsl(26.1069 98.4962% 73.9216%)',
+  accentForeground: 'hsl(336 13.5135% 14.5098%)',
+  destructive: 'hsl(355.4913 77.5785% 56.2745%)',
+  destructiveForeground: 'hsl(0 0% 100%)',
+  border: 'hsl(325 9.375% 25.098%)',
+  input: 'hsl(325 9.375% 25.098%)',
+  ring: 'hsl(11.625 100% 68.6275%)',
+
+  chart1: 'hsl(11.625 100% 68.6275%)',
+  chart2: 'hsl(26.1069 98.4962% 73.9216%)',
+  chart3: 'hsl(23.8636 100% 82.7451%)',
+  chart4: 'hsl(16.0714 100% 78.0392%)',
+  chart5: 'hsl(9.5798 54.8387% 57.451%)',
+
+  sidebar: 'hsl(336 13.5135% 14.5098%)',
+  sidebarForeground: 'hsl(21.4286 35% 92.1569%)',
+  sidebarPrimary: 'hsl(11.625 100% 68.6275%)',
+  sidebarPrimaryForeground: 'hsl(0 0% 100%)',
+  sidebarAccent: 'hsl(26.1069 98.4962% 73.9216%)',
+  sidebarAccentForeground: 'hsl(336 13.5135% 14.5098%)',
+  sidebarBorder: 'hsl(325 9.375% 25.098%)',
+  sidebarRing: 'hsl(11.625 100% 68.6275%)',
+
+  fontSans: 'Montserrat, sans-serif',
+  fontSerif: 'Merriweather, serif',
+  fontMono: 'Ubuntu Mono, monospace',
+
+  radius: 10,
+  spacing: 4,
+  shadow: {
+    x: 0,
+    y: 6,
+    blur: 12,
+    spread: -3,
+    opacity: 0.09,
+    color: 'hsl(0 0% 0%)',
+    sm: '0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09)',
+    md: '0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 2px 4px -4px hsl(0 0% 0% / 0.09)',
+    lg: '0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 4px 6px -4px hsl(0 0% 0% / 0.09)',
+    xl: '0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 8px 10px -4px hsl(0 0% 0% / 0.09)',
+  },
+};
+
+export const theme = {
+  light: lightTheme,
+  dark: darkTheme,
+};
+
