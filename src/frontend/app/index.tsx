@@ -1,5 +1,4 @@
 import * as React from 'react';
-import '../global.css';
 import { useAuth } from '@/contexts/AuthContext';
 import { Stack, useRouter} from 'expo-router';
 import { ActivityIndicator, View} from 'react-native';
