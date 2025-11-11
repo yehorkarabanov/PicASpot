@@ -80,6 +80,7 @@ export default function RegisterScreen() {
       <Stack.Screen
         options={{
           title: 'Register',
+          animation: 'slide_from_right',
           headerShown: false,
         }}
       />
