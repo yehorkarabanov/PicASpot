@@ -1,4 +1,8 @@
+import logging
+
 from .repository import UnlockRepository
+
+logger = logging.getLogger(__name__)
 
 
 class UnlockService:
@@ -19,3 +23,4 @@ class UnlockService:
             unlock_repository: Repository instance for unlock data access.
         """
         self.unlock_repository = unlock_repository
+        logger.info("UnlockService initialized with repository: %s", unlock_repository)

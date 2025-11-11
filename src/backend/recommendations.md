@@ -54,7 +54,7 @@ Index('idx_user_created_at', 'created_at')  # For time-based queries
 
 ---
 
-### 1.3 Add Timestamps to Models
+### 1.3 Add Timestamps to Models - DONE
 **Priority: MEDIUM**
 
 **Current State:**
@@ -103,7 +103,7 @@ is_deleted: Mapped[bool] = mapped_column(default=False)
 
 ## 2. Security
 
-### 2.1 Add Rate Limiting
+### 2.1 Add Rate Limiting - DONE
 **Priority: HIGH**
 
 **Current State:**
@@ -130,7 +130,7 @@ is_deleted: Mapped[bool] = mapped_column(default=False)
 
 ---
 
-### 2.2 Improve Password Security
+### 2.2 Improve Password Security - DONE
 **Priority: HIGH**
 
 **Current State:**
@@ -212,7 +212,7 @@ from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 
 ## 3. Error Handling & Logging
 
-### 3.1 Implement Structured Logging
+### 3.1 Implement Structured Logging - DONE
 **Priority: HIGH**
 
 **Current State:**

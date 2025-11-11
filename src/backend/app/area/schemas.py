@@ -1,9 +1,10 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from app.core.schemas import BaseReturn
+from app.core.schemas_base import TimezoneAwareSchema
 
 
 class AreaBase(BaseModel):
@@ -23,7 +24,6 @@ class AreaCreate(AreaBase):
     parent_area_id: UUID | None = Field(
         None, description="Parent area ID for hierarchical structure"
     )
-    # created_by will be injected from authenticated user, not from request body
 
 
 class AreaUpdate(BaseModel):
@@ -40,10 +40,8 @@ class AreaUpdate(BaseModel):
     parent_area_id: UUID | None = Field(None, description="Parent area ID")
 
 
-class AreaResponse(AreaBase):
-    """Schema for area responses - includes all read-only fields"""
-
-    model_config = ConfigDict(from_attributes=True)
+class AreaResponse(AreaBase, TimezoneAwareSchema):
+    """Schema for area responses - includes all read-only fields with timezone-aware timestamps"""
 
     id: UUID = Field(..., description="Unique area identifier")
     parent_area_id: UUID | None = Field(None, description="Parent area ID")
@@ -52,10 +50,8 @@ class AreaResponse(AreaBase):
     updated_at: datetime = Field(..., description="Last update timestamp")
 
 
-class AreaListResponse(BaseModel):
-    """Schema for paginated list of areas"""
-
-    model_config = ConfigDict(from_attributes=True)
+class AreaListResponse(TimezoneAwareSchema):
+    """Schema for paginated list of areas with timezone-aware timestamps"""
 
     areas: list[AreaResponse] = Field(default_factory=list, description="List of areas")
     total: int = Field(..., ge=0, description="Total number of areas")

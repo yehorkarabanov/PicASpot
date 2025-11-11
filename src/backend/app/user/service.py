@@ -1,4 +1,5 @@
 import logging
+from zoneinfo import ZoneInfo
 
 from app.auth.security import get_password_hash, verify_password
 from app.core.exceptions import BadRequestError, NotFoundError
@@ -19,14 +20,18 @@ class UserService:
     default users for system initialization.
     """
 
-    def __init__(self, user_repository: UserRepository):
+    def __init__(
+        self, user_repository: UserRepository, timezone: ZoneInfo | None = None
+    ):
         """
         Initialize the UserService.
 
         Args:
             user_repository: Repository instance for user data access.
+            timezone: Client's timezone for datetime conversion in responses.
         """
         self.user_repository = user_repository
+        self.timezone = timezone or ZoneInfo("UTC")
 
     async def get_user(self, user_id: str) -> UserResponse:
         """
@@ -44,7 +49,7 @@ class UserService:
         user = await self.user_repository.get_by_id(user_id)
         if not user:
             raise NotFoundError("User not found")
-        return UserResponse.model_validate(user)
+        return UserResponse.model_validate_with_timezone(user, self.timezone)
 
     async def update_user(self, user_id: str, user_data: UserUpdate) -> UserResponse:
         """
@@ -93,7 +98,7 @@ class UserService:
             setattr(user, key, value)
 
         await self.user_repository.save(user)
-        return UserResponse.model_validate(user)
+        return UserResponse.model_validate_with_timezone(user, self.timezone)
 
     async def update_password(
         self, user_id: str, password_data: UserUpdatePassword

@@ -1,10 +1,14 @@
+import logging
 import uuid
+from zoneinfo import ZoneInfo
 
 from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
 from app.user.models import User
 
 from .repository import AreaRepository
 from .schemas import AreaCreate, AreaResponse, AreaUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class AreaService:
@@ -15,14 +19,18 @@ class AreaService:
     and deleting areas, including permission checks and validation.
     """
 
-    def __init__(self, area_repository: AreaRepository):
+    def __init__(
+        self, area_repository: AreaRepository, timezone: ZoneInfo | None = None
+    ):
         """
         Initialize the AreaService.
 
         Args:
             area_repository: Repository instance for area data access.
+            timezone: Client's timezone for datetime conversion in responses.
         """
         self.area_repository = area_repository
+        self.timezone = timezone or ZoneInfo("UTC")
 
     async def _validate_parent_area_exists(self, parent_area_id: uuid.UUID) -> None:
         """
@@ -69,14 +77,14 @@ class AreaService:
             raise BadRequestError("Cannot set parent: hierarchy depth limit reached. ")
 
     async def create_area(
-        self, area_data: AreaCreate, created_by: uuid.UUID
+        self, area_data: AreaCreate, creator_id: uuid.UUID
     ) -> AreaResponse:
         """
         Create a new area with the given data and creator ID.
 
         Args:
             area_data: The area creation data containing name, description, etc.
-            created_by: The UUID of the user creating the area.
+            creator_id: The UUID of the user creating the area.
 
         Returns:
             AreaResponse: The created area data.
@@ -88,9 +96,11 @@ class AreaService:
             await self._validate_parent_area_exists(area_data.parent_area_id)
 
         area_dict = area_data.model_dump()
-        area_dict["created_by"] = created_by
+        area_dict["creator_id"] = creator_id
         area = await self.area_repository.create(area_dict)
-        return AreaResponse.model_validate(area)
+        logger.info("Area created successfully: %s by user %s", area.name, creator_id)
+
+        return AreaResponse.model_validate_with_timezone(area, self.timezone)
 
     async def get_area(self, area_id: uuid.UUID) -> AreaResponse:
         """
@@ -108,7 +118,8 @@ class AreaService:
         area = await self.area_repository.get_by_id(area_id)
         if not area:
             raise NotFoundError(f"Area with ID {area_id} not found")
-        return AreaResponse.model_validate(area)
+
+        return AreaResponse.model_validate_with_timezone(area, self.timezone)
 
     async def delete_area(self, area_id: uuid.UUID, user: User) -> None:
         """
@@ -128,12 +139,13 @@ class AreaService:
         if not area:
             raise NotFoundError(f"Area with ID {area_id} not found")
 
-        if not user.is_superuser and area.created_by != user.id:
+        if not user.is_superuser and area.creator_id != user.id:
             raise ForbiddenError("You do not have permission to delete this area")
 
         deleted = await self.area_repository.delete(area_id)
         if not deleted:
             raise NotFoundError(f"Area with ID {area_id} not found")
+        logger.info("Area deleted: %s by user %s", area.name, user.username)
 
     async def update_area(
         self, area_id: uuid.UUID, area_data: AreaUpdate, user: User
@@ -160,7 +172,7 @@ class AreaService:
         if not area:
             raise NotFoundError(f"Area with ID {area_id} not found")
 
-        if area.created_by != user.id and not user.is_superuser:
+        if area.creator_id != user.id and not user.is_superuser:
             raise ForbiddenError("You do not have permission to update this area")
 
         if area_data.parent_area_id is not None:
@@ -171,7 +183,9 @@ class AreaService:
 
         area_dict = area_data.model_dump(exclude_unset=True)
         area = await self.area_repository.update(area_id, area_dict)
-        return AreaResponse.model_validate(area)
+        logger.info("Area updated: %s by user %s", area.name, user.username)
+
+        return AreaResponse.model_validate_with_timezone(area, self.timezone)
 
     async def verify_area(self, area_id: uuid.UUID, super_user: User) -> AreaResponse:
         """
@@ -198,4 +212,8 @@ class AreaService:
         updated_area = await self.area_repository.update(area_id, area_dict)
         if not updated_area:
             raise NotFoundError(f"Area with ID {area_id} not found")
-        return AreaResponse.model_validate(updated_area)
+        logger.info(
+            "Area verified: %s by superuser %s", updated_area.name, super_user.username
+        )
+
+        return AreaResponse.model_validate_with_timezone(updated_area, self.timezone)

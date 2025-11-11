@@ -1,11 +1,17 @@
 import datetime
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Index, types
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.landmark.models import Landmark
+    from app.unlock.models import Unlock
+    from app.user.models import User
 
 
 class Area(Base):
@@ -20,7 +26,7 @@ class Area(Base):
         nullable=True,
         index=True,
     )
-    created_by: Mapped[uuid.UUID] = mapped_column(
+    creator_id: Mapped[uuid.UUID] = mapped_column(
         types.Uuid,
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
@@ -40,9 +46,35 @@ class Area(Base):
         server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
+    # Relationships
+    # lazy="raise" prevents accidental lazy loading in async context
+    # Use selectinload() or joinedload() in queries to explicitly load relationships
+    creator: Mapped["User"] = relationship(
+        "User", back_populates="created_areas", foreign_keys=[creator_id], lazy="raise"
+    )
+    parent_area: Mapped["Area | None"] = relationship(
+        "Area",
+        remote_side=[id],
+        back_populates="child_areas",
+        foreign_keys=[parent_area_id],
+        lazy="raise",
+    )
+    child_areas: Mapped[list["Area"]] = relationship(
+        "Area",
+        back_populates="parent_area",
+        foreign_keys=[parent_area_id],
+        lazy="raise",
+    )
+    landmarks: Mapped[list["Landmark"]] = relationship(
+        "Landmark", back_populates="area", lazy="raise"
+    )
+    unlocks: Mapped[list["Unlock"]] = relationship(
+        "Unlock", back_populates="area", lazy="raise"
+    )
+
 
 # Composite indexes for common query patterns
 # Get verified child areas of a parent
 Index("idx_area_parent_verified", Area.parent_area_id, Area.is_verified)
 # Get verified areas created by a user
-Index("idx_area_creator_verified", Area.created_by, Area.is_verified)
+Index("idx_area_creator_verified", Area.creator_id, Area.is_verified)

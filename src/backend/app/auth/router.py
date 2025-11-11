@@ -13,7 +13,18 @@ from .schemas import (
     UserResetPassword,
 )
 
-router = APIRouter(tags=["auth"], prefix="/auth")
+router = APIRouter(
+    tags=["auth"],
+    prefix="/auth",
+    responses={
+        429: {
+            "description": "Rate limit exceeded. Too many requests.",
+            "content": {
+                "application/json": {"example": {"detail": "Too Many Requests"}}
+            },
+        }
+    },
+)
 
 
 @router.post(
@@ -45,7 +56,11 @@ async def resend_verification_token(
     return AuthReturn(message="Verification email resent successfully.")
 
 
-@router.post("/login", response_model=UserLoginReturn, response_model_exclude_none=True)
+@router.post(
+    "/login",
+    response_model=UserLoginReturn,
+    response_model_exclude_none=True,
+)
 async def login(login_data: UserLogin, auth_service: AuthServiceDep) -> UserLoginReturn:
     """Login a user and return an access token."""
     data = await auth_service.login(login_data)

@@ -467,7 +467,7 @@ main_menu() {
       0) create_backup_interactive ;;
       1) list_backups ;;
       2) cleanup_backups ;;
-      3) clear_screen; printf "\n${BLUE}┌─────────────────────────────────────────────┐${NC}\n"; printf "${BLUE}│        Thank you for using Hell-App         │${NC}\n"; printf "${BLUE}│         Postgres Backup Manager             │${NC}\n"; printf "${BLUE}└─────────────────────────────────────────────┘${NC}\n\n"; exit 0 ;;
+      3) clear_screen; printf "\n${BLUE}┌─────────────────────────────────────────────┐${NC}\n"; printf "${BLUE}│        Thank you for using picASpot         │${NC}\n"; printf "${BLUE}│         Postgres Backup Manager             │${NC}\n"; printf "${BLUE}└─────────────────────────────────────────────┘${NC}\n\n"; exit 0 ;;
     esac
   done
 }
