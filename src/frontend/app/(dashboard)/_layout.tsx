@@ -10,19 +10,20 @@ const DashboardLayout = () => {
   return (
     <Tabs
       screenOptions={{
-        animation: "fade",
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: colors.card,
+          backgroundColor: colors.background,
           borderRadius: 8,
           position: 'absolute',
           overflow:'hidden',
           left: 0,
-          bottom: 0,
+          bottom: -5,
           right: 0,
-          paddingBottom:-3,
-          height: 70
+          paddingBottom:0,
+          height: 75,
+          borderBlockColor: colors.border,
+          borderWidth: 2,
         },
         tabBarIconStyle: {
           marginTop: 13

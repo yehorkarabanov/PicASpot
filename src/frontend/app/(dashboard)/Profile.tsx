@@ -8,13 +8,7 @@ import { Container, LogOut, MoonStarIcon, SunIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { View } from 'react-native';
 export default function Screen() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
 
-  const handleLogout = async () => {
-    await logout();
-    router.replace('/login');
-  };
 
   return (
     <>
