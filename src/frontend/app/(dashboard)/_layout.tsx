@@ -1,11 +1,11 @@
 import { useTheme } from '@/theme';
-import { Tabs } from "expo-router"
-import React from "react"
-import {Ionicons} from "@expo/vector-icons"
+import { Tabs } from 'expo-router';
+import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
 
 const DashboardLayout = () => {
   const colors = useTheme();
-    const iconSize = 30
+  const iconSize = 30;
 
   return (
     <Tabs
@@ -32,57 +32,64 @@ const DashboardLayout = () => {
           shadowRadius: 8,
         },
         tabBarIconStyle: {
-          marginTop: 10
+          marginTop: 10,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.foreground,
-      }}
-    >
-    <Tabs.Screen
-      name="Map"
-      options = {{tabBarIcon: ({focused}) => (
-        <Ionicons
-          size= {iconSize}
-          name={focused ? "map" : "map-outline"}
-          color={focused ? colors.primary : colors.foreground}
-        />
-      )}}
-    />
+      }}>
+      <Tabs.Screen
+        name="Map"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <Ionicons
+              size={iconSize}
+              name={focused ? 'map' : 'map-outline'}
+              color={focused ? colors.primary : colors.foreground}
+            />
+          ),
+        }}
+      />
 
-    <Tabs.Screen
-      name="Feed"
-      options = {{tabBarIcon: ({focused}) => (
-        <Ionicons
-          size= {iconSize}
-          name={focused ? "albums" : "albums-outline"}
-          color={focused ? colors.primary : colors.foreground}
-        />
-      )}}
-    />
+      <Tabs.Screen
+        name="Feed"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <Ionicons
+              size={iconSize}
+              name={focused ? 'albums' : 'albums-outline'}
+              color={focused ? colors.primary : colors.foreground}
+            />
+          ),
+        }}
+      />
 
-    <Tabs.Screen
-      name="Profile"
-      options = {{tabBarIcon: ({focused}) => (
-        <Ionicons
-          size= {iconSize}
-          name={focused ? "person" : "person-outline"}
-          color={focused ? colors.primary : colors.foreground}
-        />
-      )}}
-    />
+      <Tabs.Screen
+        name="Profile"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <Ionicons
+              size={iconSize}
+              name={focused ? 'person' : 'person-outline'}
+              color={focused ? colors.primary : colors.foreground}
+            />
+          ),
+        }}
+      />
 
-    <Tabs.Screen
-      name="Settings"
-      options = {{tabBarIcon: ({focused}) => (
-        <Ionicons
-          size= {iconSize}
-          name={focused ? "settings" : "settings-outline"}
-          color={focused ? colors.primary : colors.foreground}
-        />
-      )}}
-    />
-
+      <Tabs.Screen
+        name="Settings"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <Ionicons
+              size={iconSize}
+              name={focused ? 'settings' : 'settings-outline'}
+              color={focused ? colors.primary : colors.foreground}
+            />
+          ),
+        }}
+      />
     </Tabs>
-  )}
+  );
+};
 
-export default DashboardLayout
+export default DashboardLayout;
