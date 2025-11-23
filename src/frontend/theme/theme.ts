@@ -71,6 +71,7 @@ export const darkTheme = {
   mutedForeground: 'hsl(22.2222 25.2336% 79.0196%)',
   accent: 'hsl(26.1069 98.4962% 73.9216%)',
   accentTransparent: 'hsla(26.1069, 98.4962%, 73.9216%, 0.15)',
+  accentForeground: 'hsl(346.6667 7.9646% 22.1569%)',
   destructive: 'hsl(355.4913 77.5785% 56.2745%)',
   destructiveForeground: 'hsl(0 0% 100%)',
   border: 'hsl(325 9.375% 25.098%)',

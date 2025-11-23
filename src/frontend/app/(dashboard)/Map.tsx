@@ -5,16 +5,12 @@ import { Stack } from 'expo-router';
 import { MainMap } from '@/components/map-components/main_map';
 import { LIGHT_MAP, DARK_MAP } from '@/components/map-components/main_map/styles';
 import { useColorScheme } from 'nativewind';
-// Circle is used instead of Polygon
 import MapView, { Marker, Callout, Circle } from 'react-native-maps';
 import {markers} from '@/components/map-components/markers'
 import { Text } from '@/components/ui/text';
+import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 
-import * as Location from 'expo-location';
-
-
-// --- Type Definitions and Helpers ---
 
 type Coordinate = {
     latitude: number;
@@ -23,7 +19,7 @@ type Coordinate = {
 
 interface CircleData {
     center: Coordinate;
-    radius: number; // in meters
+    radius: number;
 }
 
 interface AnimatedCardBaseProps {
@@ -47,13 +43,11 @@ const AnimatedCardBase: React.FC<AnimatedCardBaseProps> = ({ children, cardAnim,
     </Animated.View>
 );
 
-// --- Main MapScreen Component ---
 
 export default function MapScreen() {
     const { colorScheme } = useColorScheme();
     const colors = useTheme();
 
-    // 🛑 Define a sensible fallback radius in case a marker is missing the property
     const DEFAULT_SEARCH_RADIUS_METERS = 50;
 
     const mapStyle = colorScheme === 'dark' ? DARK_MAP : LIGHT_MAP;
@@ -68,6 +62,18 @@ export default function MapScreen() {
     const [selectedMarker, setSelectedMarker] = React.useState<typeof markers[0] | null>(null);
     const [circleData, setCircleData] = React.useState<CircleData | null>(null);
     const [locationPermissionGranted, setLocationPermissionGranted] = React.useState(false);
+    const [tracksViewChanges, setTracksViewChanges] = React.useState(true);
+    const [forceRedraw, setForceRedraw] = React.useState(false);
+
+    React.useEffect(() => {
+      setTracksViewChanges(true);
+      setForceRedraw(true);
+      const timer = setTimeout(() => {
+        setTracksViewChanges(false);
+        setForceRedraw(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }, [colorScheme, colors]);
 
     React.useEffect(() => {
         (async () => {
@@ -80,6 +86,7 @@ export default function MapScreen() {
             setLocationPermissionGranted(true);
 
             let location = await Location.getCurrentPositionAsync({});
+            /*                                                            Commented out for easier tests on emulator
             mapRef.current?.animateCamera(
                 {
                     center: {
@@ -89,6 +96,7 @@ export default function MapScreen() {
                 },
                 { duration: 500 }
             );
+            */
 
         })();
     }, []);
@@ -118,7 +126,7 @@ export default function MapScreen() {
         const markerRadius = marker.radius || DEFAULT_SEARCH_RADIUS_METERS;
         if (marker.unlocked === 0) {
             setCircleData({
-                center: marker.coordinate,
+                center: marker.customPhotoLoc || marker.coordinate,
                 radius: markerRadius,
             });
 
@@ -217,10 +225,17 @@ export default function MapScreen() {
                             coordinate={marker.coordinate}
                             pinColor={marker.unlocked === 1 ? 'green' : 'red'}
                             onPress={() => handleMarkerPress(marker, index)}
-
+                            anchor={{ x: 0.12, y: 0.73}}
+                            tracksViewChanges={tracksViewChanges || forceRedraw}
                         >
 
-                            <Callout />
+                            <Ionicons
+                                name={marker.unlocked === 1 ? 'flag' : 'flag-outline'}
+                                size={30}
+                                color={marker.unlocked === 1 ? colors.primary : colors.foreground}
+                            />
+
+                          <Callout />
                         </Marker>
                     ))}
                 </MainMap>
