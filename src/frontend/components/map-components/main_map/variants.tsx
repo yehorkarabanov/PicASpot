@@ -17,6 +17,6 @@ export const mapVariants = cva('overflow-hidden', {
   },
   defaultVariants: {
     variant: 'default',
-    rounded: 'lg',
+    rounded: 'none',
   },
 })

@@ -19,6 +19,8 @@ export default function MapScreen() {
   const CARD_HEIGHT = height / 2.5;
   const CARD_WIDTH = width - 20;
   const NAV_BAR_HEIGHT = 78
+
+  const BOTTOM_UI_HEIGHT = CARD_HEIGHT + NAV_BAR_HEIGHT;
   const cardAnim = React.useRef(new Animated.Value(height)).current;
   const [selectedMarker, setSelectedMarker] = React.useState<typeof markers[0] | null>(null);
 
@@ -86,8 +88,14 @@ export default function MapScreen() {
             longitude: 19.936744,
             latitudeDelta: 0.0922,
             longitudeDelta: 0.0421,
+
           }}
-          onPress={hideCard}
+          mapPadding={{ top: 0, right: 0, bottom: 80, left: 0 }}
+          onPress={(e) => {
+            if (e.nativeEvent.action !== 'marker-press') {
+              hideCard();
+            }
+          }}
           customMapStyle={mapStyle}
           showsUserLocation={locationPermissionGranted}
           showsMyLocationButton={true}
