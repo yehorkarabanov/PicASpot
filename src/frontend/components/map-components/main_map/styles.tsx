@@ -200,57 +200,79 @@ export const DARK_MAP = [
 
 export const LIGHT_MAP = [
   {
+    elementType: "geometry",
+    stylers: [
+      { color: "#FCFCF7" },
+      { lightness: 2 },
+    ],
+  },
+  {
+    featureType: "road",
+    elementType: "geometry",
+    stylers: [
+      { color: "#ebebeb" },
+    ],
+  },
+  {
+    featureType: "water",
+    elementType: "geometry",
+    stylers: [
+      { color: "#b3d2e9" },
+    ],
+  },
+  {
+    featureType: "poi.park",
+    elementType: "geometry",
+    stylers: [
+      { color: "#E8F1D6" },
+    ],
+  },
+  {
+    elementType: "labels.text.fill",
+    stylers: [
+      { color: "#3d3d3d" },
+    ],
+  },
+  {
+    elementType: "labels.text.stroke",
+    stylers: [
+      { color: "#ffffff" },
+    ],
+  },
+
+  {
     "featureType": "transit.station",
     "elementType": "labels",
     "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "visibility": "on"
-      }
+      { "visibility": "off" }
     ]
   },
   {
     "featureType": "poi",
     "elementType": "labels",
     "stylers": [
-      {
-        "visibility": "off"
-      }
+      { "visibility": "off" }
     ]
   },
   {
     "featureType": "road.highway",
     "elementType": "labels",
     "stylers": [
-      {
-        "visibility": "off"
-      }
+      { "visibility": "off" }
     ]
   },
   {
     "featureType": "road.arterial",
     "elementType": "labels",
     "stylers": [
-      {
-        "visibility": "off"
-      }
+      { "visibility": "off" }
     ]
   },
   {
     "featureType": "road.local",
     "elementType": "labels",
     "stylers": [
-      {
-        "visibility": "off"
-      }
+      { "visibility": "off" }
     ]
   }
 ];
