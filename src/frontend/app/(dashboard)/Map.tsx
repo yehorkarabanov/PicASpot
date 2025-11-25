@@ -18,70 +18,67 @@ import { X, BadgeQuestionMark, Camera } from 'lucide-react-native';
 
 
 type Coordinate = {
-    latitude: number;
-    longitude: number;
+  latitude: number;
+  longitude: number;
 };
 
-// 1. Interface definitions
 interface CircleData {
-    center: Coordinate;
-    radius: number;
+  center: Coordinate;
+  radius: number;
 }
 
 interface AnimatedCardBaseProps {
-    children: React.ReactNode;
-    cardAnim: Animated.Value;
-    CARD_WIDTH: number;
-    CARD_HEIGHT: number;
+  children: React.ReactNode;
+  cardAnim: Animated.Value;
+  CARD_WIDTH: number;
+  CARD_HEIGHT: number;
 }
 
 const AnimatedCardBase: React.FC<AnimatedCardBaseProps> = ({ children, cardAnim, CARD_WIDTH, CARD_HEIGHT }) => (
-    <Animated.View
-        style={{
-            transform: [{ translateY: cardAnim }],
-            width: CARD_WIDTH,
-            height: CARD_HEIGHT,
-            alignSelf: 'center',
-        }}
-        className="absolute p-4 rounded-xl bg-card shadow-2xl border border-border"
-    >
-        {children}
-    </Animated.View>
+  <Animated.View
+    style={{
+      transform: [{ translateY: cardAnim }],
+      width: CARD_WIDTH,
+      height: CARD_HEIGHT,
+      alignSelf: 'center',
+    }}
+    className="absolute p-4 rounded-xl bg-card shadow-2xl border border-border"
+  >
+    {children}
+  </Animated.View>
 );
 
 
 export default function MapScreen() {
-    const { colorScheme } = useColorScheme();
-    const colors = useTheme();
+  const { colorScheme } = useColorScheme();
+  const colors = useTheme();
 
-    const DEFAULT_SEARCH_RADIUS_METERS = 50;
+  const DEFAULT_SEARCH_RADIUS_METERS = 50;
 
-    const mapStyle = colorScheme === 'dark' ? DARK_MAP : LIGHT_MAP;
-    const mapRef = React.useRef<MapView>(null);
+  const mapStyle = colorScheme === 'dark' ? DARK_MAP : LIGHT_MAP;
+  const mapRef = React.useRef<MapView>(null);
 
-    const { width, height } = Dimensions.get("window")
-    const CARD_HEIGHT = height / 2.5;
-    const CARD_WIDTH = width - 20;
-    const NAV_BAR_HEIGHT = 85
+  const { width, height } = Dimensions.get("window")
+  const CARD_HEIGHT = height / 2.5;
+  const CARD_WIDTH = width - 20;
+  const NAV_BAR_HEIGHT = 85
 
-    const cardAnim = React.useRef(new Animated.Value(height)).current;
-    const [selectedMarker, setSelectedMarker] = React.useState<typeof markers[0] | null>(null);
+  const cardAnim = React.useRef(new Animated.Value(height)).current;
+  const [selectedMarker, setSelectedMarker] = React.useState<typeof markers[0] | null>(null);
+  const [activeCircles, setActiveCircles] = React.useState<CircleData[]>([]);
+  const [locationPermissionGranted, setLocationPermissionGranted] = React.useState(false);
+  const [tracksViewChanges, setTracksViewChanges] = React.useState(true);
+  const [forceRedraw, setForceRedraw] = React.useState(false);
+  const [showHint, setShowHint] = React.useState(false);
 
-    // 2. Changed state to hold an ARRAY of circles
-    const [activeCircles, setActiveCircles] = React.useState<CircleData[]>([]);
-
-    const [locationPermissionGranted, setLocationPermissionGranted] = React.useState(false);
-    const [tracksViewChanges, setTracksViewChanges] = React.useState(true);
-    const [forceRedraw, setForceRedraw] = React.useState(false);
-    const [showHint, setShowHint] = React.useState(false);
-    React.useEffect(() => {
-        setForceRedraw(true);
-        const timer = setTimeout(() => {
-            setTracksViewChanges(false);
-            setForceRedraw(false);
-        }, 100);
-        return () => clearTimeout(timer);
-    }, [colorScheme, colors]);
+  React.useEffect(() => {
+    setForceRedraw(true);
+    const timer = setTimeout(() => {
+      setTracksViewChanges(false);
+      setForceRedraw(false);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [colorScheme, colors]);
 
     React.useEffect(() => {
         (async () => {
@@ -93,6 +90,17 @@ export default function MapScreen() {
 
             setLocationPermissionGranted(true);
             let location = await Location.getCurrentPositionAsync({});
+             /*                                                            Commented out for easier tests on emulator
+            mapRef.current?.animateCamera(
+                {
+                    center: {
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                    },
+                },
+                { duration: 500 }
+            );
+            */
         })();
     }, []);
 
@@ -106,7 +114,6 @@ export default function MapScreen() {
     };
 
     const hideCard = () => {
-        // 3. Reset array to empty
         setActiveCircles([]);
         Animated.timing(cardAnim, {
             toValue: height,
@@ -117,7 +124,6 @@ export default function MapScreen() {
         });
     };
 
-    // 4. Updated Logic to handle arrays of Custom Locations and Radii
     const handleMarkerPress = (marker: typeof markers[0], index: number) => {
         showCard(marker);
 
@@ -126,9 +132,7 @@ export default function MapScreen() {
             const hasCustomLocs = marker.customPhotoLoc && marker.customPhotoLoc.length > 0;
 
             if (hasCustomLocs) {
-                // Iterate over the list of dicts
                 marker.customPhotoLoc.forEach((loc, i) => {
-                    // Get corresponding radius, or fallback to first radius, or fallback to default
                     const specificRadius = marker.radius && marker.radius[i]
                         ? marker.radius[i]
                         : (marker.radius?.[0] || DEFAULT_SEARCH_RADIUS_METERS);
@@ -139,7 +143,6 @@ export default function MapScreen() {
                     });
                 });
             } else {
-                // Fallback: One circle at marker coordinate
                 newCircles.push({
                     center: marker.coordinate,
                     radius: marker.radius?.[0] || DEFAULT_SEARCH_RADIUS_METERS,
@@ -194,8 +197,6 @@ export default function MapScreen() {
                       </Button>
 
                     </View>
-
-                    {/* The rest of the content */}
                     <View className="p-4 items-center justify-center flex-1">
                         <Text className="text-lg text-muted-foreground mt-2 text-center">
                             This landmark is locked.
@@ -279,7 +280,6 @@ export default function MapScreen() {
                     toolbarEnabled={false}
                 >
 
-                    {/* 5. Map over the activeCircles array */}
                     {activeCircles.map((circle, i) => (
                         <Circle
                             key={`circle-${i}`}
