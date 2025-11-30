@@ -23,7 +23,8 @@ class TestAuthServiceRegistration:
     @pytest.fixture
     async def auth_service(self, test_session):
         """Create AuthService instance with test repository."""
-        user_repo = UserRepository(test_session)
+        from app.user.models import User
+        user_repo = UserRepository(test_session, User)
         return AuthService(user_repository=user_repo)
 
     @pytest.mark.asyncio
@@ -92,7 +93,8 @@ class TestAuthServiceLogin:
     @pytest.fixture
     async def auth_service(self, test_session):
         """Create AuthService instance with test repository."""
-        user_repo = UserRepository(test_session)
+        from app.user.models import User
+        user_repo = UserRepository(test_session, User)
         return AuthService(user_repository=user_repo)
 
     @pytest.mark.asyncio
@@ -181,7 +183,8 @@ class TestAuthServiceVerification:
     @pytest.fixture
     async def auth_service(self, test_session):
         """Create AuthService instance with test repository."""
-        user_repo = UserRepository(test_session)
+        from app.user.models import User
+        user_repo = UserRepository(test_session, User)
         return AuthService(user_repository=user_repo)
 
     @pytest.mark.asyncio
