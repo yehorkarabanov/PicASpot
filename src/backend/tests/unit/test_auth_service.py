@@ -190,70 +190,63 @@ class TestAuthServiceVerification:
     @pytest.mark.asyncio
     async def test_verify_token_success(self, auth_service, unverified_user, mock_redis):
         """Test successful email verification."""
-        # Create a verification token
-        token = await create_verification_token(
-            user_id=str(unverified_user.id),
-            token_type=TokenType.VERIFICATION,
-            use_redis=True,
-        )
+        with patch("app.database.redis.get_redis_client", return_value=mock_redis), \
+             patch("app.auth.service.decode_verification_token") as mock_decode:
+            # Mock decode_verification_token to return token data
+            mock_decode.return_value = {
+                "user_id": unverified_user.id,
+                "type": TokenType.VERIFICATION.value,
+            }
 
-        # Mock Redis to return token data
-        import json
-        mock_redis.get.return_value = json.dumps({
-            "user_id": str(unverified_user.id),
-            "type": TokenType.VERIFICATION.value,
-        })
+            await auth_service.verify_token("test_token")
 
-        await auth_service.verify_token(token)
-
-        # Verify user is now verified
-        user = await auth_service.user_repository.get_by_id(unverified_user.id)
-        assert user.is_verified is True
+            # Verify user is now verified
+            user = await auth_service.user_repository.get_by_id(unverified_user.id)
+            assert user.is_verified is True
 
     @pytest.mark.asyncio
     async def test_verify_token_invalid(self, auth_service, mock_redis):
         """Test verification with invalid token."""
-        mock_redis.get.return_value = None
-
-        with pytest.raises(AuthenticationError, match="Invalid or expired"):
-            await auth_service.verify_token("invalid_token")
+        with patch("app.auth.service.decode_verification_token", return_value=None):
+            with pytest.raises(AuthenticationError, match="Invalid or expired"):
+                await auth_service.verify_token("invalid_token")
 
     @pytest.mark.asyncio
     async def test_verify_token_user_not_found(self, auth_service, mock_redis):
         """Test verification when user doesn't exist."""
-        fake_user_id = str(uuid.uuid4())
-        import json
-        mock_redis.get.return_value = json.dumps({
-            "user_id": fake_user_id,
-            "type": TokenType.VERIFICATION.value,
-        })
+        with patch("app.auth.service.decode_verification_token") as mock_decode:
+            fake_user_id = uuid.uuid4()
+            mock_decode.return_value = {
+                "user_id": fake_user_id,
+                "type": TokenType.VERIFICATION.value,
+            }
 
-        with pytest.raises(NotFoundError, match="User not found"):
-            await auth_service.verify_token("some_token")
+            with pytest.raises(NotFoundError, match="User not found"):
+                await auth_service.verify_token("some_token")
 
     @pytest.mark.asyncio
     async def test_verify_token_already_verified(self, auth_service, test_user, mock_redis):
         """Test verification when user is already verified."""
-        import json
-        mock_redis.get.return_value = json.dumps({
-            "user_id": str(test_user.id),
-            "type": TokenType.VERIFICATION.value,
-        })
+        with patch("app.auth.service.decode_verification_token") as mock_decode:
+            mock_decode.return_value = {
+                "user_id": test_user.id,
+                "type": TokenType.VERIFICATION.value,
+            }
 
-        with pytest.raises(AuthenticationError, match="already verified"):
-            await auth_service.verify_token("some_token")
+            with pytest.raises(AuthenticationError, match="already verified"):
+                await auth_service.verify_token("some_token")
 
     @pytest.mark.asyncio
     async def test_verify_token_wrong_type(self, auth_service, unverified_user, mock_redis):
         """Test verification with wrong token type."""
-        import json
-        mock_redis.get.return_value = json.dumps({
-            "user_id": str(unverified_user.id),
-            "type": "WRONG_TYPE",
-        })
+        with patch("app.auth.service.decode_verification_token") as mock_decode:
+            mock_decode.return_value = {
+                "user_id": unverified_user.id,
+                "type": "WRONG_TYPE",
+            }
 
-        with pytest.raises(AuthenticationError, match="Invalid token type"):
-            await auth_service.verify_token("some_token")
+            with pytest.raises(AuthenticationError, match="Invalid token type"):
+                await auth_service.verify_token("some_token")
 
 
 @pytest.mark.unit
@@ -263,7 +256,7 @@ class TestAuthServicePasswordReset:
     @pytest.fixture
     async def auth_service(self, test_session):
         """Create AuthService instance with test repository."""
-        user_repo = UserRepository(test_session)
+        user_repo = UserRepository(test_session, User)
         return AuthService(user_repository=user_repo)
 
     @pytest.mark.asyncio
@@ -292,4 +285,3 @@ class TestAuthServicePasswordReset:
         """Test resending verification token to already verified user."""
         with pytest.raises(BadRequestError, match="already verified"):
             await auth_service.resend_verification_token(test_user.email)
-

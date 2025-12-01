@@ -62,10 +62,12 @@ async def test_engine():
         # Import models individually to avoid creating landmarks/unlocks tables
         from app.user.models import User
         from app.area.models import Area
+        from app.unlock.models import Unlock
 
         # Create only the tables we need for auth tests
         await conn.run_sync(User.__table__.create, checkfirst=True)
         await conn.run_sync(Area.__table__.create, checkfirst=True)
+        await conn.run_sync(Unlock.__table__.create, checkfirst=True)
 
     yield engine
 
@@ -107,8 +109,8 @@ async def mock_redis():
 @pytest.fixture
 async def mock_celery():
     """Mock Celery tasks for testing."""
-    with patch("app.celery.tasks.email_tasks.tasks.user_verify_mail_event") as mock_verify, \
-         patch("app.celery.tasks.email_tasks.tasks.user_reset_password_mail_event") as mock_reset:
+    with patch("app.auth.service.user_verify_mail_event") as mock_verify, \
+         patch("app.auth.service.user_password_reset_mail") as mock_reset:
         mock_verify.delay = MagicMock(return_value=None)
         mock_reset.delay = MagicMock(return_value=None)
         yield {
@@ -238,5 +240,3 @@ def pytest_configure(config):
 os.environ["ENVIRONMENT"] = "test"
 os.environ["DEBUG"] = "True"
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
-
-
