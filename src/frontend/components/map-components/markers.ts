@@ -1,14 +1,14 @@
 export const markers = [
   {
-    unlocked: 0,
-    coordinate: {
+    unlocked: 0,                // 0 or 1, NOT NULL, indicates if the marker is unlocked
+    coordinate: {               // 2 numeric values, NOT NULL, indicates the position of the marker on the map
       latitude: 50.053920,
       longitude: 19.935154,
     },
-    title: "Wawel Castle",
+    title: "Wawel Castle",      // string, NOT NULL, title of the marker
     description: "The Wawel Royal Castle (Polish pronunciation: [vavɛl]; Zamek Królewski na Wawelu) and the Wawel Hill on which it sits constitute the most historically and culturally significant site in Poland. A fortified residency on the Vistula River in Kraków, it was established on the orders of King Casimir III the Great and enlarged over the centuries into a number of structures around a Polish Renaissance courtyard. It represents nearly all European architectural styles of the Medieval, Renaissance and Baroque periods. The castle is part of a fortified architectural complex erected atop a limestone outcrop on the left bank of the Vistula River, at an altitude of metres (ft) above sea level. The complex consists of numerous buildings of great historical and national importance, including the Wawel Cathedral where Polish monarchs were crowned and buried. Some of Wawel's oldest stone buildings can be traced back to CE, in addition to the earliest examples of Romanesque and Gothic architecture in Poland. The current castle was built in the th century, and expanded over the next hundreds of years. In , Wawel was declared the first World Heritage Site as part of the Historic Centre of Kraków. For centuries the residence of the kings of Poland and the symbol of Polish statehood, Wawel Castle is now one of the country's premier art museums. Established in , the museum encompasses ten curatorial departments responsible for collections of paintings, including an important collection of Italian Renaissance paintings, prints, sculpture, textiles, among them the Sigismund II Augustus tapestry collection, goldsmith's work, arms and armor, ceramics, Meissen porcelain, and period furniture. The museum's holdings in oriental art include the largest collection of Ottoman tents in Europe. With seven specialized conservation studios, the museum is also an important center for the conservation of works of art. With over million visitors in , Wawel Castle is the most visited art museum in Poland and the th most visited art museum in the world.",
-    image: "https://turystycznepropozycje.pl/wp-content/uploads/2019/02/wawel-widok-1024x683.jpg",
-    customPhotoLoc: [{
+    image: "https://turystycznepropozycje.pl/wp-content/uploads/2019/02/wawel-widok-1024x683.jpg", // string URL (not final) or null, image hint associated with the marker
+    customPhotoLoc: [{          // array of dicts with latitude and longitude numeric values, or null, indicates custom photo locations associated with the marker
       latitude: 50.055083,
       longitude: 19.928073,
     },
@@ -21,15 +21,16 @@ export const markers = [
       longitude: 19.935368,
     },
   ],
-    radius: [
+    radius: [                 // array of numeric values (at least 1), NOT NULL, indicates the radius sizes (in meters) for different photo locations
       25,
       50,
       50,
     ],
-    badgeIDs: [
+    badgeIDs: [              // array of numeric values (at least 1), NOT NULL, indicates the badge IDs associated with the marker
       1, 2
     ]
-  },
+  },                          //note: if customPhotoLoc is not null it takes priority over coordinate when it comes to generating the photo locations, if it's null only one
+                              //photo loction is drawn, direclty on coordinate in the form of a circle with radius equal to the first element of radius array
   {
     unlocked: 1,
     coordinate: {
