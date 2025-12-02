@@ -125,37 +125,6 @@
 - Area model factories with polygons
 - Hierarchical area relationships
 
-#### 1.2 Docker Test Environment
-
-**File: `docker-compose.test.yaml`**
-```yaml
-services:
-  postgres_test:
-    image: postgis/postgis:18-3.6-alpine
-    environment:
-      POSTGRES_DB: test_picaspot
-      POSTGRES_USER: test_user
-      POSTGRES_PASSWORD: test_password
-    ports:
-      - "5433:5432"
-    tmpfs:
-      - /var/lib/postgresql/data  # In-memory for speed
-    
-  redis_test:
-    image: redis:8.2.2-alpine
-    command: redis-server --requirepass test_password
-    ports:
-      - "6380:6379"
-    tmpfs:
-      - /data  # In-memory for speed
-```
-
-**File: `.env.test`**
-- Test environment variables
-- Test database URLs
-- Mock SMTP settings
-- Disabled rate limiting for tests
-
 #### 1.3 Test Utilities
 
 **File: `tests/utils/helpers.py`**
