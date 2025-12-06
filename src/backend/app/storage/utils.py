@@ -1,50 +1,58 @@
 """Utility functions for storage operations"""
 
-from urllib.parse import urlparse, urlunparse
+import uuid
+from pathlib import Path
 
-from app.settings import settings
 
-
-def fix_presigned_url(internal_url: str) -> str:
+def generate_uuid_filename(original_filename: str) -> tuple[str, str]:
     """
-    Replace internal MinIO endpoint with external NGINX proxy endpoint in presigned URLs.
-
-    This is necessary because MinIO generates URLs using the internal Docker
-    hostname (minio1:9000) which is not accessible from outside the container.
-
-    The function converts:
-        http://minio1:9000/bucket/file?signature=...
-    To:
-        http://localhost/storage/bucket/file?signature=...
-
-    This routes through NGINX proxy which handles load balancing and is accessible externally.
+    Generate a UUID-based filename while preserving the file extension.
 
     Args:
-        internal_url: URL with internal endpoint (e.g., http://minio1:9000/...)
+        original_filename: Original filename (e.g., "Снимок экрана.png")
 
     Returns:
-        URL with external NGINX proxy endpoint (e.g., http://localhost/storage/...)
+        tuple: (uuid_filename, original_filename)
+        - uuid_filename: UUID-based filename (e.g., "550e8400-e29b-41d4-a716-446655440000.png")
+        - original_filename: Original filename for metadata
+
+    Examples:
+        >>> generate_uuid_filename("Снимок экрана 2025.png")
+        ('550e8400-e29b-41d4-a716-446655440000.png', 'Снимок экрана 2025.png')
     """
-    parsed = urlparse(internal_url)
+    # Get file extension (lowercase)
+    ext = Path(original_filename).suffix.lower()
 
-    # Get external endpoint from settings (e.g., "localhost" or "yourdomain.com")
-    external_host = settings.MINIO_EXTERNAL_ENDPOINT.split(':')[0]  # Remove port if present
+    # Generate UUID-based filename
+    uuid_filename = f"{uuid.uuid4()}{ext}"
 
-    # Determine protocol (http or https)
-    protocol = "https" if settings.MINIO_SECURE else "http"
+    return uuid_filename, original_filename
 
-    # Add /storage prefix to path for NGINX routing
-    new_path = f"/storage{parsed.path}"
 
-    # Reconstruct URL with external endpoint and NGINX proxy path
-    external_url = str(urlunparse((
-        protocol,
-        external_host,  # Use external host without port (NGINX handles standard ports)
-        new_path,
-        parsed.params,
-        parsed.query,
-        parsed.fragment
-    )))
+def generate_storage_path(prefix: str, original_filename: str) -> tuple[str, dict]:
+    """
+    Generate a complete storage path with UUID filename and metadata.
 
-    return external_url
+    Args:
+        prefix: Path prefix (e.g., "users/123" or "uploads")
+        original_filename: Original filename
+
+    Returns:
+        tuple: (storage_path, metadata)
+        - storage_path: Full path in storage (e.g., "users/123/uuid.png")
+        - metadata: Dict with original filename for reference
+
+    Examples:
+        >>> generate_storage_path("users/123", "photo.jpg")
+        ('users/123/550e8400-e29b-41d4-a716-446655440000.jpg',
+         {'original_filename': 'photo.jpg'})
+    """
+    uuid_filename, original_filename = generate_uuid_filename(original_filename)
+    storage_path = f"{prefix}/{uuid_filename}"
+    metadata = {
+        "original_filename": original_filename,
+    }
+
+    return storage_path, metadata
+
 

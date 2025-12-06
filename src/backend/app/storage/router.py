@@ -2,41 +2,47 @@ from fastapi import APIRouter, HTTPException, Response, UploadFile, status
 
 from app.storage.dependencies import StorageServiceDep
 
-example_router = APIRouter(prefix="/storage", tags=["storage"])
+router = APIRouter(prefix="/storage", tags=["storage"])
 
 
-@example_router.post("/upload")
+@router.post("/upload")
 async def upload_file(
     file: UploadFile,
     storage: StorageServiceDep,
     path_prefix: str = "uploads",
 ) -> dict:
     """
-    Upload a file to storage.
+    Upload a file to storage with UUID-based filename.
+
+    The file is stored with a UUID filename to avoid:
+    - Encoding issues with non-ASCII characters
+    - Filename collisions
+    - Path traversal vulnerabilities
+
+    The original filename is preserved in metadata.
 
     Args:
         file: File to upload
         path_prefix: Folder prefix (default: "uploads")
 
     Returns:
-        dict with object_path and size
+        dict with object_path, original_filename, and size
     """
     try:
         # Read file content
         content = await file.read()
 
-        # Upload to MinIO
-        object_path = f"{path_prefix}/{file.filename}"
-        await storage.put_object(
-            object_path=object_path,
+        # Upload using StorageService (handles UUID generation internally)
+        result = await storage.upload_file(
             file_data=content,
+            original_filename=file.filename,
+            path_prefix=path_prefix,
             content_type=file.content_type or "application/octet-stream",
         )
 
         return {
             "message": "File uploaded successfully",
-            "object_path": object_path,
-            "size": len(content),
+            **result,
         }
     except Exception as e:
         raise HTTPException(
@@ -45,7 +51,7 @@ async def upload_file(
         )
 
 
-@example_router.get("/download/{object_path:path}")
+@router.get("/download/{object_path:path}")
 async def download_file(
     object_path: str,
     storage: StorageServiceDep,
@@ -53,8 +59,10 @@ async def download_file(
     """
     Download a file from storage as bytes.
 
+    Returns the file with the original filename in Content-Disposition header.
+
     Args:
-        object_path: Path to file in storage
+        object_path: Path to file in storage (UUID-based)
 
     Returns:
         File content as bytes with appropriate content-type header
@@ -63,15 +71,21 @@ async def download_file(
         # Get file bytes
         file_data = await storage.get_object(object_path)
 
-        # Get file info to determine content type
+        # Get file info to determine content type and original filename
         file_info = await storage.get_object_info(object_path)
+
+        # Get original filename from metadata, fallback to object path filename
+        original_filename = file_info.get("metadata", {}).get("original_filename")
+        if not original_filename:
+            # Fallback to UUID filename if metadata not available
+            original_filename = object_path.split("/")[-1]
 
         # Return file as response with appropriate headers
         return Response(
             content=file_data,
             media_type=file_info.get("content_type", "application/octet-stream"),
             headers={
-                "Content-Disposition": f'inline; filename="{object_path.split("/")[-1]}"',
+                "Content-Disposition": f'inline; filename="{original_filename}"',
                 "Cache-Control": "public, max-age=3600",
             },
         )
@@ -82,7 +96,7 @@ async def download_file(
         )
 
 
-@example_router.delete("/delete/{object_path:path}")
+@router.delete("/delete/{object_path:path}")
 async def delete_file(
     object_path: str,
     storage: StorageServiceDep,
@@ -91,7 +105,7 @@ async def delete_file(
     Delete a file from storage.
 
     Args:
-        object_path: Path to file in storage
+        object_path: Path to file in storage (UUID-based)
 
     Returns:
         Success message
@@ -110,7 +124,7 @@ async def delete_file(
         )
 
 
-@example_router.get("/list")
+@router.get("/list")
 async def list_objects(
     storage: StorageServiceDep,
     prefix: str = "",
@@ -124,7 +138,7 @@ async def list_objects(
         recursive: List recursively or just immediate children
 
     Returns:
-        List of objects with metadata
+        List of objects with metadata including original filenames
     """
     try:
         objects = await storage.list_objects(prefix=prefix, recursive=recursive)
@@ -141,7 +155,7 @@ async def list_objects(
         )
 
 
-@example_router.get("/folders")
+@router.get("/folders")
 async def list_folders(
     storage: StorageServiceDep,
     prefix: str = "",
@@ -170,7 +184,7 @@ async def list_folders(
         )
 
 
-@example_router.get("/info/{object_path:path}")
+@router.get("/info/{object_path:path}")
 async def get_file_info(
     object_path: str,
     storage: StorageServiceDep,
@@ -179,10 +193,10 @@ async def get_file_info(
     Get metadata about a file.
 
     Args:
-        object_path: Path to file in storage
+        object_path: Path to file in storage (UUID-based)
 
     Returns:
-        File metadata (size, content_type, last_modified, etc.)
+        File metadata (size, content_type, last_modified, original_filename, etc.)
     """
     try:
         info = await storage.get_object_info(object_path)
@@ -197,7 +211,7 @@ async def get_file_info(
         )
 
 
-@example_router.head("/exists/{object_path:path}")
+@router.head("/exists/{object_path:path}")
 async def check_file_exists(
     object_path: str,
     storage: StorageServiceDep,
@@ -206,7 +220,7 @@ async def check_file_exists(
     Check if a file exists.
 
     Args:
-        object_path: Path to file in storage
+        object_path: Path to file in storage (UUID-based)
 
     Returns:
         200 if exists, 404 if not
@@ -220,5 +234,6 @@ async def check_file_exists(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="File not found",
         )
+
 
 

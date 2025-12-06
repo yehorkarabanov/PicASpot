@@ -11,7 +11,7 @@ Public API:
 
 from .dependencies import StorageServiceDep
 from .manager import check_minio_health, ensure_bucket_exists
-from .router import example_router
+from .router import router
 from .service import StorageService
 
 __all__ = [
@@ -19,6 +19,6 @@ __all__ = [
     "StorageService",
     "ensure_bucket_exists",
     "check_minio_health",
-    "example_router",
+    "router",
 ]
 
