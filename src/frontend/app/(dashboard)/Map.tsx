@@ -13,7 +13,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Modal } from 'react-native';
-import { X, BadgeQuestionMark, Camera } from 'lucide-react-native';
+import { X, BadgeQuestionMark, Camera, Redo , RotateCw} from 'lucide-react-native';
+import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
+import { StyleSheet } from 'react-native';
 
 
 
@@ -70,6 +72,11 @@ export default function MapScreen() {
   const [tracksViewChanges, setTracksViewChanges] = React.useState(true);
   const [forceRedraw, setForceRedraw] = React.useState(false);
   const [showHint, setShowHint] = React.useState(false);
+  const [showCamera, setShowCamera] = React.useState(false);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [facing, setFacing] = React.useState<CameraType>('back');
+  const cameraRef = React.useRef<CameraView>(null);
+  const [capturedPhotoUri, setCapturedPhotoUri] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setForceRedraw(true);
@@ -124,7 +131,43 @@ export default function MapScreen() {
         });
     };
 
-    const handleMarkerPress = (marker: typeof markers[0], index: number) => {
+  const takePhoto = async () => {
+      if (cameraRef.current) {
+          console.log("Attempting to take photo...");
+          try {
+              const photo = await cameraRef.current.takePictureAsync({
+                  base64: false,
+                  exif: true,
+              });
+
+              console.log("Photo taken successfully! URI:", photo.uri);
+              setCapturedPhotoUri(photo.uri);
+
+          } catch (error) {
+              console.error("Failed to take picture:", error);
+          }
+      } else {
+          console.log("Camera reference is not available.");
+      }
+  };
+
+  const redoPhoto = () => {
+      setCapturedPhotoUri(null);
+      console.log("Redo photo. Back to camera.");
+  };
+
+  const confirmPhoto = () => {
+      setCapturedPhotoUri(null);
+      setShowCamera(false);
+      console.log("Photo confirmed and camera closed.");
+  };
+
+  const toggleCameraFacing = () => {
+    setFacing(current => (current === 'back' ? 'front' : 'back'));
+    console.log(`Toggling camera to: ${facing === 'back' ? 'front' : 'back'}`);
+  };
+
+  const handleMarkerPress = (marker: typeof markers[0], index: number) => {
         showCard(marker);
 
         if (marker.unlocked === 0) {
@@ -209,8 +252,7 @@ export default function MapScreen() {
                       className="absolute bottom-4 right-4 h-12 w-12 rounded-full items-center justify-center"
                       variant="ghost"
                       size="icon"
-                      onPress={() => console.log("Launch Camera Logic Here")}
-                    >
+                      onPress={() => setShowCamera(true)}>
                       <Icon as={Camera} className="size-8 text-foreground" />
                     </Button>
 
@@ -225,7 +267,6 @@ export default function MapScreen() {
         <Modal
             visible={showHint}
             transparent={true}
-            animationType="fade"
             statusBarTranslucent={true}
         >
             <View className="flex-1 bg-black/90 justify-center items-center h-full w-full">
@@ -255,6 +296,111 @@ export default function MapScreen() {
         </Modal>
     );
 };
+
+    const renderCameraModal = () => {
+        if (!permission || !permission.granted) {
+            return (
+                <Modal visible={showCamera} transparent={true} animationType="fade">
+                    <View style={cameraStyles.permissionContainer} className="bg-background">
+                        <Text className="text-lg text-foreground text-center mb-4">
+                            {permission === null ? 'Loading camera permissions...' : 'We need your permission to access the camera to take a photo.'}
+                        </Text>
+                        {permission !== null && !permission.granted && (
+                            <Button onPress={requestPermission} className="mb-4">
+                                <Text>Grant Camera Permission</Text>
+                            </Button>
+                        )}
+                        <Button variant="ghost" onPress={() => setShowCamera(false)}>
+                            <Text>Close</Text>
+                        </Button>
+                    </View>
+                </Modal>
+            );
+        }
+
+return (
+    <Modal
+        visible={showCamera}
+        transparent={false}
+        animationType="slide"
+        statusBarTranslucent={true}
+        onRequestClose={confirmPhoto}
+    >
+        <View style={cameraStyles.container}>
+            {capturedPhotoUri ? (
+                <>
+                    <Image
+                        source={{ uri: capturedPhotoUri }}
+                        style={cameraStyles.camera}
+                        resizeMode="cover"
+                    />
+
+                    <View style={cameraStyles.previewButtonContainer}>
+                        <Button
+                            className="h-12 w-12 rounded-full items-center justify-center bg-black/50"
+                            variant="ghost"
+                            size="icon"
+                            onPress={redoPhoto}
+                        >
+                            <Icon as={Redo} className="size-8 text-white" />
+                        </Button>
+
+                        <Button
+                            className="h-12 w-12 rounded-full items-center justify-center bg-black/50"
+                            variant="ghost"
+                            size="icon"
+                            onPress={confirmPhoto}
+                        >
+                            <Ionicons name="checkmark" size={30} color="white" />
+                        </Button>
+                    </View>
+                </>
+            ) : (
+                <>
+                    <CameraView
+                        ref={cameraRef}
+                        style={cameraStyles.camera}
+                        facing={facing}
+                    />
+                    <View style={cameraStyles.closeButtonContainer}>
+                      <Button
+                          className="absolute top-10 right-4 h-12 w-12 rounded-full items-center justify-center bg-black/50"
+                          variant="ghost"
+                          size="icon"
+                          onPress={confirmPhoto}
+                      >
+                          <Icon as={X} className="size-8 text-white" />
+                      </Button>
+                    </View>
+
+                    <View style={cameraStyles.mainButtonContainer}>
+
+                    <Button
+                        className="h-12 w-12 rounded-full items-center justify-center bg-black/50"
+                        variant="ghost"
+                        size="icon"
+                        onPress={toggleCameraFacing}
+                    >
+                        <Icon as={RotateCw} className="size-8 text-white" />
+                    </Button>
+
+                    <Button
+                        style={cameraStyles.captureButton}
+                        onPress={takePhoto}
+                        size="icon"
+                    >
+                        <View style={cameraStyles.captureCircle} />
+                    </Button>
+
+                    <View style={{ width: 48, height: 48 }} />
+                </View>
+            </>
+        )}
+        </View>
+    </Modal>
+);
+    };
+
     return (
         <>
             <Stack.Screen options={{
@@ -314,8 +460,70 @@ export default function MapScreen() {
 
                 {renderAnimatedCard()}
                 {renderSimplePopup()}
+                {renderCameraModal()}
 
             </View>
         </>
     );
 }
+
+
+const cameraStyles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: 'black',
+    },
+    permissionContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    camera: {
+        flex: 1,
+        width: '100%',
+    },
+    closeButtonContainer: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        zIndex: 10,
+        paddingHorizontal: 16,
+        paddingTop: 40,
+    },
+
+    mainButtonContainer: {
+        position: 'absolute',
+        bottom: 40,
+        flexDirection: 'row',
+        width: '100%',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+    },
+    previewButtonContainer: {
+        position: 'absolute',
+        bottom: 40,
+        flexDirection: 'row',
+        width: '100%',
+        justifyContent: 'space-between',
+        paddingHorizontal: 40,
+        alignItems: 'center',
+    },
+    captureButton: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    captureCircle: {
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        backgroundColor: 'white',
+        borderWidth: 2,
+        borderColor: 'black',
+    }
+});
