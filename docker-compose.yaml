@@ -15,10 +15,11 @@ x-minio-common: &minio-common
     timeout: 5s
     retries: 5
 
+x-backend-build: &backend-build
+  context: ./src/backend
+  dockerfile: Dockerfile
+
 x-backend-common: &backend-common
-  build:
-    context: ./src/backend
-    dockerfile: Dockerfile
   volumes:
     - ./src/backend/:/code
     - /code/.venv
@@ -53,6 +54,7 @@ services:
     expose:
       - ${BACKEND_PORT_INTERNAL}
     build:
+      <<: *backend-build
       target: backend
     environment:
       SERVICE_NAME: backend
@@ -64,6 +66,7 @@ services:
       - redis
     container_name: celery_worker
     build:
+      <<: *backend-build
       target: worker
     environment:
       SERVICE_NAME: celery
@@ -77,6 +80,7 @@ services:
       - celery_worker
       - redis
     build:
+      <<: *backend-build
       target: flower
     environment:
       SERVICE_NAME: flower
@@ -131,6 +135,11 @@ services:
       - ${MAILHOG_PORT}:${MAILHOG_PORT_INTERNAL}
     networks:
       - app-network
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:${MAILHOG_UI_PORT_INTERNAL}/api/v1/messages" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   backup:
     image: postgis/postgis:18-3.6
