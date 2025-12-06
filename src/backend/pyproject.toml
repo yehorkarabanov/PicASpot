@@ -4,32 +4,30 @@ version = "0.1.0"
 description = "PicASpot backend"
 requires-python = ">=3.14"
 dependencies = [
-    "alembic>=1.17.0",
-    # asyncpg is not compiled on Windows (for now, waiting for wheels).
-    # We compile it on Docker Linux containers instead
-    "asyncpg>=0.30.0; sys_platform != 'win32'",
-    "asgiref>=3.10.0",
+    "alembic>=1.17.2",
+    "asyncpg>=0.31.0",
+    "asgiref>=3.11.0",
     "bcrypt>=5.0.0",
     "celery>=5.5.3",
     "celery-types==0.23.0",
     "cryptography>=46.0.3",
-    "fastapi-mail>=1.5.7",
-    "fastapi[standard]>=0.119.0",
+    "fastapi-mail>=1.5.8",
+    "fastapi[standard]>=0.122.0",
     "flower>=2.0.1",
-    "geoalchemy2[shapely]>=0.18.0",
+    "geoalchemy2[shapely]>=0.18.1",
     "itsdangerous>=2.2.0",
-    "pydantic-settings>=2.11.0",
+    "pydantic-settings>=2.12.0",
     "pyjwt>=2.10.1",
-    "redis>=7.0.0",
+    "redis>=7.1.0",
     "sqlalchemy>=2.0.44",
 ]
 
 
-[project.optional-dependencies]
-test = [
+[dependency-groups]
+dev = [
     "faker>=37.11.0",
-    "pytest>=8.4.2",
-    "pytest-asyncio>=0.25.0",
+    "pytest>=9.0.1",
+    "pytest-asyncio>=0.24.0",
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
     "httpx>=0.28.0",
@@ -65,4 +63,39 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --cov=app --cov-report=html --cov-report=term-missing"
+asyncio_mode = "auto"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "e2e: End-to-end tests",
+    "slow: Slow running tests",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "*/tests/*",
+    "*/alembic/*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+branch = true
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
