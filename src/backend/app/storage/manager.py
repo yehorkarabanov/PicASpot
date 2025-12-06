@@ -1,3 +1,5 @@
+"""Manager for MinIO client creation and initialization"""
+
 import logging
 from collections.abc import AsyncGenerator
 
@@ -8,11 +10,10 @@ from app.settings import settings
 
 logger = logging.getLogger(__name__)
 
-bucket_name = settings.MINIO_BUCKET_NAME
 
-
+# MinIO client configuration
 def create_minio_client() -> Minio:
-    """Create a new MinIO client instance"""
+    """Create a MinIO client instance"""
     return Minio(
         settings.MINIO_ENDPOINT,
         access_key=settings.MINIO_ROOT_USER,
@@ -21,12 +22,16 @@ def create_minio_client() -> Minio:
     )
 
 
+# Bucket name
+bucket_name = settings.MINIO_BUCKET_NAME
+
+
 async def ensure_bucket_exists() -> None:
     """Create bucket if it doesn't exist (call once at startup)"""
     client = create_minio_client()
     try:
-        bucket_exists = await client.bucket_exists(bucket_name)
-        if not bucket_exists:
+        exists = await client.bucket_exists(bucket_name)
+        if not exists:
             await client.make_bucket(bucket_name, location=settings.MINIO_REGION)
             logger.info(f"Created MinIO bucket: {bucket_name}")
         else:
@@ -49,19 +54,18 @@ async def check_minio_health() -> bool:
         return False
 
 
+# Dependency for FastAPI (similar to get_async_session pattern)
 async def get_minio_client() -> AsyncGenerator[Minio, None]:
     """
-    Async dependency injection for MinIO client.
+    Dependency for providing MinIO client to routes.
 
-    Usage in FastAPI routes:
-        async def my_endpoint(minio: MinioClientDep) -> dict:
-            # Use minio client with await
-            await minio.put_object(...)
+    Yields a MinIO client instance per request.
+    Similar to database session pattern.
     """
     client = create_minio_client()
     try:
         yield client
     finally:
-
+        # Cleanup if needed (miniopy-async handles connection cleanup)
         pass
 

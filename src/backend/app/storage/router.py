@@ -1,39 +1,35 @@
-from datetime import timedelta
-from io import BytesIO
+from fastapi import APIRouter, HTTPException, Response, UploadFile, status
 
-from fastapi import APIRouter, HTTPException, UploadFile, status
+from app.storage.dependencies import StorageServiceDep
 
-from app.storage.dependencies import MinioClientDep
-
-router = APIRouter(prefix="/storage", tags=["storage"])
+example_router = APIRouter(prefix="/storage", tags=["storage"])
 
 
-@router.post("/upload-example")
-async def upload_file_example(
+@example_router.post("/upload")
+async def upload_file(
     file: UploadFile,
-    minio: MinioClientDep,
+    storage: StorageServiceDep,
+    path_prefix: str = "uploads",
 ) -> dict:
     """
-    Example endpoint showing how to use MinioClientDep.
+    Upload a file to storage.
 
-    Usage in your routes:
-        from app.storage.dependencies import MinioClientDep
+    Args:
+        file: File to upload
+        path_prefix: Folder prefix (default: "uploads")
 
-        async def my_endpoint(minio: MinioClientDep) -> dict:
-            # Use minio client with await
-            await minio.put_object(bucket, path, data, length, content_type)
+    Returns:
+        dict with object_path and size
     """
     try:
         # Read file content
         content = await file.read()
 
-        # Upload to MinIO using the injected client (now async!)
-        object_path = f"examples/{file.filename}"
-        await minio.put_object(
-            bucket_name="picaspot-storage",
-            object_name=object_path,
-            data=BytesIO(content),
-            length=len(content),
+        # Upload to MinIO
+        object_path = f"{path_prefix}/{file.filename}"
+        await storage.put_object(
+            object_path=object_path,
+            file_data=content,
             content_type=file.content_type or "application/octet-stream",
         )
 
@@ -49,49 +45,59 @@ async def upload_file_example(
         )
 
 
-@router.get("/download-url-example/{object_path:path}")
-async def get_download_url_example(
+@example_router.get("/download/{object_path:path}")
+async def download_file(
     object_path: str,
-    minio: MinioClientDep,
-) -> dict:
+    storage: StorageServiceDep,
+) -> Response:
     """
-    Example endpoint showing how to generate presigned download URLs.
+    Download a file from storage as bytes.
 
-    This is useful for giving users temporary access to files.
+    Args:
+        object_path: Path to file in storage
+
+    Returns:
+        File content as bytes with appropriate content-type header
     """
     try:
-        # Generate presigned URL (valid for 1 hour) - now async!
-        url = await minio.presigned_get_object(
-            bucket_name="picaspot-storage",
-            object_name=object_path,
-            expires=timedelta(hours=1),
-        )
+        # Get file bytes
+        file_data = await storage.get_object(object_path)
 
-        return {
-            "url": url,
-            "expires_in_seconds": 3600,
-            "object_path": object_path,
-        }
+        # Get file info to determine content type
+        file_info = await storage.get_object_info(object_path)
+
+        # Return file as response with appropriate headers
+        return Response(
+            content=file_data,
+            media_type=file_info.get("content_type", "application/octet-stream"),
+            headers={
+                "Content-Disposition": f'inline; filename="{object_path.split("/")[-1]}"',
+                "Cache-Control": "public, max-age=3600",
+            },
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File not found or error generating URL: {str(e)}",
+            detail=f"File not found: {str(e)}",
         )
 
 
-@router.delete("/delete-example/{object_path:path}")
-async def delete_file_example(
+@example_router.delete("/delete/{object_path:path}")
+async def delete_file(
     object_path: str,
-    minio: MinioClientDep,
+    storage: StorageServiceDep,
 ) -> dict:
     """
-    Example endpoint showing how to delete files from MinIO.
+    Delete a file from storage.
+
+    Args:
+        object_path: Path to file in storage
+
+    Returns:
+        Success message
     """
     try:
-        await minio.remove_object(
-            bucket_name="picaspot-storage",
-            object_name=object_path,
-        )
+        await storage.remove_object(object_path)
 
         return {
             "message": "File deleted successfully",
@@ -102,4 +108,117 @@ async def delete_file_example(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Delete failed: {str(e)}",
         )
+
+
+@example_router.get("/list")
+async def list_objects(
+    storage: StorageServiceDep,
+    prefix: str = "",
+    recursive: bool = True,
+) -> dict:
+    """
+    List objects in storage.
+
+    Args:
+        prefix: Filter objects by prefix (e.g., "users/123/")
+        recursive: List recursively or just immediate children
+
+    Returns:
+        List of objects with metadata
+    """
+    try:
+        objects = await storage.list_objects(prefix=prefix, recursive=recursive)
+
+        return {
+            "objects": objects,
+            "count": len(objects),
+            "prefix": prefix,
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"List failed: {str(e)}",
+        )
+
+
+@example_router.get("/folders")
+async def list_folders(
+    storage: StorageServiceDep,
+    prefix: str = "",
+) -> dict:
+    """
+    List folders in storage.
+
+    Args:
+        prefix: Filter folders by prefix
+
+    Returns:
+        List of folder paths
+    """
+    try:
+        folders = await storage.list_folders(prefix=prefix)
+
+        return {
+            "folders": folders,
+            "count": len(folders),
+            "prefix": prefix,
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"List folders failed: {str(e)}",
+        )
+
+
+@example_router.get("/info/{object_path:path}")
+async def get_file_info(
+    object_path: str,
+    storage: StorageServiceDep,
+) -> dict:
+    """
+    Get metadata about a file.
+
+    Args:
+        object_path: Path to file in storage
+
+    Returns:
+        File metadata (size, content_type, last_modified, etc.)
+    """
+    try:
+        info = await storage.get_object_info(object_path)
+
+        return {
+            "file_info": info,
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File not found: {str(e)}",
+        )
+
+
+@example_router.head("/exists/{object_path:path}")
+async def check_file_exists(
+    object_path: str,
+    storage: StorageServiceDep,
+) -> Response:
+    """
+    Check if a file exists.
+
+    Args:
+        object_path: Path to file in storage
+
+    Returns:
+        200 if exists, 404 if not
+    """
+    exists = await storage.object_exists(object_path)
+
+    if exists:
+        return Response(status_code=200)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found",
+        )
+
 

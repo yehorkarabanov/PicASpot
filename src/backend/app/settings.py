@@ -69,6 +69,7 @@ class Settings(BaseSettings):
 
     # MinIO
     MINIO_ENDPOINT: str = Field(default="minio1:9000")
+    MINIO_EXTERNAL_ENDPOINT: str = Field(default="localhost/dev/minio")
     MINIO_ROOT_USER: str
     MINIO_ROOT_PASSWORD: str
     MINIO_SECURE: bool = Field(default=False)
