@@ -1,3 +1,23 @@
+x-minio-common: &minio-common
+  image: quay.io/minio/minio
+#  image: quay.io/minio/minio:RELEASE.2025-09-06T17-38-46Z
+  command: server --console-address :${MINIO_CONSOLE_PORT} http://minio1/data{1...2}
+#  command: server --console-address ":9001" http://minio{1...4}/data{1...2}
+  expose:
+    - ${MINIO_PORT_INTERNAL}
+    - ${MINIO_CONSOLE_PORT_INTERNAL}
+  ports:
+    - ${MINIO_PORT}:${MINIO_PORT_INTERNAL}
+    - ${MINIO_CONSOLE_PORT}:${MINIO_CONSOLE_PORT_INTERNAL}
+  environment:
+    MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+    MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+  healthcheck:
+    test: [ "CMD", "mc", "ready", "local" ]
+    interval: 5s
+    timeout: 5s
+    retries: 5
+
 services:
   redis:
     image: redis:8.2.2-alpine
@@ -9,7 +29,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -32,7 +52,7 @@ services:
     env_file:
       - ./.env
     environment:
-      - SERVICE_NAME=backend
+      SERVICE_NAME: backend
     networks:
       - app-network
 
@@ -51,7 +71,7 @@ services:
     env_file:
       - ./.env
     environment:
-      - SERVICE_NAME=celery
+      SERVICE_NAME: celery
     networks:
       - app-network
 
@@ -69,7 +89,7 @@ services:
     env_file:
       - ./.env
     environment:
-      - SERVICE_NAME=flower
+      SERVICE_NAME: flower
     networks:
       - app-network
 
@@ -80,9 +100,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     networks:
       - app-network
     healthcheck:
@@ -96,15 +116,18 @@ services:
     depends_on:
       - backend
       - flower
+      - minio1
     volumes:
       - ./src/nginx/conf/nginx.conf:/etc/nginx/nginx.conf.template
       - ./src/nginx/entrypoint.sh:/etc/nginx/entrypoint.sh
       - ./src/nginx/certs/:/etc/nginx/certs/
     environment:
-      - BACKEND_PORT_INTERNAL=${BACKEND_PORT_INTERNAL}
-      - DOMAIN=${DOMAIN}
-      - MAILHOG_UI_PORT_INTERNAL=${MAILHOG_UI_PORT_INTERNAL}
-      - FLOWER_PORT_INTERNAL=${FLOWER_PORT_INTERNAL}
+      BACKEND_PORT_INTERNAL: ${BACKEND_PORT_INTERNAL}
+      DOMAIN: ${DOMAIN}
+      MAILHOG_UI_PORT_INTERNAL: ${MAILHOG_UI_PORT_INTERNAL}
+      FLOWER_PORT_INTERNAL: ${FLOWER_PORT_INTERNAL}
+      MINIO_PORT_INTERNAL: ${MINIO_PORT_INTERNAL}
+      MINIO_CONSOLE_PORT_INTERNAL: ${MINIO_CONSOLE_PORT_INTERNAL}
     entrypoint: [ "/bin/sh", "/etc/nginx/entrypoint.sh" ]
     ports:
       - "${HTTP_PORT}:80"
@@ -128,21 +151,57 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT_INTERNAL=${POSTGRES_PORT_INTERNAL}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - BACKUP_DIR=/backup
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT_INTERNAL: ${POSTGRES_PORT_INTERNAL}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      BACKUP_DIR: /backup
     volumes:
       - ./src/backup:/backup
     entrypoint: [ "sh", "-c", "chmod +x /backup/backup.sh 2>/dev/null || true; tail -f /dev/null" ]
     networks:
       - app-network
 
+  minio1:
+    <<: *minio-common
+    hostname: minio1
+    volumes:
+      - minio-data1-1:/data1
+      - minio-data1-2:/data2
+    networks:
+      - app-network
+#  minio:
+#    image: quay.io/minio/minio
+#    container_name: minio
+#    hostname: minio
+#    expose:
+#      - ${MINIO_PORT_INTERNAL}
+#      - ${MINIO_CONSOLE_PORT_INTERNAL}
+#    ports:
+#      - ${MINIO_PORT}:${MINIO_PORT_INTERNAL}
+#      - ${MINIO_CONSOLE_PORT}:${MINIO_CONSOLE_PORT_INTERNAL}
+#    volumes:
+#      - minio-data:/data
+#    environment:
+#      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+#      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+#      - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}
+#      - MINIO_SERVER_URL=${MINIO_SERVER_URL}
+#    command: server /data --console-address ":${MINIO_CONSOLE_PORT_INTERNAL}"
+#    networks:
+#      - app-network
+#    healthcheck:
+#      test: ["CMD", "mc", "ready", "local"]
+#      interval: 5s
+#      timeout: 5s
+#      retries: 5
+
 volumes:
   postgres_data:
   redis-data:
+  minio-data1-1:
+  minio-data1-2:
 
 networks:
   app-network:
