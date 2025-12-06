@@ -15,6 +15,18 @@ x-minio-common: &minio-common
     timeout: 5s
     retries: 5
 
+x-backend-common: &backend-common
+  build:
+    context: ./src/backend
+    dockerfile: Dockerfile
+  volumes:
+    - ./src/backend/:/code
+    - /code/.venv
+  env_file:
+    - ./.env
+  networks:
+    - app-network
+
 services:
   redis:
     image: redis:8.2.2-alpine
@@ -32,6 +44,7 @@ services:
       retries: 3
 
   backend:
+    <<: *backend-common
     depends_on:
       postgres:
         condition: service_healthy
@@ -40,39 +53,23 @@ services:
     expose:
       - ${BACKEND_PORT_INTERNAL}
     build:
-      context: ./src/backend
-      dockerfile: Dockerfile
       target: backend
-    volumes:
-      - ./src/backend/:/code
-      - /code/.venv
-    env_file:
-      - ./.env
     environment:
       SERVICE_NAME: backend
-    networks:
-      - app-network
 
   celery_worker:
+    <<: *backend-common
     depends_on:
       - backend
       - redis
     container_name: celery_worker
     build:
-      context: ./src/backend
-      dockerfile: Dockerfile
       target: worker
-    volumes:
-      - ./src/backend/:/code
-      - /code/.venv
-    env_file:
-      - ./.env
     environment:
       SERVICE_NAME: celery
-    networks:
-      - app-network
 
   flower:
+    <<: *backend-common
     container_name: flower
     expose:
       - ${FLOWER_PORT_INTERNAL}
@@ -80,15 +77,9 @@ services:
       - celery_worker
       - redis
     build:
-      context: ./src/backend
-      dockerfile: Dockerfile
       target: flower
-    env_file:
-      - ./.env
     environment:
       SERVICE_NAME: flower
-    networks:
-      - app-network
 
   postgres:
     image: postgis/postgis:18-3.6-alpine
