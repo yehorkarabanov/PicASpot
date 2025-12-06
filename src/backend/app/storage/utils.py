@@ -1,5 +1,3 @@
-"""Utility functions for storage operations"""
-
 import uuid
 from pathlib import Path
 
@@ -9,7 +7,7 @@ def generate_uuid_filename(original_filename: str) -> tuple[str, str]:
     Generate a UUID-based filename while preserving the file extension.
 
     Args:
-        original_filename: Original filename (e.g., "Снимок экрана.png")
+        original_filename: Original filename (e.g., "Abracadabra with unknown symbols.png")
 
     Returns:
         tuple: (uuid_filename, original_filename)
@@ -17,8 +15,8 @@ def generate_uuid_filename(original_filename: str) -> tuple[str, str]:
         - original_filename: Original filename for metadata
 
     Examples:
-        >>> generate_uuid_filename("Снимок экрана 2025.png")
-        ('550e8400-e29b-41d4-a716-446655440000.png', 'Снимок экрана 2025.png')
+        >>> generate_uuid_filename("Abracadabra with unknown symbols 2025.png")
+        ('550e8400-e29b-41d4-a716-446655440000.png', 'Abracadabra with unknown symbols 2025.png')
     """
     # Get file extension (lowercase)
     ext = Path(original_filename).suffix.lower()

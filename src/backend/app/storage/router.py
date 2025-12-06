@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Response, UploadFile, status
 
 from app.storage.dependencies import StorageServiceDep
+from app.storage.service import StorageError
 
 router = APIRouter(prefix="/storage", tags=["storage"])
 
@@ -26,13 +27,11 @@ async def upload_file(
         path_prefix: Folder prefix (default: "uploads")
 
     Returns:
-        dict with object_path, original_filename, and size
+        Upload result with object_path, original_filename, and size
     """
     try:
-        # Read file content
         content = await file.read()
 
-        # Upload using StorageService (handles UUID generation internally)
         result = await storage.upload_file(
             file_data=content,
             original_filename=file.filename,
@@ -44,11 +43,11 @@ async def upload_file(
             "message": "File uploaded successfully",
             **result,
         }
-    except Exception as e:
+    except StorageError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Upload failed: {str(e)}",
-        )
+            detail=str(e),
+        ) from e
 
 
 @router.get("/download/{object_path:path}")
@@ -65,22 +64,17 @@ async def download_file(
         object_path: Path to file in storage (UUID-based)
 
     Returns:
-        File content as bytes with appropriate content-type header
+        File content as bytes with appropriate headers
     """
     try:
-        # Get file bytes
         file_data = await storage.get_object(object_path)
-
-        # Get file info to determine content type and original filename
         file_info = await storage.get_object_info(object_path)
 
-        # Get original filename from metadata, fallback to object path filename
+        # Get original filename from metadata, fallback to UUID filename
         original_filename = file_info.get("metadata", {}).get("original_filename")
         if not original_filename:
-            # Fallback to UUID filename if metadata not available
             original_filename = object_path.split("/")[-1]
 
-        # Return file as response with appropriate headers
         return Response(
             content=file_data,
             media_type=file_info.get("content_type", "application/octet-stream"),
@@ -89,11 +83,11 @@ async def download_file(
                 "Cache-Control": "public, max-age=3600",
             },
         )
-    except Exception as e:
+    except StorageError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File not found: {str(e)}",
-        )
+            detail=str(e),
+        ) from e
 
 
 @router.delete("/delete/{object_path:path}")
@@ -108,20 +102,19 @@ async def delete_file(
         object_path: Path to file in storage (UUID-based)
 
     Returns:
-        Success message
+        Success message with deleted path
     """
     try:
         await storage.remove_object(object_path)
-
         return {
             "message": "File deleted successfully",
             "object_path": object_path,
         }
-    except Exception as e:
+    except StorageError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Delete failed: {str(e)}",
-        )
+            detail=str(e),
+        ) from e
 
 
 @router.get("/list")
@@ -138,21 +131,20 @@ async def list_objects(
         recursive: List recursively or just immediate children
 
     Returns:
-        List of objects with metadata including original filenames
+        List of objects with metadata
     """
     try:
         objects = await storage.list_objects(prefix=prefix, recursive=recursive)
-
         return {
             "objects": objects,
             "count": len(objects),
             "prefix": prefix,
         }
-    except Exception as e:
+    except StorageError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"List failed: {str(e)}",
-        )
+            detail=str(e),
+        ) from e
 
 
 @router.get("/folders")
@@ -171,17 +163,16 @@ async def list_folders(
     """
     try:
         folders = await storage.list_folders(prefix=prefix)
-
         return {
             "folders": folders,
             "count": len(folders),
             "prefix": prefix,
         }
-    except Exception as e:
+    except StorageError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"List folders failed: {str(e)}",
-        )
+            detail=str(e),
+        ) from e
 
 
 @router.get("/info/{object_path:path}")
@@ -196,19 +187,16 @@ async def get_file_info(
         object_path: Path to file in storage (UUID-based)
 
     Returns:
-        File metadata (size, content_type, last_modified, original_filename, etc.)
+        File metadata including size, content_type, and original_filename
     """
     try:
         info = await storage.get_object_info(object_path)
-
-        return {
-            "file_info": info,
-        }
-    except Exception as e:
+        return {"file_info": info}
+    except StorageError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File not found: {str(e)}",
-        )
+            detail=str(e),
+        ) from e
 
 
 @router.head("/exists/{object_path:path}")

@@ -1,5 +1,3 @@
-"""Manager for MinIO client creation and initialization"""
-
 import logging
 from collections.abc import AsyncGenerator
 
@@ -10,10 +8,17 @@ from app.settings import settings
 
 logger = logging.getLogger(__name__)
 
+# Bucket configuration
+bucket_name = settings.MINIO_BUCKET_NAME
 
-# MinIO client configuration
+
 def create_minio_client() -> Minio:
-    """Create a MinIO client instance"""
+    """
+    Create a MinIO client instance with configured credentials.
+
+    Returns:
+        Configured MinIO client
+    """
     return Minio(
         settings.MINIO_ENDPOINT,
         access_key=settings.MINIO_ROOT_USER,
@@ -22,12 +27,16 @@ def create_minio_client() -> Minio:
     )
 
 
-# Bucket name
-bucket_name = settings.MINIO_BUCKET_NAME
-
 
 async def ensure_bucket_exists() -> None:
-    """Create bucket if it doesn't exist (call once at startup)"""
+    """
+    Create MinIO bucket if it doesn't exist.
+
+    Should be called once at application startup.
+
+    Raises:
+        S3Error: If bucket creation fails
+    """
     client = create_minio_client()
     try:
         exists = await client.bucket_exists(bucket_name)
@@ -45,7 +54,12 @@ async def ensure_bucket_exists() -> None:
 
 
 async def check_minio_health() -> bool:
-    """Check if MinIO is accessible"""
+    """
+    Check if MinIO is accessible and healthy.
+
+    Returns:
+        True if MinIO is accessible, False otherwise
+    """
     client = create_minio_client()
     try:
         return await client.bucket_exists(bucket_name)
@@ -54,18 +68,20 @@ async def check_minio_health() -> bool:
         return False
 
 
-# Dependency for FastAPI (similar to get_async_session pattern)
 async def get_minio_client() -> AsyncGenerator[Minio, None]:
     """
-    Dependency for providing MinIO client to routes.
+    Provide MinIO client as FastAPI dependency.
 
-    Yields a MinIO client instance per request.
-    Similar to database session pattern.
+    Yields MinIO client instance per request.
+    Follows the same pattern as database session dependency.
+
+    Yields:
+        MinIO client instance
     """
     client = create_minio_client()
     try:
         yield client
     finally:
-        # Cleanup if needed (miniopy-async handles connection cleanup)
+        # Cleanup handled by miniopy-async
         pass
 

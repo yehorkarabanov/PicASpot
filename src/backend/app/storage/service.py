@@ -2,12 +2,18 @@ import logging
 import uuid
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote, unquote
 
 from miniopy_async import Minio
 from miniopy_async.error import S3Error
 
+from .exceptions import StorageError
+
 logger = logging.getLogger(__name__)
+
+
+
 
 
 class StorageService:
@@ -91,7 +97,7 @@ class StorageService:
         object_path: str,
         file_data: bytes,
         content_type: str = "application/octet-stream",
-        metadata: dict | None = None,
+        metadata: dict[str, str] | None = None,
     ) -> str:
         """
         Upload a file to MinIO.
@@ -103,10 +109,10 @@ class StorageService:
             metadata: Additional metadata to store with the file
 
         Returns:
-            str: Object path in bucket
+            Object path in bucket
 
         Raises:
-            Exception: If upload fails
+            StorageError: If upload fails
         """
         try:
             file_stream = BytesIO(file_data)
@@ -118,11 +124,14 @@ class StorageService:
                 content_type=content_type,
                 metadata=metadata or {},
             )
-            logger.info(f"Uploaded file: {object_path} ({len(file_data)} bytes)")
+            logger.info(
+                f"Uploaded file: {object_path}",
+                extra={"size": len(file_data), "content_type": content_type},
+            )
             return object_path
         except S3Error as e:
             logger.error(f"Upload failed for {object_path}: {e}")
-            raise Exception(f"Failed to upload file: {e}")
+            raise StorageError(f"Failed to upload file: {e}") from e
 
     async def get_object(self, object_path: str) -> bytes:
         """
@@ -132,10 +141,10 @@ class StorageService:
             object_path: Path in bucket
 
         Returns:
-            bytes: File content as bytes
+            File content as bytes
 
         Raises:
-            Exception: If download fails or file not found
+            StorageError: If download fails or file not found
         """
         try:
             response = await self.client.get_object(
@@ -144,11 +153,15 @@ class StorageService:
             )
             data = await response.read()
             response.close()
-            logger.info(f"Downloaded file: {object_path} ({len(data)} bytes)")
+
+            logger.info(
+                f"Downloaded file: {object_path}",
+                extra={"size": len(data)},
+            )
             return data
         except S3Error as e:
             logger.error(f"Download failed for {object_path}: {e}")
-            raise Exception(f"Failed to download file: {e}")
+            raise StorageError(f"Failed to download file: {e}") from e
 
     async def remove_object(self, object_path: str) -> None:
         """
@@ -158,7 +171,7 @@ class StorageService:
             object_path: Path in bucket
 
         Raises:
-            Exception: If deletion fails
+            StorageError: If deletion fails
         """
         try:
             await self.client.remove_object(
@@ -168,11 +181,11 @@ class StorageService:
             logger.info(f"Deleted file: {object_path}")
         except S3Error as e:
             logger.error(f"Delete failed for {object_path}: {e}")
-            raise Exception(f"Failed to delete file: {e}")
+            raise StorageError(f"Failed to delete file: {e}") from e
 
     async def list_objects(
         self, prefix: str = "", recursive: bool = True
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """
         List objects in bucket with optional prefix filter.
 
@@ -181,7 +194,10 @@ class StorageService:
             recursive: If True, list all objects recursively
 
         Returns:
-            list[dict]: List of objects with name, size, and modified time
+            List of objects with metadata (name, size, last_modified, etag)
+
+        Raises:
+            StorageError: If listing fails
         """
         try:
             objects = self.client.list_objects(
@@ -195,15 +211,20 @@ class StorageService:
                 result.append({
                     "name": obj.object_name,
                     "size": obj.size,
-                    "last_modified": obj.last_modified.isoformat() if obj.last_modified else None,
+                    "last_modified": (
+                        obj.last_modified.isoformat() if obj.last_modified else None
+                    ),
                     "etag": obj.etag,
                 })
 
-            logger.info(f"Listed {len(result)} objects with prefix '{prefix}'")
+            logger.info(
+                f"Listed {len(result)} objects",
+                extra={"prefix": prefix, "recursive": recursive},
+            )
             return result
         except S3Error as e:
             logger.error(f"List objects failed: {e}")
-            raise Exception(f"Failed to list objects: {e}")
+            raise StorageError(f"Failed to list objects: {e}") from e
 
     async def list_folders(self, prefix: str = "") -> list[str]:
         """
@@ -213,7 +234,10 @@ class StorageService:
             prefix: Prefix to filter folders
 
         Returns:
-            list[str]: List of folder paths
+            List of folder paths
+
+        Raises:
+            StorageError: If listing fails
         """
         try:
             # List objects non-recursively to get folders
@@ -229,11 +253,14 @@ class StorageService:
                 if obj.is_dir:
                     folders.append(obj.object_name)
 
-            logger.info(f"Listed {len(folders)} folders with prefix '{prefix}'")
+            logger.info(
+                f"Listed {len(folders)} folders",
+                extra={"prefix": prefix},
+            )
             return folders
         except S3Error as e:
             logger.error(f"List folders failed: {e}")
-            raise Exception(f"Failed to list folders: {e}")
+            raise StorageError(f"Failed to list folders: {e}") from e
 
     async def object_exists(self, object_path: str) -> bool:
         """
@@ -243,7 +270,7 @@ class StorageService:
             object_path: Path in bucket
 
         Returns:
-            bool: True if object exists, False otherwise
+            True if object exists, False otherwise
         """
         try:
             await self.client.stat_object(
@@ -254,7 +281,7 @@ class StorageService:
         except S3Error:
             return False
 
-    async def get_object_info(self, object_path: str) -> dict:
+    async def get_object_info(self, object_path: str) -> dict[str, Any]:
         """
         Get metadata about an object.
 
@@ -262,10 +289,16 @@ class StorageService:
             object_path: Path in bucket
 
         Returns:
-            dict: Object metadata (size, content_type, last_modified, etc.)
+            Object metadata including:
+            - name: Object path
+            - size: File size in bytes
+            - content_type: MIME type
+            - last_modified: ISO format timestamp
+            - etag: ETag identifier
+            - metadata: Custom metadata (including original_filename if available)
 
         Raises:
-            Exception: If object not found
+            StorageError: If object not found or stat operation fails
         """
         try:
             stat = await self.client.stat_object(
@@ -274,7 +307,7 @@ class StorageService:
             )
 
             # Decode original filename from metadata if present
-            metadata = stat.metadata or {}
+            metadata = dict(stat.metadata) if stat.metadata else {}
             if "original_filename" in metadata:
                 # URL-decode the filename (it was encoded to support non-ASCII)
                 metadata["original_filename"] = unquote(metadata["original_filename"])
@@ -283,11 +316,13 @@ class StorageService:
                 "name": object_path,
                 "size": stat.size,
                 "content_type": stat.content_type,
-                "last_modified": stat.last_modified.isoformat() if stat.last_modified else None,
+                "last_modified": (
+                    stat.last_modified.isoformat() if stat.last_modified else None
+                ),
                 "etag": stat.etag,
                 "metadata": metadata,
             }
         except S3Error as e:
             logger.error(f"Stat object failed for {object_path}: {e}")
-            raise Exception(f"Failed to get object info: {e}")
+            raise StorageError(f"Failed to get object info: {e}") from e
 
