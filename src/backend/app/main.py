@@ -22,6 +22,7 @@ from app.middleware import (
 )
 from app.router import router
 from app.settings import settings
+from app.storage import check_minio_health, ensure_bucket_exists
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -33,6 +34,8 @@ async def lifespan(_app: FastAPI):
     logger.info("Application startup initiated", extra={"debug_mode": settings.DEBUG})
     await init_redis()
     logger.info("Redis connection initialized")
+    await ensure_bucket_exists()
+    logger.info("MinIO bucket initialized")
     await generate_users()
     logger.info("Default users created/verified")
 
@@ -95,6 +98,7 @@ async def health_check():
     checks = {
         "redis": await check_redis_health(),
         "database": await check_database_health(),
+        "minio": await check_minio_health(),
     }
     all_healthy = all(checks.values())
     return JSONResponse(

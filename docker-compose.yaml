@@ -135,11 +135,6 @@ services:
       - ${MAILHOG_PORT}:${MAILHOG_PORT_INTERNAL}
     networks:
       - app-network
-    healthcheck:
-      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:${MAILHOG_UI_PORT_INTERNAL}/api/v1/messages" ]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
   backup:
     image: postgis/postgis:18-3.6
