@@ -52,5 +52,3 @@ def generate_storage_path(prefix: str, original_filename: str) -> tuple[str, dic
     }
 
     return storage_path, metadata
-
-

@@ -13,9 +13,6 @@ from .exceptions import StorageError
 logger = logging.getLogger(__name__)
 
 
-
-
-
 class StorageService:
     """Service for managing MinIO object storage operations"""
 
@@ -75,7 +72,7 @@ class StorageService:
 
         # Store original filename in metadata (URL-encoded for non-ASCII support)
         # MinIO metadata only supports US-ASCII, so we encode non-ASCII characters
-        encoded_filename = quote(original_filename, safe='')
+        encoded_filename = quote(original_filename, safe="")
         metadata = {"original_filename": encoded_filename}
 
         # Upload the file
@@ -208,14 +205,16 @@ class StorageService:
 
             result = []
             async for obj in objects:
-                result.append({
-                    "name": obj.object_name,
-                    "size": obj.size,
-                    "last_modified": (
-                        obj.last_modified.isoformat() if obj.last_modified else None
-                    ),
-                    "etag": obj.etag,
-                })
+                result.append(
+                    {
+                        "name": obj.object_name,
+                        "size": obj.size,
+                        "last_modified": (
+                            obj.last_modified.isoformat() if obj.last_modified else None
+                        ),
+                        "etag": obj.etag,
+                    }
+                )
 
             logger.info(
                 f"Listed {len(result)} objects",
@@ -325,4 +324,3 @@ class StorageService:
         except S3Error as e:
             logger.error(f"Stat object failed for {object_path}: {e}")
             raise StorageError(f"Failed to get object info: {e}") from e
-

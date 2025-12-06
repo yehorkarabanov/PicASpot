@@ -27,7 +27,6 @@ def create_minio_client() -> Minio:
     )
 
 
-
 async def ensure_bucket_exists() -> None:
     """
     Create MinIO bucket if it doesn't exist.
@@ -82,6 +81,5 @@ async def get_minio_client() -> AsyncGenerator[Minio, None]:
     try:
         yield client
     finally:
-        # Cleanup handled by miniopy-async
+        # Cleanup handled by miniopy-async :)
         pass
-

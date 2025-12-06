@@ -13,10 +13,6 @@ async def get_storage_service(
     """
     Create StorageService instance with MinIO client.
 
-    Follows the same pattern as database SessionDep:
-    - Manager provides the raw client (like AsyncSession)
-    - Dependency wraps it in a service class
-
     Args:
         client: MinIO client from dependency
 

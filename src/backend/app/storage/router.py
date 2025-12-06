@@ -222,6 +222,3 @@ async def check_file_exists(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="File not found",
         )
-
-
-
