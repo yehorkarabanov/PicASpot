@@ -51,10 +51,3 @@ CMD ["sh", "-c", "uv run fastapi dev --port ${BACKEND_PORT_INTERNAL} --host 0.0.
 FROM base AS worker
 
 CMD ["uv", "run", "celery", "--app", "app.celery.worker", "worker", "--loglevel=info", "--uid=nobody", "--gid=nogroup"]
-
-
-# Flower stage - for Celery monitoring UI (no migrations needed)
-FROM base AS flower
-
-CMD ["sh", "-c", "uv run celery --broker=redis://:${REDIS_PASSWORD}@redis:${REDIS_PORT_INTERNAL}/0 flower --port=${FLOWER_PORT_INTERNAL} --url-prefix=/dev/flower"]
-

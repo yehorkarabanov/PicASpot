@@ -74,18 +74,20 @@ services:
       SERVICE_NAME: celery
 
   flower:
-    <<: *backend-common
+    image: mher/flower:2.0.1
     container_name: flower
+    env_file:
+      - ./.env
+    command: celery --broker=redis://:${REDIS_PASSWORD}@redis:${REDIS_PORT_INTERNAL}/0 flower --port=${FLOWER_PORT_INTERNAL} --url-prefix=/dev/flower
     expose:
       - ${FLOWER_PORT_INTERNAL}
     depends_on:
       - celery_worker
       - redis
-    build:
-      <<: *backend-build
-      target: flower
-    environment:
-      SERVICE_NAME: flower
+
+    networks:
+      - app-network
+
 
   postgres:
     image: postgis/postgis:18-3.6-alpine
