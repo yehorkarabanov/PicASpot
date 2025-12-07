@@ -21,6 +21,7 @@ dependencies = [
     "redis>=7.1.0",
     "sqlalchemy>=2.0.44",
     "miniopy-async>=1.21.1",
+    "geomatchai",
 ]
 
 
@@ -100,3 +101,6 @@ exclude_lines = [
 
 [tool.coverage.html]
 directory = "htmlcov"
+
+[tool.uv.sources]
+geomatchai = { git = "https://github.com/LilConsul/GeoMatchAI.git" }
