@@ -17,6 +17,7 @@ dependencies = [
     "redis>=7.1.0",
     "sqlalchemy>=2.0.44",
     "miniopy-async>=1.21.1",
+    "aiokafka >= 0.12.0; sys_platform == 'linux'"
 ]
 
 
