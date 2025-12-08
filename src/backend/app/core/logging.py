@@ -219,11 +219,6 @@ def setup_logging(use_file_logging: bool = True) -> None:
     logging.getLogger("sqlalchemy.engine").setLevel("WARNING")
     logging.getLogger("sqlalchemy.pool").setLevel("WARNING")
 
-    # Celery - Async task processing
-    logging.getLogger("celery").setLevel("INFO")
-    logging.getLogger("celery.worker").setLevel("INFO")
-    logging.getLogger("celery.task").setLevel("INFO")
-
     # Redis
     logging.getLogger("redis").setLevel("WARNING")  # Redis can be noisy
 

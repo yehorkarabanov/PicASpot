@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     make \
     libc-dev \
     postgresql-client \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 ENV UV_COMPILE_BYTECODE=1 \

@@ -3,10 +3,6 @@ from zoneinfo import ZoneInfo
 
 from pydantic import EmailStr
 
-from app.celery.tasks.email_tasks.tasks import (
-    user_password_reset_mail,
-    user_verify_mail_event,
-)
 from app.core.exceptions import AuthenticationError, BadRequestError, NotFoundError
 from app.settings import settings
 from app.user.repository import UserRepository
@@ -108,7 +104,7 @@ class AuthService:
             user_id=str(user.id), token_type=TokenType.VERIFICATION, use_redis=True
         )
         link = f"{settings.VERIFY_EMAIL_URL}{verification_token}"
-        user_verify_mail_event.delay(email, link, user.username)
+        # user_verify_mail_event.delay(email, link, user.username)
 
     async def login(self, user_data: UserLogin) -> UserLoginResponse:
         """
@@ -212,11 +208,11 @@ class AuthService:
             user_id=str(user.id), token_type=TokenType.PASSWORD_RESET
         )
         link = f"{settings.EMAIL_RESET_PASSWORD_URL}/{reset_token}"
-        user_password_reset_mail.delay(
-            user.email,
-            link,
-            user.username,
-        )
+        # user_password_reset_mail.delay(
+        #     user.email,
+        #     link,
+        #     user.username,
+        # )
         logger.info("Password reset email sent to %s", email)
 
     async def reset_password(self, token: str, new_password: str) -> None:
