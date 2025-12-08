@@ -23,7 +23,7 @@ import sys
 from typing import NoReturn
 
 from .consumer import EmailConsumer
-from .logging_config import setup_logging
+from .core.logging_config import setup_logging
 from .settings import settings
 
 logger = logging.getLogger(__name__)

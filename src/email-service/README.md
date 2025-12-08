@@ -184,16 +184,29 @@ Email events sent to Kafka must follow this format:
 email-service/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py              # Main entry point
-│   ├── consumer.py          # Kafka consumer
-│   ├── email_manager.py     # Email sending logic
-│   ├── schemas.py           # Data models
-│   ├── settings.py          # Configuration
-│   ├── logging_config.py    # Logging setup
-│   └── templates/           # Email templates
+│   ├── api/                 # API entry points
+│   │   ├── __init__.py
+│   │   ├── main.py          # Main service orchestrator
+│   │   └── consumer.py      # Kafka consumer
+│   ├── core/                # Core configuration and logging
+│   │   ├── __init__.py
+│   │   ├── settings.py      # Configuration management
+│   │   └── logging_config.py # Logging setup
+│   ├── handlers/            # Business logic handlers
+│   │   ├── __init__.py
+│   │   ├── email_manager.py # Email sending logic
+│   │   └── templates/       # Email templates
+│   └── models/              # Data models and schemas
+│       ├── __init__.py
+│       └── schemas.py       # Pydantic models
+├── tests/                   # Test suite
+│   ├── __init__.py
+│   ├── test_email_manager.py # Unit tests
+│   └── test_consumer.py     # Integration tests
 ├── logs/                    # Log files
 ├── Dockerfile
 ├── pyproject.toml
+├── .env.example             # Environment variables template
 └── README.md
 ```
 
@@ -276,4 +289,3 @@ For issues or questions:
 2. Review this documentation
 3. Contact the development team
 4. Create an issue in the project repository
-

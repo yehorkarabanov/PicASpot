@@ -32,8 +32,5 @@ COPY . /code/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
-# Create logs directory
-RUN mkdir -p /code/logs
-
 # Run the email service
 CMD ["uv", "run", "python", "-m", "app.main"]

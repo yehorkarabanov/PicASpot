@@ -3,7 +3,6 @@
 import asyncio
 import json
 import logging
-import signal
 import sys
 from datetime import datetime
 from typing import Any
@@ -12,8 +11,8 @@ from aiokafka import AIOKafkaConsumer
 from aiokafka.errors import KafkaConnectionError, KafkaError
 from pydantic import ValidationError
 
-from .email_manager import EmailManager, metrics
-from .logging_config import setup_logging
+from .core.logging_config import setup_logging
+from .handlers.email_manager import EmailManager, metrics
 from .schemas import EmailEvent
 from .settings import settings
 

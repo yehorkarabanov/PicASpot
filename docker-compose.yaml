@@ -61,7 +61,6 @@ services:
       retries: 3
 
   backend:
-    image: picaspot-backend
     volumes:
       - ./src/backend/:/code
       - /code/.venv
@@ -240,7 +239,6 @@ services:
       - app-network
 
   email-service:
-    image: picaspot-email-service
     container_name: email-service
     build:
       context: ./src/email-service

@@ -5,10 +5,9 @@ import logging
 from datetime import datetime
 from typing import Any
 
+from app.core.settings import settings
+from app.models.schemas import EmailEvent, EmailType
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
-
-from .schemas import EmailEvent, EmailType
-from .settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -150,12 +149,12 @@ class EmailManager:
         }
 
         message = self._create_message(
-            recipient=event.recipient,
+            recipient=str(event.recipient),
             subject=f"{settings.PROJECT_NAME} | Verify Your Email",
             body=body,
         )
 
-        await self._send_with_retry(message, "verify.html", event.recipient)
+        await self._send_with_retry(message, "verify.html", str(event.recipient))
 
     async def send_password_reset_email(self, event: EmailEvent) -> None:
         """
@@ -174,12 +173,12 @@ class EmailManager:
         }
 
         message = self._create_message(
-            recipient=event.recipient,
+            recipient=str(event.recipient),
             subject=f"{settings.PROJECT_NAME} | Reset Your Password",
             body=body,
         )
 
-        await self._send_with_retry(message, "password_reset.html", event.recipient)
+        await self._send_with_retry(message, "password_reset.html", str(event.recipient))
 
     async def process_email_event(self, event: EmailEvent) -> None:
         """
