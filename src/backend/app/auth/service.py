@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from pydantic import EmailStr
 
 from app.core.exceptions import AuthenticationError, BadRequestError, NotFoundError
+from app.kafka.producers.email_publisher import EmailPublisher
 from app.settings import settings
 from app.user.repository import UserRepository
 
@@ -30,7 +31,10 @@ class AuthService:
     """
 
     def __init__(
-        self, user_repository: UserRepository, timezone: ZoneInfo | None = None
+        self,
+        user_repository: UserRepository,
+        timezone: ZoneInfo | None = None,
+        email_publisher: EmailPublisher | None = None,
     ):
         """
         Initialize the AuthService.
@@ -41,6 +45,7 @@ class AuthService:
         """
         self.user_repository = user_repository
         self.timezone = timezone or ZoneInfo("UTC")
+        self.email_publisher = EmailPublisher()
 
     # TODO: add opt flow
     async def register(self, user_data: UserCreate) -> None:
@@ -72,15 +77,20 @@ class AuthService:
             "hashed_password": hashed_password,
             "is_verified": True,  # TODO: Set to False when OTP will be done
         }
-        user = await self.user_repository.create(user_dict)  # noqa: F841
+        user = await self.user_repository.create(user_dict)
 
         logger.info("User registered successfully: %s", user.email)
 
+        # TODO: Uncomment when OTP flow is ready
         # verification_token = await create_verification_token(
         #     user_id=str(user.id), token_type=TokenType.VERIFICATION, use_redis=False
         # )
         # link = f"{settings.VERIFY_EMAIL_URL}{verification_token}"
-        # user_verify_mail_event.delay(user_data.email, link, user.username)
+        # await self.email_publisher.publish_verification_email(
+        #     email=user.email,
+        #     username=user.username,
+        #     verification_link=link,
+        # )
 
     # TODO: redo to send otp
     async def resend_verification_token(self, email: EmailStr) -> None:
@@ -104,7 +114,12 @@ class AuthService:
             user_id=str(user.id), token_type=TokenType.VERIFICATION, use_redis=True
         )
         link = f"{settings.VERIFY_EMAIL_URL}{verification_token}"
-        # user_verify_mail_event.delay(email, link, user.username)
+
+        await self.email_publisher.publish_verification_email(
+            email=email,
+            username=user.username,
+            verification_link=link,
+        )
 
     async def login(self, user_data: UserLogin) -> UserLoginResponse:
         """
@@ -208,11 +223,12 @@ class AuthService:
             user_id=str(user.id), token_type=TokenType.PASSWORD_RESET
         )
         link = f"{settings.EMAIL_RESET_PASSWORD_URL}/{reset_token}"
-        # user_password_reset_mail.delay(
-        #     user.email,
-        #     link,
-        #     user.username,
-        # )
+
+        await self.email_publisher.publish_password_reset_email(
+            email=user.email,
+            username=user.username,
+            reset_link=link,
+        )
         logger.info("Password reset email sent to %s", email)
 
     async def reset_password(self, token: str, new_password: str) -> None:

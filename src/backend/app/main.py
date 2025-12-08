@@ -15,6 +15,7 @@ from app.core.utils import generate_users
 from app.database import dispose_engine
 from app.database.manager import check_database_health
 from app.database.redis import check_redis_health, close_redis, init_redis
+from app.kafka import kafka_manager
 from app.middleware import (
     RateLimiterMiddleware,
     RequestLoggingMiddleware,
@@ -30,18 +31,22 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    # Startup: Initialize Redis and create default users
+    # Startup: Initialize Redis, Kafka, MinIO and create default users
     logger.info("Application startup initiated", extra={"debug_mode": settings.DEBUG})
     await init_redis()
     logger.info("Redis connection initialized")
+    await kafka_manager.start()
+    logger.info("Kafka producer initialized")
     await ensure_bucket_exists()
     logger.info("MinIO bucket initialized")
     await generate_users()
     logger.info("Default users created/verified")
 
     yield
-    # Shutdown: Dispose engine and close Redis
+    # Shutdown: Dispose engine, close Redis and Kafka
     logger.info("Application shutdown initiated")
+    await kafka_manager.stop()
+    logger.info("Kafka producer stopped")
     await dispose_engine()
     logger.info("Database engine disposed")
     await close_redis()
@@ -99,6 +104,7 @@ async def health_check():
         "redis": await check_redis_health(),
         "database": await check_database_health(),
         "minio": await check_minio_health(),
+        "kafka": kafka_manager.is_connected,
     }
     all_healthy = all(checks.values())
     return JSONResponse(
