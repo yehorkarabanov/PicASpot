@@ -30,24 +30,23 @@ x-backend-common: &backend-common
   networks:
     - app-network
 
-# 1. Extracted common environment variables to a separate anchor for merging
 x-kafka-env: &kafka-env
   # Cluster ID for KRaft mode
   CLUSTER_ID: abcdefghijklmnopqrstuv
-  # KRaft settings (using dot notation)
-  KAFKA_process.roles: controller,broker
-  KAFKA_controller.quorum.voters: 0@kafka-0:9093,1@kafka-1:9093,2@kafka-2:9093
+  # KRaft settings
+  KAFKA_PROCESS_ROLES: 'broker,controller'
+  KAFKA_CONTROLLER_QUORUM_VOTERS: '0@kafka-0:9093,1@kafka-1:9093,2@kafka-2:9093'
   # Listeners
-  KAFKA_listeners: PLAINTEXT://:9092,CONTROLLER://:9093
-  KAFKA_listener.security.protocol.map: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
-  KAFKA_controller.listener.names: CONTROLLER
-  KAFKA_inter.broker.listener.name: PLAINTEXT
+  KAFKA_LISTENERS: 'PLAINTEXT://:9092,CONTROLLER://:9093'
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT'
+  KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+  KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
   # Clustering
-  KAFKA_offsets.topic.replication.factor: 3
-  KAFKA_transaction.state.log.replication.factor: 3
-  KAFKA_transaction.state.log.min.isr: 2
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
   # Log directories
-  KAFKA_log.dirs: /var/lib/kafka/data
+  KAFKA_LOG_DIRS: '/var/lib/kafka/data'
 
 x-kafka-common: &kafka-common
   image: apache/kafka:4.1.1
@@ -220,32 +219,33 @@ services:
   kafka-0:
     <<: *kafka-common
     hostname: kafka-0
+    container_name: kafka-0
     environment:
-      # 2. Merge common env vars here
       <<: *kafka-env
-      KAFKA_node.id: 0
-      # 3. Use specific hostname for advertised listener
-      KAFKA_advertised.listeners: PLAINTEXT://kafka-0:9092
+      KAFKA_NODE_ID: 0
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-0:9092'
     volumes:
       - kafka_0_data:/var/lib/kafka/data
 
   kafka-1:
     <<: *kafka-common
     hostname: kafka-1
+    container_name: kafka-1
     environment:
       <<: *kafka-env
-      KAFKA_node.id: 1
-      KAFKA_advertised.listeners: PLAINTEXT://kafka-1:9092
+      KAFKA_NODE_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-1:9092'
     volumes:
       - kafka_1_data:/var/lib/kafka/data
 
   kafka-2:
     <<: *kafka-common
     hostname: kafka-2
+    container_name: kafka-2
     environment:
       <<: *kafka-env
-      KAFKA_node.id: 2
-      KAFKA_advertised.listeners: PLAINTEXT://kafka-2:9092
+      KAFKA_NODE_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-2:9092'
     volumes:
       - kafka_2_data:/var/lib/kafka/data
 
