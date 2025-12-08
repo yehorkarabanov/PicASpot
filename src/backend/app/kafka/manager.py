@@ -71,15 +71,10 @@ class KafkaManager:
                         value_serializer=lambda v: json.dumps(v).encode("utf-8"),
                         # Performance and reliability settings
                         compression_type=kafka_config.compression_type,
-                        acks=kafka_config.acks,
-                        retries=kafka_config.retries,
-                        max_in_flight_requests_per_connection=kafka_config.max_in_flight_requests,
                         # Batching for better throughput
                         linger_ms=kafka_config.linger_ms,
-                        batch_size=kafka_config.batch_size,
                         # Timeout settings
                         request_timeout_ms=kafka_config.request_timeout_ms,
-                        api_version="auto",
                     )
 
                     await self.producer.start()

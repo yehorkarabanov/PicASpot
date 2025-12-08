@@ -31,13 +31,10 @@ class KafkaConfig(BaseSettings):
         default=["kafka-0:9092", "kafka-1:9092", "kafka-2:9092"]
     )
 
-    # Producer settings
+    # Producer settings (only aiokafka-supported parameters)
+    # Note: aiokafka has different parameters than kafka-python
     compression_type: str = Field(default="gzip")
-    acks: str = Field(default="all")  # Wait for all replicas
-    retries: int = Field(default=3)
-    max_in_flight_requests: int = Field(default=5)
     linger_ms: int = Field(default=10)  # Batch messages for 10ms
-    batch_size: int = Field(default=16384)  # 16KB
     request_timeout_ms: int = Field(default=30000)
 
     # Connection retry settings
