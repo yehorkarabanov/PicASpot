@@ -72,7 +72,10 @@ class Settings(BaseSettings):
     KAFKA_BOOTSTRAP_SERVERS: list[str] = Field(
         default=["kafka-0:9092", "kafka-1:9092", "kafka-2:9092"]
     )
-    KAFKA_EMAIL_TOPIC: str = Field(default="email-events")
+    KAFKA_VERIFICATION_EMAIL_TOPIC: str = Field(default="verification-email-requests")
+    KAFKA_RESET_PASSWORD_EMAIL_TOPIC: str = Field(
+        default="password-reset-email-requests"
+    )
 
     @property
     def KAFKA_BOOTSTRAP_SERVERS_STRING(self) -> str:  # noqa: N802
@@ -95,9 +98,7 @@ class Settings(BaseSettings):
     MAX_UNLOCK_PHOTO_SIZE_MB: int = Field(default=15)
 
     # Allowed file types
-    ALLOWED_IMAGE_EXTENSIONS: list[str] = Field(
-        default=["jpg", "jpeg", "png", "webp"]
-    )
+    ALLOWED_IMAGE_EXTENSIONS: list[str] = Field(default=["jpg", "jpeg", "png", "webp"])
     ALLOWED_MIME_TYPES: list[str] = Field(
         default=["image/jpeg", "image/png", "image/webp"]
     )

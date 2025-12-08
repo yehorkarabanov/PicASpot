@@ -4,7 +4,6 @@ from zoneinfo import ZoneInfo
 from pydantic import EmailStr
 
 from app.core.exceptions import AuthenticationError, BadRequestError, NotFoundError
-from app.kafka.producers.email_publisher import EmailPublisher
 from app.settings import settings
 from app.user.repository import UserRepository
 
@@ -17,6 +16,11 @@ from .security import (
     delete_verification_token,
     get_password_hash,
     verify_password,
+)
+from app.kafka import (
+    kafka_producer,
+    VerificationEmailMessage,
+    ResetPasswordEmailMessage,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,7 +38,6 @@ class AuthService:
         self,
         user_repository: UserRepository,
         timezone: ZoneInfo | None = None,
-        email_publisher: EmailPublisher | None = None,
     ):
         """
         Initialize the AuthService.
@@ -45,7 +48,6 @@ class AuthService:
         """
         self.user_repository = user_repository
         self.timezone = timezone or ZoneInfo("UTC")
-        self.email_publisher = EmailPublisher()
 
     # TODO: add opt flow
     async def register(self, user_data: UserCreate) -> None:
@@ -115,10 +117,12 @@ class AuthService:
         )
         link = f"{settings.VERIFY_EMAIL_URL}{verification_token}"
 
-        await self.email_publisher.publish_verification_email(
-            email=email,
-            username=user.username,
-            verification_link=link,
+        await kafka_producer.send_password_reset_message(
+            VerificationEmailMessage(
+                email=email,
+                username=user.username,
+                link=link,
+            )
         )
 
     async def login(self, user_data: UserLogin) -> UserLoginResponse:

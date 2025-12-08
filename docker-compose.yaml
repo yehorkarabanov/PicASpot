@@ -232,20 +232,20 @@ services:
     networks:
       - app-network
 
-  email-service:
-    container_name: email-service
-    build:
-      context: ./src/email-service
-      dockerfile: Dockerfile
-    env_file:
-      - ./.env
-    depends_on:
-      - kafka-0
-      - kafka-1
-      - kafka-2
-      - mailhog
-    networks:
-      - app-network
+#  email-service:
+#    container_name: email-service
+#    build:
+#      context: ./src/email-service
+#      dockerfile: Dockerfile
+#    env_file:
+#      - ./.env
+#    depends_on:
+#      - kafka-0
+#      - kafka-1
+#      - kafka-2
+#      - mailhog
+#    networks:
+#      - app-network
 
 volumes:
   postgres_data:
