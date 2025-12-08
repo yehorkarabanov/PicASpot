@@ -8,11 +8,8 @@ dependencies = [
     "asyncpg>=0.31.0",
     "asgiref>=3.11.0",
     "bcrypt>=5.0.0",
-    "celery>=5.5.3",
-    "celery-types==0.23.0",
     "cryptography>=46.0.3",
-    "fastapi-mail>=1.5.8",
-    "fastapi[standard]>=0.122.0",
+    "fastapi[standard]>=0.124.0",
     "geoalchemy2[shapely]>=0.18.1",
     "itsdangerous>=2.2.0",
     "pydantic-settings>=2.12.0",
@@ -99,6 +96,3 @@ exclude_lines = [
 
 [tool.coverage.html]
 directory = "htmlcov"
-
-[tool.uv.sources]
-geomatchai = { git = "https://github.com/LilConsul/GeoMatchAI.git" }

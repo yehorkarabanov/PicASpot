@@ -17,18 +17,6 @@ x-minio-common: &minio-common
     timeout: 5s
     retries: 5
 
-x-backend-build: &backend-build
-  context: ./src/backend
-  dockerfile: Dockerfile
-
-x-backend-common: &backend-common
-  volumes:
-    - ./src/backend/:/code
-    - /code/.venv
-  env_file:
-    - ./.env
-  networks:
-    - app-network
 
 x-kafka-env: &kafka-env
   # Cluster ID for KRaft mode
@@ -73,7 +61,15 @@ services:
       retries: 3
 
   backend:
-    <<: *backend-common
+    image: picaspot-backend
+    volumes:
+      - ./src/backend/:/code
+      - /code/.venv
+    env_file:
+      - ./.env
+    networks:
+      - app-network
+    container_name: backend
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,36 +78,14 @@ services:
     expose:
       - ${BACKEND_PORT_INTERNAL}
     build:
-      <<: *backend-build
-      target: backend
-    environment:
-      SERVICE_NAME: backend
-
-  celery_worker:
-    <<: *backend-common
-    depends_on:
-      - backend
-      - redis
-    container_name: celery_worker
-    build:
-      <<: *backend-build
-      target: worker
-    environment:
-      SERVICE_NAME: celery
-
-  flower:
-    image: mher/flower:2.0.1
-    container_name: flower
-    env_file:
-      - ./.env
-    command: celery --broker=redis://:${REDIS_PASSWORD}@redis:${REDIS_PORT_INTERNAL}/0 flower --port=${FLOWER_PORT_INTERNAL} --url-prefix=/dev/flower
-    expose:
-      - ${FLOWER_PORT_INTERNAL}
-    depends_on:
-      - celery_worker
-      - redis
-    networks:
-      - app-network
+      context: ./src/backend
+      dockerfile: Dockerfile
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:${BACKEND_PORT_INTERNAL}/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   postgres:
     image: postgis/postgis:18-3.6-alpine
@@ -135,7 +109,6 @@ services:
     image: nginx:1.29.2-alpine-slim
     depends_on:
       - backend
-      - flower
       - minio1
       - kafka-ui
     volumes:
@@ -146,7 +119,6 @@ services:
       BACKEND_PORT_INTERNAL: ${BACKEND_PORT_INTERNAL}
       DOMAIN: ${DOMAIN}
       MAILHOG_UI_PORT_INTERNAL: ${MAILHOG_UI_PORT_INTERNAL}
-      FLOWER_PORT_INTERNAL: ${FLOWER_PORT_INTERNAL}
       MINIO_PORT_INTERNAL: ${MINIO_PORT_INTERNAL}
       MINIO_CONSOLE_PORT_INTERNAL: ${MINIO_CONSOLE_PORT_INTERNAL}
       KAFKA_UI_PORT_INTERNAL: ${KAFKA_UI_PORT_INTERNAL}

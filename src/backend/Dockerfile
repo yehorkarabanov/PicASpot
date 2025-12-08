@@ -1,5 +1,5 @@
 # Base stage - common dependencies for all services
-FROM python:3.14.0-slim AS base
+FROM python:3.14.0-slim
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
@@ -34,10 +34,6 @@ WORKDIR /code/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
-
-# Backend stage - includes entrypoint for migrations
-FROM base AS backend
-
 # Copy and set up entrypoint script for running migrations at startup
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
@@ -45,9 +41,3 @@ RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["sh", "-c", "uv run fastapi dev --port ${BACKEND_PORT_INTERNAL} --host 0.0.0.0 --reload --proxy-headers"]
-
-
-# Worker stage - for Celery worker (no migrations needed)
-FROM base AS worker
-
-CMD ["uv", "run", "celery", "--app", "app.celery.worker", "worker", "--loglevel=info", "--uid=nobody", "--gid=nogroup"]
