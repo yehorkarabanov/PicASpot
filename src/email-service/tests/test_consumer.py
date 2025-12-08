@@ -3,8 +3,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.api.consumer import EmailConsumer
-from app.models.schemas import EmailEvent, EmailType
+from app.consumer import EmailConsumer
+from app.schemas import EmailEvent, EmailType
 
 
 @pytest.fixture
@@ -14,7 +14,7 @@ def email_consumer():
 
 
 @pytest.mark.asyncio
-@patch("app.api.consumer.AIOKafkaConsumer")
+@patch("app.consumer.AIOKafkaConsumer")
 async def test_consumer_start_success(mock_kafka_consumer_class, email_consumer):
     """Test successful consumer start."""
     mock_consumer = MagicMock()
@@ -29,7 +29,7 @@ async def test_consumer_start_success(mock_kafka_consumer_class, email_consumer)
 
 
 @pytest.mark.asyncio
-@patch("app.api.consumer.AIOKafkaConsumer")
+@patch("app.consumer.AIOKafkaConsumer")
 async def test_consumer_start_kafka_connection_error_retry_success(mock_kafka_consumer_class, email_consumer):
     """Test consumer start with Kafka connection error and successful retry."""
     mock_consumer = MagicMock()
@@ -93,7 +93,7 @@ async def test_consumer_process_invalid_message(email_consumer):
     email_consumer.consumer = MagicMock()
     email_consumer.consumer.__aiter__ = MagicMock(return_value=iter([mock_msg]))
 
-    with patch("app.api.consumer.logger") as mock_logger:
+    with patch("app.consumer.logger") as mock_logger:
         await email_consumer.consume()
 
         mock_logger.error.assert_called()

@@ -15,9 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Set environment variables for uv
 ENV UV_COMPILE_BYTECODE=1 \
-    UV_LINK_MODE=copy \
-    PYTHONUNBUFFERED=1
+    UV_LINK_MODE=copy
 
+# Copy application code
+COPY . /code/
 WORKDIR /code
 
 # Install Python dependencies
@@ -26,8 +27,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project
 
-# Copy application code
-COPY . /code/
 
 # Install the project
 RUN --mount=type=cache,target=/root/.cache/uv \

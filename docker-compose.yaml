@@ -79,12 +79,6 @@ services:
     build:
       context: ./src/backend
       dockerfile: Dockerfile
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:${BACKEND_PORT_INTERNAL}/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   postgres:
     image: postgis/postgis:18-3.6-alpine

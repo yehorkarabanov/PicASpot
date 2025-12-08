@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.handlers.email_manager import EmailManager, metrics
-from app.models.schemas import EmailEvent, EmailType
+from app.schemas import EmailEvent, EmailType
 
 
 @pytest.fixture
