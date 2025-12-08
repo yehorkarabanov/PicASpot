@@ -56,12 +56,6 @@ x-kafka-common: &kafka-common
   # Removed 'environment' from here as it cannot be easily merged when overridden
   networks:
     - app-network
-  healthcheck:
-    test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
-    interval: 10s
-    timeout: 5s
-    retries: 5
-    start_period: 30s
 
 services:
   redis:
@@ -269,6 +263,7 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-0:${KAFKA_PORT_INTERNAL},kafka-1:${KAFKA_PORT_INTERNAL},kafka-2:${KAFKA_PORT_INTERNAL}
       KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: PLAINTEXT
       SERVER_SERVLET_CONTEXT_PATH: /dev/kafka
+      SERVER_PORT: ${KAFKA_UI_PORT_INTERNAL}
     networks:
       - app-network
 
