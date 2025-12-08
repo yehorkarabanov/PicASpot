@@ -92,14 +92,20 @@ class SensitiveDataFilter(logging.Filter):
     }
 
     def filter(self, record: logging.LogRecord) -> bool:
-        # Check message for sensitive data patterns
-        message = record.getMessage().lower()
+        # Get the formatted message
+        message = record.getMessage()
+
+        # Redact sensitive information
+        redacted_message = message
         for key in self.SENSITIVE_KEYS:
-            if key in message:
-                record.msg = record.msg.replace(
-                    record.msg[record.msg.lower().find(key) :],
-                    f"{key.upper()}_REDACTED",
-                )
+            if key in redacted_message.lower():
+                redacted_message = redacted_message.replace(key, f"{key.upper()}_REDACTED")
+
+        # If redaction occurred, update the record to use the redacted message directly
+        if redacted_message != message:
+            record.msg = redacted_message
+            record.args = ()
+
         return True
 
 
