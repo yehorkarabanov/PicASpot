@@ -28,7 +28,7 @@ class KafkaProducer:
         for attempt in range(max_retries):
             try:
                 self.producer = AIOKafkaProducer(
-                    bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS_STRING,
+                    bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
                 )
                 await self.producer.start()
                 self._started = True
@@ -58,7 +58,9 @@ class KafkaProducer:
         if not self.producer or not self._started:
             return False
         try:
-            return self.producer.bootstrap_connected()
+            if not await self.producer.client.fetch_all_metadata():
+                return False
+            return True
         except Exception as e:
             logger.warning(f"Health check failed: {e}")
             return False

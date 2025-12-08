@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     make \
     libc-dev \
     zlib1g-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables for uv
@@ -18,8 +19,8 @@ ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy
 
 # Copy application code
-COPY . /app-service/
-WORKDIR /app-service
+COPY . /code/
+WORKDIR /code
 
 # Install Python dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \

@@ -82,4 +82,5 @@ async def get_minio_client() -> AsyncGenerator[Minio, None]:
         yield client
     finally:
         # Cleanup handled by miniopy-async :)
+        await client.close_session()
         pass

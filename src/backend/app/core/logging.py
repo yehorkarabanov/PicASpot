@@ -235,6 +235,11 @@ def setup_logging(use_file_logging: bool = True) -> None:
     logging.getLogger("httpx").setLevel("WARNING")
     logging.getLogger("httpcore").setLevel("WARNING")
 
+    # Kafka
+    logging.getLogger("aiokafka").setLevel("WARNING")
+    logging.getLogger("aiokafka.conn").setLevel("WARNING")
+    logging.getLogger("aiokafka.cluster").setLevel("WARNING")
+
     # Email
     logging.getLogger("fastapi_mail").setLevel("INFO")
 

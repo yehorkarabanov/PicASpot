@@ -39,13 +39,6 @@ class Settings(BaseSettings):
     def DATABASE_URL(self) -> str:  # noqa: N802
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
-    # Email settings
-    SMTP_USER: str
-    SMTP_PASSWORD: str
-    EMAILS_FROM_EMAIL: str
-    SMTP_PORT: int
-    SMTP_HOST: str
-    EMAIL_FROM_NAME: str
 
     EMAIL_VERIFY_PATH: str
     EMAIL_RESET_PASSWORD_PATH: str
@@ -68,7 +61,6 @@ class Settings(BaseSettings):
         return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
     # Kafka
-    KAFKA_PORT_INTERNAL: int = Field(default=9092)
     KAFKA_BOOTSTRAP_SERVERS: list[str] = Field(
         default=["kafka-0:9092", "kafka-1:9092", "kafka-2:9092"]
     )
@@ -76,11 +68,6 @@ class Settings(BaseSettings):
     KAFKA_RESET_PASSWORD_EMAIL_TOPIC: str = Field(
         default="password-reset-email-requests"
     )
-
-    @property
-    def KAFKA_BOOTSTRAP_SERVERS_STRING(self) -> str:  # noqa: N802
-        """Returns Kafka bootstrap servers as comma-separated string"""
-        return ",".join(self.KAFKA_BOOTSTRAP_SERVERS)
 
     # MinIO
     MINIO_ENDPOINT: str = Field(default="minio1:9000")
