@@ -7,6 +7,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+    )
+
     SECRET_KEY: str
     ALGORITHM: str
     PROJECT_NAME: str
@@ -32,12 +38,6 @@ class Settings(BaseSettings):
     @property
     def DATABASE_URL(self) -> str:  # noqa: N802
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-
-    model_config = SettingsConfigDict(
-        env_file=".",
-        env_file_encoding="utf-8",
-        case_sensitive=True,
-    )
 
     # Email settings
     SMTP_USER: str
@@ -72,6 +72,7 @@ class Settings(BaseSettings):
     KAFKA_BOOTSTRAP_SERVERS: list[str] = Field(
         default=["kafka-0:9092", "kafka-1:9092", "kafka-2:9092"]
     )
+    KAFKA_EMAIL_TOPIC: str = Field(default="email-events")
 
     @property
     def KAFKA_BOOTSTRAP_SERVERS_STRING(self) -> str:  # noqa: N802

@@ -1,43 +1,39 @@
-# Base stage - common dependencies for all services
+# Email Service Dockerfile
 FROM python:3.14.0-slim
 
+# Copy uv binary
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     make \
     libc-dev \
-    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
+# Set environment variables for uv
 ENV UV_COMPILE_BYTECODE=1 \
-    UV_LINK_MODE=copy
+    UV_LINK_MODE=copy \
+    PYTHONUNBUFFERED=1
 
-# Install the project's dependencies using the lockfile and settings
-#RUN --mount=type=cache,target=/root/.cache/uv \
-#    --mount=type=bind,source=uv.lock,target=uv.lock \
-#    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-#    uv sync --frozen --no-install-project --no-dev
+WORKDIR /code
+
+# Install Python dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project
 
-# Then, add the rest of the project source code and install it
-# Installing separately from its dependencies allows optimal layer caching
+# Copy application code
 COPY . /code/
-WORKDIR /code/
 
-#RUN --mount=type=cache,target=/root/.cache/uv \
-#    uv sync --frozen --no-dev
+# Install the project
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
-# Copy and set up entrypoint script for running migrations at startup
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Create logs directory
+RUN mkdir -p /code/logs
 
-ENTRYPOINT ["/entrypoint.sh"]
-
-CMD ["sh", "-c", "uv run fastapi dev --port ${BACKEND_PORT_INTERNAL} --host 0.0.0.0 --reload --proxy-headers"]
+# Run the email service
+CMD ["uv", "run", "python", "-m", "app.main"]
