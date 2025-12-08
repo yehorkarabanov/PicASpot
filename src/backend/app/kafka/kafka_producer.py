@@ -53,6 +53,16 @@ class KafkaProducer:
             self._started = False
             logger.info("Kafka producer stopped successfully")
 
+    async def health_check(self) -> bool:
+        """Check if the Kafka producer is healthy and connected."""
+        if not self.producer or not self._started:
+            return False
+        try:
+            return self.producer.bootstrap_connected()
+        except Exception as e:
+            logger.warning(f"Health check failed: {e}")
+            return False
+
     async def _send_message(self, topic: str, value: dict[str, Any]) -> bool:
         """Send a message to the specified Kafka topic."""
         if not self.producer or not self._started:

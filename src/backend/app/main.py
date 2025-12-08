@@ -106,7 +106,7 @@ async def health_check():
         "redis": await check_redis_health(),
         "database": await check_database_health(),
         "minio": await check_minio_health(),
-        "kafka": kafka_manager.is_connected,
+        "kafka": await kafka_producer.health_check(),
     }
     all_healthy = all(checks.values())
     return JSONResponse(
