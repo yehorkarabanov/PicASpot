@@ -67,6 +67,17 @@ class Settings(BaseSettings):
     def REDIS_URL(self) -> str:  # noqa: N802
         return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
+    # Kafka
+    KAFKA_PORT_INTERNAL: int = Field(default=9092)
+    KAFKA_BOOTSTRAP_SERVERS: list[str] = Field(
+        default=["kafka-0:9092", "kafka-1:9092", "kafka-2:9092"]
+    )
+
+    @property
+    def KAFKA_BOOTSTRAP_SERVERS_STRING(self) -> str:  # noqa: N802
+        """Returns Kafka bootstrap servers as comma-separated string"""
+        return ",".join(self.KAFKA_BOOTSTRAP_SERVERS)
+
     # MinIO
     MINIO_ENDPOINT: str = Field(default="minio1:9000")
     MINIO_EXTERNAL_ENDPOINT: str = Field(default="localhost/dev/minio")

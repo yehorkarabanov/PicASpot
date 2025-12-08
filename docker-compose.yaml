@@ -113,6 +113,7 @@ services:
       - backend
       - flower
       - minio1
+      - kafka-ui
     volumes:
       - ./src/nginx/conf/nginx.conf:/etc/nginx/nginx.conf.template
       - ./src/nginx/entrypoint.sh:/etc/nginx/entrypoint.sh
@@ -124,6 +125,7 @@ services:
       FLOWER_PORT_INTERNAL: ${FLOWER_PORT_INTERNAL}
       MINIO_PORT_INTERNAL: ${MINIO_PORT_INTERNAL}
       MINIO_CONSOLE_PORT_INTERNAL: ${MINIO_CONSOLE_PORT_INTERNAL}
+      KAFKA_UI_PORT_INTERNAL: ${KAFKA_UI_PORT_INTERNAL}
     entrypoint: [ "/bin/sh", "/etc/nginx/entrypoint.sh" ]
     ports:
       - "${HTTP_PORT}:80"
@@ -214,6 +216,9 @@ services:
       - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
     volumes:
       - kafka_0_data:/bitnami/kafka
+    networks:
+      - app-network
+
   kafka-1:
     image: docker.io/bitnami/kafka:4.1
     expose:
@@ -237,6 +242,9 @@ services:
       - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
     volumes:
       - kafka_1_data:/bitnami/kafka
+    networks:
+      - app-network
+
   kafka-2:
     image: docker.io/bitnami/kafka:4.1
     expose:
@@ -260,6 +268,25 @@ services:
       - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
     volumes:
       - kafka_2_data:/bitnami/kafka
+    networks:
+      - app-network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka-0
+      - kafka-1
+      - kafka-2
+    expose:
+      - ${KAFKA_UI_PORT_INTERNAL}
+    environment:
+      KAFKA_CLUSTERS_0_NAME: picaspot-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-0:${KAFKA_PORT_INTERNAL},kafka-1:${KAFKA_PORT_INTERNAL},kafka-2:${KAFKA_PORT_INTERNAL}
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: PLAINTEXT
+      SERVER_SERVLET_CONTEXT_PATH: /dev/kafka
+    networks:
+      - app-network
 
 
 volumes:
