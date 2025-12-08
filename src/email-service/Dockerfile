@@ -18,8 +18,8 @@ ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy
 
 # Copy application code
-COPY . /code/
-WORKDIR /code
+COPY . /app-service/
+WORKDIR /app-service
 
 # Install Python dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \

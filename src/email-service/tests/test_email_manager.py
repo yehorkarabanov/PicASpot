@@ -7,6 +7,19 @@ from app.handlers.email_manager import EmailManager, metrics
 from app.schemas import EmailEvent, EmailType
 
 
+@pytest.fixture(autouse=True)
+def reset_metrics():
+    """Reset metrics before each test."""
+    metrics.emails_sent = 0
+    metrics.emails_failed = 0
+    metrics.emails_retried = 0
+    yield
+    # Clean up after test
+    metrics.emails_sent = 0
+    metrics.emails_failed = 0
+    metrics.emails_retried = 0
+
+
 @pytest.fixture
 def email_manager():
     """Fixture for EmailManager instance."""
@@ -104,12 +117,16 @@ async def test_process_email_event_password_reset(email_manager, sample_password
 @pytest.mark.asyncio
 async def test_process_email_event_unknown_type(email_manager):
     """Test processing email event with unknown type."""
+    # Create a valid event first
     event = EmailEvent(
-        email_type="unknown",
+        email_type=EmailType.VERIFICATION,
         recipient="test@example.com",
         username="testuser",
         link="https://example.com",
     )
+
+    # Mock the email_type to simulate an unknown type
+    event.email_type = "unknown"
 
     with patch("app.handlers.email_manager.logger") as mock_logger:
         await email_manager.process_email_event(event)

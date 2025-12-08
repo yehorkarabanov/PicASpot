@@ -111,7 +111,6 @@ class EmailManager:
                 return
             except Exception as e:
                 last_exception = e
-                metrics.increment_retried()
                 logger.warning(
                     "Failed to send email to %s (attempt %d/%d): %s",
                     recipient,
@@ -120,7 +119,9 @@ class EmailManager:
                     str(e),
                 )
 
+                # If we're going to retry (not the last attempt), increment retry counter
                 if attempt < settings.EMAIL_MAX_RETRIES - 1:
+                    metrics.increment_retried()
                     await asyncio.sleep(settings.EMAIL_RETRY_DELAY_SECONDS)
 
         # All retries failed

@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class EmailType(str, Enum):
@@ -33,7 +33,4 @@ class EmailEvent(BaseModel):
     timestamp: datetime | None = None
     metadata: dict[str, Any] | None = None
 
-    class Config:
-        """Pydantic configuration."""
-
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
