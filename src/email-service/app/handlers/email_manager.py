@@ -5,9 +5,10 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from app.core.settings import settings
-from app.models.schemas import EmailEvent, EmailType
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
+
+from app.schemas import EmailEvent, EmailType
+from app.settings import settings
 
 logger = logging.getLogger(__name__)
 

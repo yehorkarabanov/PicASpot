@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     @property
     def TEMPLATE_FOLDER(self) -> Path:
         """Returns the path to email templates."""
-        return self.BASE_DIR.parent / "handlers" / "templates"
+        return self.BASE_DIR / "handlers" / "templates"
 
     @property
     def KAFKA_BOOTSTRAP_SERVERS_STRING(self) -> str:

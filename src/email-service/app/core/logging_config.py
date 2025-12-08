@@ -16,7 +16,7 @@ from logging.handlers import QueueHandler, QueueListener, RotatingFileHandler
 from queue import Queue
 from typing import Any
 
-from .settings import settings
+from ..settings import settings
 
 
 class JSONFormatter(logging.Formatter):
