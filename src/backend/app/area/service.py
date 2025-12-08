@@ -76,9 +76,7 @@ class AreaService:
         if hit_depth_limit:
             raise BadRequestError("Cannot set parent: hierarchy depth limit reached. ")
 
-    async def create_area(
-        self, area_data: AreaCreate, user: User
-    ) -> AreaResponse:
+    async def create_area(self, area_data: AreaCreate, user: User) -> AreaResponse:
         """
         Create a new area with the given data.
 

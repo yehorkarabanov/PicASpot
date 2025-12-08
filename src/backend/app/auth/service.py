@@ -4,6 +4,10 @@ from zoneinfo import ZoneInfo
 from pydantic import EmailStr
 
 from app.core.exceptions import AuthenticationError, BadRequestError, NotFoundError
+from app.kafka import (
+    VerificationEmailMessage,
+    kafka_producer,
+)
 from app.settings import settings
 from app.user.repository import UserRepository
 
@@ -16,11 +20,6 @@ from .security import (
     delete_verification_token,
     get_password_hash,
     verify_password,
-)
-from app.kafka import (
-    kafka_producer,
-    VerificationEmailMessage,
-    ResetPasswordEmailMessage,
 )
 
 logger = logging.getLogger(__name__)
@@ -228,10 +227,12 @@ class AuthService:
         )
         link = f"{settings.EMAIL_RESET_PASSWORD_URL}/{reset_token}"
 
-        await self.email_publisher.publish_password_reset_email(
-            email=user.email,
-            username=user.username,
-            reset_link=link,
+        await kafka_producer.send_password_reset_message(
+            VerificationEmailMessage(
+                email=email,
+                username=user.username,
+                link=link,
+            )
         )
         logger.info("Password reset email sent to %s", email)
 

@@ -15,7 +15,7 @@ from app.core.utils import generate_users
 from app.database import dispose_engine
 from app.database.manager import check_database_health
 from app.database.redis import check_redis_health, close_redis, init_redis
-from app.kafka import kafka_producer
+from app.kafka import ensure_topics_exist, kafka_producer
 from app.middleware import (
     RateLimiterMiddleware,
     RequestLoggingMiddleware,
@@ -35,6 +35,8 @@ async def lifespan(_app: FastAPI):
     logger.info("Application startup initiated", extra={"debug_mode": settings.DEBUG})
     await init_redis()
     logger.info("Redis connection initialized")
+    await ensure_topics_exist()
+    logger.info("Kafka topics initialized")
     await kafka_producer.start()
     logger.info("Kafka producer initialized")
     await ensure_bucket_exists()
