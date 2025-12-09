@@ -5,15 +5,10 @@ from typing import Any, BinaryIO, Union
 
 from PIL import Image, ImageOps
 
+from app.images.exceptions import ImageConversionError
 from app.images.formats import ImageFormat
 
 logger = logging.getLogger(__name__)
-
-
-class ImageConversionError(Exception):
-    """Exception raised when image conversion fails."""
-
-    pass
 
 
 class ImageConverter:
@@ -74,14 +69,19 @@ class ImageConverter:
         Raises:
             ImageConversionError: If image is invalid
         """
-        if image.width > ImageConverter.MAX_IMAGE_DIMENSION or image.height > ImageConverter.MAX_IMAGE_DIMENSION:
+        if (
+            image.width > ImageConverter.MAX_IMAGE_DIMENSION
+            or image.height > ImageConverter.MAX_IMAGE_DIMENSION
+        ):
             raise ImageConversionError(
                 f"Image dimensions ({image.width}x{image.height}) exceed "
                 f"maximum allowed ({ImageConverter.MAX_IMAGE_DIMENSION}x{ImageConverter.MAX_IMAGE_DIMENSION})"
             )
 
         if image.width == 0 or image.height == 0:
-            raise ImageConversionError("Image has invalid dimensions (0 width or height)")
+            raise ImageConversionError(
+                "Image has invalid dimensions (0 width or height)"
+            )
 
     @staticmethod
     def _correct_orientation(image: Image.Image) -> Image.Image:
@@ -122,7 +122,9 @@ class ImageConverter:
                 if image.mode == "P":
                     image = image.convert("RGBA")
                 if image.mode in ("RGBA", "LA"):
-                    background.paste(image, mask=image.split()[-1])  # Use alpha channel as mask
+                    background.paste(
+                        image, mask=image.split()[-1]
+                    )  # Use alpha channel as mask
                     return background
             elif image.mode != "RGB":
                 return image.convert("RGB")
@@ -178,9 +180,13 @@ class ImageConverter:
 
                 # Add quality parameter for lossy formats
                 if target_format_enum in (ImageFormat.JPEG, ImageFormat.JPG):
-                    save_kwargs["quality"] = quality if quality is not None else cls.DEFAULT_JPEG_QUALITY
+                    save_kwargs["quality"] = (
+                        quality if quality is not None else cls.DEFAULT_JPEG_QUALITY
+                    )
                 elif target_format_enum == ImageFormat.WEBP:
-                    save_kwargs["quality"] = quality if quality is not None else cls.DEFAULT_WEBP_QUALITY
+                    save_kwargs["quality"] = (
+                        quality if quality is not None else cls.DEFAULT_WEBP_QUALITY
+                    )
 
                 # Convert to bytes
                 output_buffer = io.BytesIO()
@@ -234,7 +240,9 @@ class ImageConverter:
         if target_format is None:
             extension = output_path.suffix.lstrip(".").lower()
             if not extension:
-                raise ValueError("Cannot infer target format from output path without extension")
+                raise ValueError(
+                    "Cannot infer target format from output path without extension"
+                )
             target_format = extension
 
         # Read input file
@@ -327,4 +335,3 @@ class ImageConverter:
             return True
         except Exception:
             return False
-
