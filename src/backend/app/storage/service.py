@@ -9,6 +9,7 @@ from miniopy_async import Minio
 from miniopy_async.error import S3Error
 
 from .exceptions import StorageError
+from .directories import StorageDir
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class StorageService:
         self,
         file_data: bytes,
         original_filename: str,
-        path_prefix: str,
+        path_prefix: StorageDir,
         content_type: str = "application/octet-stream",
     ) -> dict:
         """
@@ -56,11 +57,11 @@ class StorageService:
             result = await storage.upload_file(
                 file_data=image_bytes,
                 original_filename="photo.jpg",
-                path_prefix="users/123",
+                path_prefix=StorageDir.USERS,
                 content_type="image/jpeg"
             )
             # Returns: {
-            #   "object_path": "users/123/uuid.jpg",
+            #   "object_path": "users/uuid.jpg",
             #   "original_filename": "photo.jpg",
             #   "size": 12345
             # }
@@ -68,7 +69,7 @@ class StorageService:
         # Generate UUID filename with original extension
         ext = Path(original_filename).suffix.lower()
         uuid_filename = f"{uuid.uuid4()}{ext}"
-        object_path = f"{path_prefix}/{uuid_filename}"
+        object_path = f"{path_prefix.value}/{uuid_filename}"
 
         # Store original filename in metadata (URL-encoded for non-ASCII support)
         # MinIO metadata only supports US-ASCII, so we encode non-ASCII characters

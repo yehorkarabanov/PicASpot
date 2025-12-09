@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Response, UploadFile, status
 
 from app.storage.dependencies import StorageServiceDep
+from app.storage.directories import StorageDir
 from app.storage.service import StorageError
 
 router = APIRouter(prefix="/storage", tags=["storage"])
@@ -10,7 +11,7 @@ router = APIRouter(prefix="/storage", tags=["storage"])
 async def upload_file(
     file: UploadFile,
     storage: StorageServiceDep,
-    path_prefix: str = "uploads",
+    path_prefix: StorageDir = StorageDir.UPLOADS,
 ) -> dict:
     """
     Upload a file to storage with UUID-based filename.
