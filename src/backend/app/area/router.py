@@ -53,9 +53,9 @@ async def delete_area(
 @router.patch("/{area_id}", response_model=AreaReturn, response_model_exclude_none=True)
 async def update_area(
     area_id: uuid.UUID,
-    area_data: AreaUpdate,
     area_service: AreaServiceDep,
     current_user: CurrentUserDep,
+    area_data: AreaUpdate = Form(..., media_type="multipart/form-data"),
 ) -> AreaReturn:
     """Update area by ID."""
     area_response = await area_service.update_area(

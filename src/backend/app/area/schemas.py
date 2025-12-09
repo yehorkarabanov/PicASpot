@@ -47,7 +47,9 @@ class AreaCreate(AreaBase):
                 raise ValueError(f"Invalid UUID format for parent_area_id: {v}") from e
 
         # Handle any other type
-        raise ValueError(f"parent_area_id must be a valid UUID or None, got {type(v).__name__}")
+        raise ValueError(
+            f"parent_area_id must be a valid UUID or None, got {type(v).__name__}"
+        )
 
 
 class AreaUpdate(BaseModel):
@@ -59,9 +61,42 @@ class AreaUpdate(BaseModel):
     description: str | None = Field(
         None, max_length=1000, description="Area description"
     )
-    image_url: str | None = Field(None, max_length=500, description="URL to area image")
-    badge_url: str | None = Field(None, max_length=500, description="URL to area badge")
+    image_file: UploadFile | None = None
+    badge_file: UploadFile | None = None
     parent_area_id: UUID | None = Field(None, description="Parent area ID")
+
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+
+    @field_validator("parent_area_id", mode="before")
+    @classmethod
+    def validate_parent_area_id(cls, v):
+        """Convert empty string to None and validate UUID format"""
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+
+        # If it's already a UUID object, return it
+        if isinstance(v, UUID):
+            return v
+
+        # Try to convert string to UUID to validate format
+        if isinstance(v, str):
+            try:
+                return UUID(v.strip())
+            except (ValueError, AttributeError) as e:
+                raise ValueError(f"Invalid UUID format for parent_area_id: {v}") from e
+
+        # Handle any other type
+        raise ValueError(
+            f"parent_area_id must be a valid UUID or None, got {type(v).__name__}"
+        )
+
+    @field_validator("name", "description", mode="before")
+    @classmethod
+    def empty_string_to_none(cls, v):
+        """Convert empty strings to None for optional fields"""
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
 
 
 class AreaResponse(AreaBase, TimezoneAwareSchema):

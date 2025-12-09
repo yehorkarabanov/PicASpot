@@ -95,6 +95,8 @@ class KafkaProducer:
             await self.producer.stop()
             self._started = False
             logger.info("Kafka producer stopped successfully")
+        else:
+            logger.info("Kafka producer is not started or already stopped")
 
     async def health_check(self) -> bool:
         """Check if the Kafka producer is healthy and connected.
