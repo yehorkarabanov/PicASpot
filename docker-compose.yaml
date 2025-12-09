@@ -63,6 +63,7 @@ services:
   backend:
     volumes:
       - ./src/backend/:/code
+      - ./src/img/:/img
       - /code/.venv
     env_file:
       - ./.env
