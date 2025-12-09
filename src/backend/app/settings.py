@@ -7,6 +7,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+    )
+
     SECRET_KEY: str
     ALGORITHM: str
     PROJECT_NAME: str
@@ -33,19 +39,6 @@ class Settings(BaseSettings):
     def DATABASE_URL(self) -> str:  # noqa: N802
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
-    model_config = SettingsConfigDict(
-        env_file=".",
-        env_file_encoding="utf-8",
-        case_sensitive=True,
-    )
-
-    # Email settings
-    SMTP_USER: str
-    SMTP_PASSWORD: str
-    EMAILS_FROM_EMAIL: str
-    SMTP_PORT: int
-    SMTP_HOST: str
-    EMAIL_FROM_NAME: str
 
     EMAIL_VERIFY_PATH: str
     EMAIL_RESET_PASSWORD_PATH: str
@@ -67,6 +60,15 @@ class Settings(BaseSettings):
     def REDIS_URL(self) -> str:  # noqa: N802
         return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
+    # Kafka
+    KAFKA_BOOTSTRAP_SERVERS: list[str] = Field(
+        default=["kafka-0:9092", "kafka-1:9092", "kafka-2:9092"]
+    )
+    KAFKA_VERIFICATION_EMAIL_TOPIC: str = Field(default="verification-email-requests")
+    KAFKA_RESET_PASSWORD_EMAIL_TOPIC: str = Field(
+        default="password-reset-email-requests"
+    )
+
     # MinIO
     MINIO_ENDPOINT: str = Field(default="minio1:9000")
     MINIO_EXTERNAL_ENDPOINT: str = Field(default="localhost/dev/minio")
@@ -83,9 +85,7 @@ class Settings(BaseSettings):
     MAX_UNLOCK_PHOTO_SIZE_MB: int = Field(default=15)
 
     # Allowed file types
-    ALLOWED_IMAGE_EXTENSIONS: list[str] = Field(
-        default=["jpg", "jpeg", "png", "webp"]
-    )
+    ALLOWED_IMAGE_EXTENSIONS: list[str] = Field(default=["jpg", "jpeg", "png", "webp"])
     ALLOWED_MIME_TYPES: list[str] = Field(
         default=["image/jpeg", "image/png", "image/webp"]
     )

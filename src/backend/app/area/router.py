@@ -16,9 +16,9 @@ async def create_area(
     area_service: AreaServiceDep,
     current_user: CurrentUserDep,
 ) -> AreaReturn:
-    """Create a new area."""
+    """Create a new area. If the user is a superuser, the area will be automatically verified."""
     area_response = await area_service.create_area(
-        area_data=area_data, creator_id=current_user.id
+        area_data=area_data, user=current_user
     )
     return AreaReturn(message="Area created successfully", data=area_response)
 

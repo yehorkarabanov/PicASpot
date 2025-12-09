@@ -1,13 +1,13 @@
 """
-Centralized logging configuration for the PicASpot application.
+Centralized logging configuration for the Email Service.
 
 This module provides a production-ready logging setup with:
 - Structured JSON logging for production
 - Human-readable console logging for development
 - Log rotation to prevent disk space issues
-- Integration with FastAPI, Uvicorn, SQLAlchemy, Celery, and Redis
+- Integration with FastAPI, Kafka, and FastAPI-Mail
 - Different log levels per environment
-- Request correlation IDs support
+- Email-specific context support
 """
 
 import logging
@@ -53,19 +53,27 @@ class JSONFormatter(logging.Formatter):
         if correlation_id:
             log_data["correlation_id"] = correlation_id
 
-        # Add extra context fields
+        # Add extra context fields - email service specific
+        if hasattr(record, "email_to"):
+            log_data["email_to"] = record.email_to
+        if hasattr(record, "email_subject"):
+            log_data["email_subject"] = record.email_subject
+        if hasattr(record, "email_template"):
+            log_data["email_template"] = record.email_template
+        if hasattr(record, "kafka_topic"):
+            log_data["kafka_topic"] = record.kafka_topic
+        if hasattr(record, "kafka_partition"):
+            log_data["kafka_partition"] = record.kafka_partition
+        if hasattr(record, "kafka_offset"):
+            log_data["kafka_offset"] = record.kafka_offset
+
+        # Add generic extra context fields
         if hasattr(record, "user_id"):
             log_data["user_id"] = record.user_id
-        if hasattr(record, "endpoint"):
-            log_data["endpoint"] = record.endpoint
-        if hasattr(record, "method"):
-            log_data["method"] = record.method
-        if hasattr(record, "status_code"):
-            log_data["status_code"] = record.status_code
+        if hasattr(record, "username"):
+            log_data["username"] = record.username
         if hasattr(record, "duration_ms"):
             log_data["duration_ms"] = record.duration_ms
-        if hasattr(record, "ip_address"):
-            log_data["ip_address"] = record.ip_address
 
         # Add exception info if present
         if record.exc_info:
@@ -89,6 +97,8 @@ class SensitiveDataFilter(logging.Filter):
         "authorization",
         "credit_card",
         "ssn",
+        "smtp_password",
+        "mail_password",
     }
 
     def filter(self, record: logging.LogRecord) -> bool:
@@ -99,7 +109,9 @@ class SensitiveDataFilter(logging.Filter):
         redacted_message = message
         for key in self.SENSITIVE_KEYS:
             if key in redacted_message.lower():
-                redacted_message = redacted_message.replace(key, f"{key.upper()}_REDACTED")
+                redacted_message = redacted_message.replace(
+                    key, f"{key.upper()}_REDACTED"
+                )
 
         # If redaction occurred, update the record to use the redacted message directly
         if redacted_message != message:
@@ -167,9 +179,7 @@ def setup_logging(use_file_logging: bool = True) -> None:
         log_dir.mkdir(exist_ok=True)
 
         # Service-specific file names to prevent Docker container conflicts
-        # backend container → logs/backend.log
-        # celery_worker container → logs/celery.log
-        # flower container → logs/flower.log
+        # email-service container → logs/email-service.log
         service_log_file = log_dir / f"{service_name}.log"
         service_error_file = log_dir / f"{service_name}-error.log"
 
@@ -221,27 +231,20 @@ def setup_logging(use_file_logging: bool = True) -> None:
     # FastAPI
     logging.getLogger("fastapi").setLevel("INFO")
 
-    # SQLAlchemy - Control database query logging
-    logging.getLogger("sqlalchemy.engine").setLevel("WARNING")
-    logging.getLogger("sqlalchemy.pool").setLevel("WARNING")
-
-    # Redis
-    logging.getLogger("redis").setLevel("WARNING")  # Redis can be noisy
-
-    # Alembic - Database migrations
-    logging.getLogger("alembic").setLevel("INFO")
-
-    # HTTP clients
-    logging.getLogger("httpx").setLevel("WARNING")
-    logging.getLogger("httpcore").setLevel("WARNING")
-
     # Kafka
     logging.getLogger("aiokafka").setLevel("WARNING")
     logging.getLogger("aiokafka.conn").setLevel("WARNING")
     logging.getLogger("aiokafka.cluster").setLevel("WARNING")
+    logging.getLogger("aiokafka.consumer").setLevel("WARNING")
+    logging.getLogger("aiokafka.producer").setLevel("WARNING")
 
     # Email
     logging.getLogger("fastapi_mail").setLevel("INFO")
+    logging.getLogger("aiosmtplib").setLevel("WARNING")
+
+    # HTTP clients
+    logging.getLogger("httpx").setLevel("WARNING")
+    logging.getLogger("httpcore").setLevel("WARNING")
 
     # Watchfiles - File watching for hot reload
     logging.getLogger("watchfiles").setLevel("WARNING")
@@ -261,3 +264,4 @@ def shutdown_logging() -> None:
     if _queue_listener:
         _queue_listener.stop()
         _queue_listener = None
+
