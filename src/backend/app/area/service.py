@@ -83,11 +83,7 @@ class AreaService:
         if hit_depth_limit:
             raise BadRequestError("Cannot set parent: hierarchy depth limit reached. ")
 
-    async def create_area(
-        self,
-        area_data: AreaCreate,
-        user: User
-    ) -> AreaResponse:
+    async def create_area(self, area_data: AreaCreate, user: User) -> AreaResponse:
         """
         Create a new area with the given data.
 
@@ -106,25 +102,27 @@ class AreaService:
         if area_data.parent_area_id:
             await self._validate_parent_area_exists(area_data.parent_area_id)
 
-        area_dict = area_data.model_dump()
+        area_dict = area_data.model_dump(exclude={"image_file", "badge_file"})
 
-        # if image_file:
-        #     result = await self.storage.upload_file(
-        #         file_data=await image_file.read(),
-        #         original_filename=image_file.filename,
-        #         path_prefix=StorageDir.AREAS,
-        #         content_type=image_file.content_type or "application/octet-stream",
-        #     )
-        #     area_dict["image_url"] = result["object_path"]
-        #
-        # if badge_file:
-        #     result = await self.storage.upload_file(
-        #         file_data=await badge_file.read(),
-        #         original_filename=badge_file.filename,
-        #         path_prefix=StorageDir.AREAS,
-        #         content_type=badge_file.content_type or "application/octet-stream",
-        #     )
-        #     area_dict["badge_url"] = result["object_path"]
+        if area_data.image_file:
+            result = await self.storage.upload_file(
+                file_data=await area_data.image_file.read(),
+                original_filename=area_data.image_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=area_data.image_file.content_type
+                or "application/octet-stream",
+            )
+            area_dict["image_url"] = result["object_path"]
+
+        if area_data.badge_file:
+            result = await self.storage.upload_file(
+                file_data=await area_data.badge_file.read(),
+                original_filename=area_data.badge_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=area_data.badge_file.content_type
+                or "application/octet-stream",
+            )
+            area_dict["badge_url"] = result["object_path"]
 
         area_dict["creator_id"] = user.id
 
