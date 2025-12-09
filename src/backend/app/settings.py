@@ -67,6 +67,38 @@ class Settings(BaseSettings):
     def REDIS_URL(self) -> str:  # noqa: N802
         return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
+    # MinIO
+    MINIO_ENDPOINT: str = Field(default="minio1:9000")
+    MINIO_EXTERNAL_ENDPOINT: str = Field(default="localhost/dev/minio")
+    MINIO_ROOT_USER: str
+    MINIO_ROOT_PASSWORD: str
+    MINIO_SECURE: bool = Field(default=False)
+    MINIO_BUCKET_NAME: str = Field(default="picaspot-storage")
+    MINIO_REGION: str = Field(default="us-east-1")
+
+    # Upload limits
+    MAX_UPLOAD_SIZE_MB: int = Field(default=10)
+    MAX_PROFILE_PICTURE_SIZE_MB: int = Field(default=5)
+    MAX_LANDMARK_IMAGE_SIZE_MB: int = Field(default=10)
+    MAX_UNLOCK_PHOTO_SIZE_MB: int = Field(default=15)
+
+    # Allowed file types
+    ALLOWED_IMAGE_EXTENSIONS: list[str] = Field(
+        default=["jpg", "jpeg", "png", "webp"]
+    )
+    ALLOWED_MIME_TYPES: list[str] = Field(
+        default=["image/jpeg", "image/png", "image/webp"]
+    )
+
+    # Presigned URL settings
+    PRESIGNED_UPLOAD_URL_EXPIRY_SECONDS: int = Field(default=300)  # 5 minutes
+    PRESIGNED_DOWNLOAD_URL_EXPIRY_SECONDS: int = Field(default=3600)  # 1 hour
+
+    # Image processing
+    IMAGE_THUMBNAIL_SIZE: tuple[int, int] = Field(default=(300, 300))
+    IMAGE_MAX_DIMENSION: int = Field(default=2048)
+    IMAGE_QUALITY: int = Field(default=85)
+
     BASE_DIR: Path = Path(__file__).resolve().parent
     ROOT_DIR: Path = Path(__file__).resolve().parent.parent
 
