@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile
 
 from app.auth.dependencies import CurrentSuperuserDep, CurrentUserDep
 
@@ -15,10 +15,15 @@ async def create_area(
     area_data: AreaCreate,
     area_service: AreaServiceDep,
     current_user: CurrentUserDep,
+    image_file: UploadFile | None = None,
+    badge_file: UploadFile | None = None,
 ) -> AreaReturn:
     """Create a new area. If the user is a superuser, the area will be automatically verified."""
     area_response = await area_service.create_area(
-        area_data=area_data, user=current_user
+        area_data=area_data,
+        user=current_user,
+        image_file=image_file,
+        badge_file=badge_file,
     )
     return AreaReturn(message="Area created successfully", data=area_response)
 

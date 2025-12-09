@@ -14,8 +14,6 @@ class AreaBase(BaseModel):
     description: str | None = Field(
         None, max_length=1000, description="Area description"
     )
-    image_url: str | None = Field(None, max_length=500, description="URL to area image")
-    badge_url: str | None = Field(None, max_length=500, description="URL to area badge")
 
 
 class AreaCreate(AreaBase):

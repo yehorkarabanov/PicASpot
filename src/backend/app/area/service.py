@@ -2,7 +2,10 @@ import logging
 import uuid
 from zoneinfo import ZoneInfo
 
+from fastapi import UploadFile
+
 from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
+from app.storage import StorageDir, StorageService
 from app.user.models import User
 
 from .repository import AreaRepository
@@ -20,7 +23,10 @@ class AreaService:
     """
 
     def __init__(
-        self, area_repository: AreaRepository, timezone: ZoneInfo | None = None
+        self,
+        area_repository: AreaRepository,
+        storage: StorageService,
+        timezone: ZoneInfo | None = None,
     ):
         """
         Initialize the AreaService.
@@ -30,6 +36,7 @@ class AreaService:
             timezone: Client's timezone for datetime conversion in responses.
         """
         self.area_repository = area_repository
+        self.storage = storage
         self.timezone = timezone or ZoneInfo("UTC")
 
     async def _validate_parent_area_exists(self, parent_area_id: uuid.UUID) -> None:
@@ -76,7 +83,13 @@ class AreaService:
         if hit_depth_limit:
             raise BadRequestError("Cannot set parent: hierarchy depth limit reached. ")
 
-    async def create_area(self, area_data: AreaCreate, user: User) -> AreaResponse:
+    async def create_area(
+        self,
+        area_data: AreaCreate,
+        user: User,
+        image_file: UploadFile,
+        badge_file: UploadFile,
+    ) -> AreaResponse:
         """
         Create a new area with the given data.
 
@@ -96,6 +109,25 @@ class AreaService:
             await self._validate_parent_area_exists(area_data.parent_area_id)
 
         area_dict = area_data.model_dump()
+
+        if image_file:
+            result = await self.storage.upload_file(
+                file_data=await image_file.read(),
+                original_filename=image_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=image_file.content_type or "application/octet-stream",
+            )
+            area_data.image_url = result["object_path"]
+
+        if badge_file:
+            result = await self.storage.upload_file(
+                file_data=await badge_file.read(),
+                original_filename=badge_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=badge_file.content_type or "application/octet-stream",
+            )
+            area_data.badge_url = result["object_path"]
+
         area_dict["creator_id"] = user.id
 
         # Automatically verify areas created by superusers
