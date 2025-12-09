@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     )
 
     SERVICE_NAME: str = Field(alias="EMAIL_SERVICE_NAME")
+    PROJECT_NAME: str = Field(default="PicASpot")
     DOMAIN: str
     DEBUG: bool = Field(..., alias="BACKEND_DEBUG")
 
