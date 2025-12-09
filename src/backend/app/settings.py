@@ -102,10 +102,13 @@ class Settings(BaseSettings):
     # Static files configuration
     STATIC_FILES_PATH: str = Field(default="/code/static")
 
+    # Base URL for the application
+    BASE_URL: str = Field(default="http://localhost")
+
     @property
     def DEFAULT_PROFILE_PICTURE_URL(self) -> str:  # noqa: N802
-        """Default profile picture URL (served from static files)."""
-        return "/static/img/users/default_pfp.svg"
+        """Default profile picture URL (full URL with base and API prefix)."""
+        return f"{self.BASE_URL}/api/static/img/users/default_pfp.svg"
 
     BASE_DIR: Path = Path(__file__).resolve().parent
     ROOT_DIR: Path = Path(__file__).resolve().parent.parent

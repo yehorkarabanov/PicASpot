@@ -29,8 +29,8 @@ class StorageService:
         """
         self.client = client
         self.bucket_name = bucket_name
-        self.default_url_expiry = timedelta(seconds=settings.DEFAULT_URL_EXPIRY_SECONDS)
-        self.max_url_expiry = timedelta(seconds=settings.MAX_URL_EXPIRY_SECONDS)
+        self.default_url_expiry = timedelta(seconds=settings.STORAGE_URL_DEFAULT_EXPIRY_SECONDS)
+        self.max_url_expiry = timedelta(seconds=settings.STORAGE_URL_MAX_EXPIRY_SECONDS)
 
     async def upload_file(
         self,

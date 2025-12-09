@@ -93,9 +93,7 @@ app.add_middleware(
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, global_exception_handler)
 
-app.include_router(router, prefix="/v1")
 
-# Mount static files for serving default profile picture and other static assets
 static_path = Path(settings.STATIC_FILES_PATH)
 if static_path.exists():
     app.mount(
@@ -106,6 +104,8 @@ if static_path.exists():
     logger.info(f"Static files mounted at /static from {static_path}")
 else:
     logger.warning(f"Static files directory not found at {static_path}")
+
+app.include_router(router, prefix="/v1")
 
 
 @app.get("/")
