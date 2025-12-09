@@ -90,9 +90,9 @@ class Settings(BaseSettings):
         default=["image/jpeg", "image/png", "image/webp"]
     )
 
-    # Presigned URL settings
-    PRESIGNED_UPLOAD_URL_EXPIRY_SECONDS: int = Field(default=300)  # 5 minutes
-    PRESIGNED_DOWNLOAD_URL_EXPIRY_SECONDS: int = Field(default=3600)  # 1 hour
+    # Storage URL expiry settings
+    STORAGE_URL_DEFAULT_EXPIRY_SECONDS: int = Field(default=3600)  # 1 hour
+    STORAGE_URL_MAX_EXPIRY_SECONDS: int = Field(default=604800)  # 7 days
 
     # Image processing
     IMAGE_THUMBNAIL_SIZE: tuple[int, int] = Field(default=(300, 300))

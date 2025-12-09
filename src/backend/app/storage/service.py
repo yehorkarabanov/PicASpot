@@ -1,5 +1,6 @@
 import logging
 import uuid
+from datetime import timedelta
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,7 @@ from miniopy_async.error import S3Error
 
 from .exceptions import StorageError
 from .directories import StorageDir
+from app.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,8 @@ class StorageService:
         """
         self.client = client
         self.bucket_name = bucket_name
+        self.default_url_expiry = timedelta(seconds=settings.DEFAULT_URL_EXPIRY_SECONDS)
+        self.max_url_expiry = timedelta(seconds=settings.MAX_URL_EXPIRY_SECONDS)
 
     async def upload_file(
         self,
@@ -325,3 +329,175 @@ class StorageService:
         except S3Error as e:
             logger.error(f"Stat object failed for {object_path}: {e}")
             raise StorageError(f"Failed to get object info: {e}") from e
+
+    async def get_object_url(
+        self,
+        object_path: str,
+        expires: timedelta | None = None,
+    ) -> str:
+        """
+        Generate a presigned URL for accessing an object.
+
+        This creates a temporary URL that allows direct access to the file
+        without requiring authentication. Useful for serving images, downloads, etc.
+
+        Args:
+            object_path: Path in bucket (e.g., "users/123/profile.jpg")
+            expires: URL expiration time (default: 1 hour, max: 7 days)
+
+        Returns:
+            Presigned URL string
+
+        Raises:
+            StorageError: If URL generation fails
+            ValueError: If expiration time exceeds maximum
+
+        Example:
+            url = await storage.get_object_url("users/123/photo.jpg")
+            # Returns: "https://minio.example.com/bucket/users/123/photo.jpg?..."
+        """
+        try:
+            # Use default expiry if not specified
+            if expires is None:
+                expires = self.default_url_expiry
+
+            # Validate expiration time
+            if expires > self.max_url_expiry:
+                raise ValueError(
+                    f"URL expiration cannot exceed {self.max_url_expiry.days} days"
+                )
+
+            # Generate presigned URL
+            url = await self.client.presigned_get_object(
+                bucket_name=self.bucket_name,
+                object_name=object_path,
+                expires=expires,
+            )
+
+            logger.info(
+                f"Generated presigned URL for {object_path}",
+                extra={"expires_seconds": expires.total_seconds()},
+            )
+            return url
+
+        except S3Error as e:
+            logger.error(f"Failed to generate URL for {object_path}: {e}")
+            raise StorageError(f"Failed to generate object URL: {e}") from e
+
+    async def get_image_url(
+        self,
+        object_path: str,
+        expires: timedelta | None = None,
+    ) -> str:
+        """
+        Generate a presigned URL for accessing an image.
+
+        This is a convenience method that calls get_object_url but is more
+        semantically clear when working with images.
+
+        Args:
+            object_path: Path to image in bucket (e.g., "users/123/profile.jpg")
+            expires: URL expiration time (default: 1 hour, max: 7 days)
+
+        Returns:
+            Presigned URL string
+
+        Raises:
+            StorageError: If URL generation fails
+            ValueError: If expiration time exceeds maximum
+
+        Example:
+            url = await storage.get_image_url("users/123/photo.jpg")
+            # Use URL in frontend: <img src="{url}" />
+        """
+        return await self.get_object_url(object_path, expires)
+
+    async def get_multiple_image_urls(
+        self,
+        object_paths: list[str],
+        expires: timedelta | None = None,
+    ) -> dict[str, str]:
+        """
+        Generate presigned URLs for multiple images at once.
+
+        Args:
+            object_paths: List of object paths
+            expires: URL expiration time (default: 1 hour, max: 7 days)
+
+        Returns:
+            Dictionary mapping object_path to presigned URL
+            Failed URLs will have None as value
+
+        Example:
+            paths = ["users/123/photo1.jpg", "users/123/photo2.jpg"]
+            urls = await storage.get_multiple_image_urls(paths)
+            # Returns: {
+            #   "users/123/photo1.jpg": "https://...",
+            #   "users/123/photo2.jpg": "https://...",
+            # }
+        """
+        result = {}
+
+        for object_path in object_paths:
+            try:
+                url = await self.get_image_url(object_path, expires)
+                result[object_path] = url
+            except (StorageError, ValueError) as e:
+                logger.error(f"Failed to generate URL for {object_path}: {e}")
+                result[object_path] = None
+
+        return result
+
+    async def get_upload_url(
+        self,
+        object_path: str,
+        expires: timedelta | None = None,
+    ) -> str:
+        """
+        Generate a presigned URL for uploading an object.
+
+        This allows clients to upload directly to MinIO without going through
+        the backend, useful for large file uploads.
+
+        Args:
+            object_path: Destination path in bucket
+            expires: URL expiration time (default: 1 hour, max: 7 days)
+
+        Returns:
+            Presigned upload URL string
+
+        Raises:
+            StorageError: If URL generation fails
+            ValueError: If expiration time exceeds maximum
+
+        Example:
+            url = await storage.get_upload_url("users/123/upload.jpg")
+            # Client can PUT to this URL directly
+        """
+        try:
+            # Use default expiry if not specified
+            if expires is None:
+                expires = self.default_url_expiry
+
+            # Validate expiration time
+            if expires > self.max_url_expiry:
+                raise ValueError(
+                    f"URL expiration cannot exceed {self.max_url_expiry.days} days"
+                )
+
+            # Generate presigned upload URL
+            url = await self.client.presigned_put_object(
+                bucket_name=self.bucket_name,
+                object_name=object_path,
+                expires=expires,
+            )
+
+            logger.info(
+                f"Generated presigned upload URL for {object_path}",
+                extra={"expires_seconds": expires.total_seconds()},
+            )
+            return url
+
+        except S3Error as e:
+            logger.error(f"Failed to generate upload URL for {object_path}: {e}")
+            raise StorageError(f"Failed to generate upload URL: {e}") from e
