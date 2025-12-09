@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Modal } from 'react-native';
-import { X, BadgeQuestionMark, Camera, Redo , RotateCw} from 'lucide-react-native';
+import { X, CircleQuestionMark, Camera, Redo , RotateCw} from 'lucide-react-native';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { StyleSheet } from 'react-native';
 
@@ -236,7 +236,7 @@ export default function MapScreen() {
                         size="icon"
                         onPress={() => setShowHint(true)}
                     >
-                        <Icon as={BadgeQuestionMark} className="size-8 text-foreground" />
+                        <Icon as={CircleQuestionMark} className="size-8 text-foreground" />
                       </Button>
 
                     </View>
