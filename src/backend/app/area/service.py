@@ -2,7 +2,6 @@ import logging
 import uuid
 from zoneinfo import ZoneInfo
 
-from fastapi import UploadFile
 
 from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
 from app.storage import StorageDir, StorageService
@@ -221,6 +220,36 @@ class AreaService:
             await self._validate_parent_area_exists(area_data.parent_area_id)
 
         area_dict = area_data.model_dump(exclude_unset=True)
+
+        # Remove file objects from dict as they shouldn't be stored directly
+        area_dict.pop("image_file", None)
+        area_dict.pop("badge_file", None)
+
+        # Filter out None values to prevent setting required fields to null
+        # Only keep None for parent_area_id (which can be explicitly set to null)
+        area_dict = {
+            k: v for k, v in area_dict.items()
+            if v is not None or k == "parent_area_id"
+        }
+
+        if area_data.image_file:
+            result = await self.storage.upload_file(
+                file_data=await area_data.image_file.read(),
+                original_filename=area_data.image_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=area_data.image_file.content_type
+                or "application/octet-stream",
+            )
+            area_dict["image_url"] = result["object_path"]
+        if area_data.badge_file:
+            result = await self.storage.upload_file(
+                file_data=await area_data.badge_file.read(),
+                original_filename=area_data.badge_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=area_data.badge_file.content_type
+                or "application/octet-stream",
+            )
+            area_dict["badge_url"] = result["object_path"]
         area = await self.area_repository.update(area_id, area_dict)
         logger.info("Area updated: %s by user %s", area.name, user.username)
 

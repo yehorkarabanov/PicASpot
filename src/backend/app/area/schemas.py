@@ -28,6 +28,14 @@ class AreaCreate(AreaBase):
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
+    @field_validator("image_file", "badge_file", mode="before")
+    @classmethod
+    def validate_file_fields(cls, v):
+        """Convert empty string to None for file upload fields"""
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
+
     @field_validator("parent_area_id", mode="before")
     @classmethod
     def validate_parent_area_id(cls, v):
@@ -66,6 +74,14 @@ class AreaUpdate(BaseModel):
     parent_area_id: UUID | None = Field(None, description="Parent area ID")
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+
+    @field_validator("image_file", "badge_file", mode="before")
+    @classmethod
+    def validate_file_fields(cls, v):
+        """Convert empty string to None for file upload fields"""
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
 
     @field_validator("parent_area_id", mode="before")
     @classmethod
