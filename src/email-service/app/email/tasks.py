@@ -8,7 +8,7 @@ from .manager import create_message, mail
 logger = logging.getLogger(__name__)
 
 
-async def user_verify_mail_event(recipient: str, link: str, username: str):
+async def user_verify_mail(recipient: str, link: str, username: str):
     """Send verification email to user."""
     logger.info(
         "Sending verification email",

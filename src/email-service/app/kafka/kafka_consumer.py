@@ -1,8 +1,10 @@
 import asyncio
+import json
 import logging
 
 from aiokafka import AIOKafkaConsumer
 
+from app.email.tasks import user_password_reset_mail, user_verify_mail
 from app.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -94,7 +96,7 @@ class KafkaConsumer:
         try:
             async for msg in self.consumer:
                 try:
-                    message_value = msg.value.decode("utf-8")
+                    message_value = json.loads(msg.value.decode("utf-8"))
                     logger.info(
                         "Received Kafka message",
                         extra={
@@ -114,7 +116,18 @@ class KafkaConsumer:
                     )
 
                     # Process the message here
-                    # TODO: Implement message processing logic
+                    if msg.topic == settings.KAFKA_VERIFICATION_EMAIL_TOPIC:
+                        await user_verify_mail(
+                            recipient=message_value["email"],
+                            link=message_value["link"],
+                            username=message_value["username"],
+                        )
+                    elif msg.topic == settings.KAFKA_RESET_PASSWORD_EMAIL_TOPIC:
+                        await user_password_reset_mail(
+                            recipient=message_value["email"],
+                            link=message_value["link"],
+                            username=message_value["username"],
+                        )
 
                     # Commit offset after successful processing
                     await self.consumer.commit()
