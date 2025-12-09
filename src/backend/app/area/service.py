@@ -86,9 +86,7 @@ class AreaService:
     async def create_area(
         self,
         area_data: AreaCreate,
-        user: User,
-        image_file: UploadFile,
-        badge_file: UploadFile,
+        user: User
     ) -> AreaResponse:
         """
         Create a new area with the given data.
@@ -110,23 +108,23 @@ class AreaService:
 
         area_dict = area_data.model_dump()
 
-        if image_file:
-            result = await self.storage.upload_file(
-                file_data=await image_file.read(),
-                original_filename=image_file.filename,
-                path_prefix=StorageDir.AREAS,
-                content_type=image_file.content_type or "application/octet-stream",
-            )
-            area_data.image_url = result["object_path"]
-
-        if badge_file:
-            result = await self.storage.upload_file(
-                file_data=await badge_file.read(),
-                original_filename=badge_file.filename,
-                path_prefix=StorageDir.AREAS,
-                content_type=badge_file.content_type or "application/octet-stream",
-            )
-            area_data.badge_url = result["object_path"]
+        # if image_file:
+        #     result = await self.storage.upload_file(
+        #         file_data=await image_file.read(),
+        #         original_filename=image_file.filename,
+        #         path_prefix=StorageDir.AREAS,
+        #         content_type=image_file.content_type or "application/octet-stream",
+        #     )
+        #     area_dict["image_url"] = result["object_path"]
+        #
+        # if badge_file:
+        #     result = await self.storage.upload_file(
+        #         file_data=await badge_file.read(),
+        #         original_filename=badge_file.filename,
+        #         path_prefix=StorageDir.AREAS,
+        #         content_type=badge_file.content_type or "application/octet-stream",
+        #     )
+        #     area_dict["badge_url"] = result["object_path"]
 
         area_dict["creator_id"] = user.id
 

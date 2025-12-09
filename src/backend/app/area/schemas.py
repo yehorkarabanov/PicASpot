@@ -1,7 +1,8 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from fastapi import UploadFile
+from pydantic import BaseModel, Field, ConfigDict
 
 from app.core.schemas import BaseReturn
 from app.core.schemas_base import TimezoneAwareSchema
@@ -19,9 +20,13 @@ class AreaBase(BaseModel):
 class AreaCreate(AreaBase):
     """Schema for creating a new area"""
 
+    image_file: UploadFile | None = None
+    badge_file: UploadFile | None = None
     parent_area_id: UUID | None = Field(
         None, description="Parent area ID for hierarchical structure"
     )
+
+    # model_config = ConfigDict(extra="forbid")
 
 
 class AreaUpdate(BaseModel):
