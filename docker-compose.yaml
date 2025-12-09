@@ -243,22 +243,27 @@ services:
     networks:
       - app-network
 
-#  email-service:
-#    container_name: email-service
-#    build:
-#      context: ./src/email-service
-#      dockerfile: Dockerfile
-#    volumes:
-#      - ./src/email-service/:/code
-#      - /code/.venv
-#    env_file:
-#      - ./.env
-#    depends_on:
-#      - kafka-0
-#      - kafka-1
-#      - kafka-2
-#    networks:
-#      - app-network
+  email-service:
+    container_name: email-service
+    build:
+      context: ./src/email-service
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/email-service/:/code
+      - /code/.venv
+    env_file:
+      - ./.env
+    depends_on:
+      - kafka-0
+      - kafka-1
+      - kafka-2
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:${BACKEND_PORT_INTERNAL}/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

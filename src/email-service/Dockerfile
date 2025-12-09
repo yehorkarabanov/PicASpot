@@ -34,4 +34,4 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
 # Run the email service
-CMD ["uv", "run", "python", "-m", "app.main"]
+CMD ["sh", "-c", "uv run fastapi dev --port ${BACKEND_PORT_INTERNAL} --reload"]
