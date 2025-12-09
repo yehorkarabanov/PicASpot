@@ -90,14 +90,22 @@ class Settings(BaseSettings):
         default=["image/jpeg", "image/png", "image/webp"]
     )
 
-    # Presigned URL settings
-    PRESIGNED_UPLOAD_URL_EXPIRY_SECONDS: int = Field(default=300)  # 5 minutes
-    PRESIGNED_DOWNLOAD_URL_EXPIRY_SECONDS: int = Field(default=3600)  # 1 hour
+    # Storage URL expiry settings
+    STORAGE_URL_DEFAULT_EXPIRY_SECONDS: int = Field(default=3600)  # 1 hour
+    STORAGE_URL_MAX_EXPIRY_SECONDS: int = Field(default=604800)  # 7 days
 
     # Image processing
     IMAGE_THUMBNAIL_SIZE: tuple[int, int] = Field(default=(300, 300))
     IMAGE_MAX_DIMENSION: int = Field(default=2048)
     IMAGE_QUALITY: int = Field(default=85)
+
+    # Static files configuration
+    STATIC_FILES_PATH: str = Field(default="/code/static")
+
+    @property
+    def DEFAULT_PROFILE_PICTURE_URL(self) -> str:  # noqa: N802
+        """Default profile picture URL (served from static files)."""
+        return "/static/img/users/default_pfp.svg"
 
     BASE_DIR: Path = Path(__file__).resolve().parent
     ROOT_DIR: Path = Path(__file__).resolve().parent.parent
