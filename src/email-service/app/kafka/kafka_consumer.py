@@ -81,92 +81,50 @@ class KafkaConsumer:
                     extra={"error": str(e)},
                 )
 
+    async def process_message(self, msg):
+        try:
+            message_data = json.loads(msg.value.decode("utf-8"))
+            logger.info(f"Received message from topic: {msg.topic}")
+
+            if msg.topic == settings.KAFKA_VERIFICATION_EMAIL_TOPIC:
+                await user_verify_mail(
+                    recipient=message_data["email"],
+                    link=message_data["link"],
+                    username=message_data["username"],
+                )
+            elif msg.topic == settings.KAFKA_RESET_PASSWORD_EMAIL_TOPIC:
+                await user_password_reset_mail(
+                    recipient=message_data["email"],
+                    link=message_data["link"],
+                    username=message_data["username"],
+                )
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to decode JSON message: {e}")
+            await self.consumer.commit()
+        except Exception as e:
+            logger.error(f"Error processing message: {e}")
+
     async def consume_messages(self):
-        """Consume and process messages from Kafka topics."""
-        if not self.consumer:
-            logger.error("Cannot consume messages: Kafka consumer is not started")
-            raise RuntimeError("Kafka consumer is not started.")
-
         self.running = True
-        logger.info(
-            "Starting message consumption loop",
-            extra={"consumer_group": settings.KAFKA_EMAIL_CONSUMER_GROUP},
-        )
+        self._task = asyncio.create_task(self._consume_loop())
+        logger.info("Starting message consumer loop")
 
+    async def _consume_loop(self):
+        """Main message consumption loop using async iterator."""
         try:
             async for msg in self.consumer:
+                if not self.running:
+                    break
                 try:
-                    message_value = json.loads(msg.value.decode("utf-8"))
-                    logger.info(
-                        "Received Kafka message",
-                        extra={
-                            "topic": msg.topic,
-                            "partition": msg.partition,
-                            "offset": msg.offset,
-                            "key": msg.key.decode("utf-8") if msg.key else None,
-                            "message_size": len(msg.value),
-                        },
-                    )
-                    logger.debug(
-                        "Message content",
-                        extra={
-                            "topic": msg.topic,
-                            "message": message_value,
-                        },
-                    )
-
-                    # Process the message here
-                    if msg.topic == settings.KAFKA_VERIFICATION_EMAIL_TOPIC:
-                        await user_verify_mail(
-                            recipient=message_value["email"],
-                            link=message_value["link"],
-                            username=message_value["username"],
-                        )
-                    elif msg.topic == settings.KAFKA_RESET_PASSWORD_EMAIL_TOPIC:
-                        await user_password_reset_mail(
-                            recipient=message_value["email"],
-                            link=message_value["link"],
-                            username=message_value["username"],
-                        )
-
-                    # Commit offset after successful processing
+                    await self.process_message(msg)
                     await self.consumer.commit()
-                    logger.debug(
-                        "Message processed and offset committed",
-                        extra={
-                            "topic": msg.topic,
-                            "partition": msg.partition,
-                            "offset": msg.offset,
-                        },
-                    )
-
                 except Exception as e:
-                    logger.error(
-                        "Error processing Kafka message",
-                        exc_info=True,
-                        extra={
-                            "topic": msg.topic,
-                            "partition": msg.partition,
-                            "offset": msg.offset,
-                            "error": str(e),
-                        },
-                    )
-                    # Decide whether to commit offset on error
-                    # For now, we'll continue to next message
-                    continue
-
-        except asyncio.CancelledError:
-            logger.info("Message consumption cancelled")
-            raise
+                    logger.error(f"Failed to process message, skipping commit: {e}")
         except Exception as e:
-            logger.error(
-                "Fatal error in message consumption loop",
-                exc_info=True,
-                extra={"error": str(e)},
-            )
-            raise
+            logger.exception(f"Error in consumption loop: {e}")
         finally:
-            logger.info("Message consumption loop ended")
+            await self.consumer.stop()
 
 
 kafka_consumer = KafkaConsumer()

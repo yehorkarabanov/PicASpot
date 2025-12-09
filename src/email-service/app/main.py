@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
             exc_info=True,
             extra={"error": str(e)},
         )
-        raise e
+        raise
 
     yield
 
@@ -45,7 +45,6 @@ async def lifespan(app: FastAPI):
             exc_info=True,
             extra={"error": str(e)},
         )
-        raise e
     finally:
         # Gracefully shutdown logging
         shutdown_logging()
