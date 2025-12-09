@@ -26,21 +26,7 @@ class AreaCreate(AreaBase):
         None, description="Parent area ID for hierarchical structure"
     )
 
-    model_config = ConfigDict(extra="forbid")
-
-    @field_validator("image_file", "badge_file", mode="before")
-    @classmethod
-    def validate_file_fields(cls, v):
-        """Convert empty string to None for optional file upload fields"""
-        if v is None or (isinstance(v, str) and v.strip() == ""):
-            return None
-
-        # If it's an UploadFile object, return it
-        if isinstance(v, UploadFile):
-            return v
-
-        # Handle any other type
-        raise ValueError(f"File field must be an UploadFile or None, got {type(v).__name__}")
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @field_validator("parent_area_id", mode="before")
     @classmethod

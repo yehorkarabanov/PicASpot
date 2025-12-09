@@ -104,6 +104,7 @@ class AreaService:
 
         area_dict = area_data.model_dump(exclude={"image_file", "badge_file"})
 
+        # TODO: Refactor file upload logic to a separate utility/helper if reused elsewhere
         if area_data.image_file:
             result = await self.storage.upload_file(
                 file_data=await area_data.image_file.read(),

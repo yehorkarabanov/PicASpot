@@ -8,8 +8,8 @@ from urllib.parse import quote, unquote
 from miniopy_async import Minio
 from miniopy_async.error import S3Error
 
-from .exceptions import StorageError
 from .directories import StorageDir
+from .exceptions import StorageError
 
 logger = logging.getLogger(__name__)
 
