@@ -21,6 +21,7 @@ class UserResponse(TimezoneAwareSchema):
     email: EmailStr
     is_superuser: bool
     is_verified: bool
+    profile_picture_url: Optional[str] = None  # Presigned URL to access the image
 
     created_at: datetime.datetime
     updated_at: datetime.datetime
@@ -38,3 +39,16 @@ class UserUpdate(BaseModel):
 
 class UserReturn(BaseReturn):
     data: UserResponse | None = None
+
+
+class UserProfilePictureUrl(BaseModel):
+    """Schema for returning profile picture URL"""
+
+    url: str = Field(..., description="Presigned URL to access the profile picture")
+    expires_in: int = Field(..., description="URL expiration time in seconds")
+
+
+class UserProfilePictureReturn(BaseReturn):
+    """Response for profile picture URL endpoint"""
+
+    data: UserProfilePictureUrl | None = None

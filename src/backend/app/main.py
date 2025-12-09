@@ -1,10 +1,12 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.core.exception_handlers import (
     global_exception_handler,
@@ -92,6 +94,18 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, global_exception_handler)
 
 app.include_router(router, prefix="/v1")
+
+# Mount static files for serving default profile picture and other static assets
+static_path = Path(settings.STATIC_FILES_PATH)
+if static_path.exists():
+    app.mount(
+        "/static",
+        StaticFiles(directory=str(static_path)),
+        name="static",
+    )
+    logger.info(f"Static files mounted at /static from {static_path}")
+else:
+    logger.warning(f"Static files directory not found at {static_path}")
 
 
 @app.get("/")

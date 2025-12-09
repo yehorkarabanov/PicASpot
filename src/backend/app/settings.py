@@ -99,6 +99,14 @@ class Settings(BaseSettings):
     IMAGE_MAX_DIMENSION: int = Field(default=2048)
     IMAGE_QUALITY: int = Field(default=85)
 
+    # Static files configuration
+    STATIC_FILES_PATH: str = Field(default="/code/static")
+
+    @property
+    def DEFAULT_PROFILE_PICTURE_URL(self) -> str:  # noqa: N802
+        """Default profile picture URL (served from static files)."""
+        return "/static/img/users/default_pfp.svg"
+
     BASE_DIR: Path = Path(__file__).resolve().parent
     ROOT_DIR: Path = Path(__file__).resolve().parent.parent
 

@@ -1,9 +1,15 @@
 import logging
+from datetime import timedelta
+from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 from app.auth.security import get_password_hash, verify_password
 from app.core.exceptions import BadRequestError, NotFoundError
 from app.settings import settings
+from app.storage.directories import StorageDir
+
+if TYPE_CHECKING:
+    from app.storage.service import StorageService
 
 from .repository import UserRepository
 from .schemas import UserResponse, UserUpdate, UserUpdatePassword
@@ -21,7 +27,10 @@ class UserService:
     """
 
     def __init__(
-        self, user_repository: UserRepository, timezone: ZoneInfo | None = None
+        self,
+        user_repository: UserRepository,
+        timezone: ZoneInfo | None = None,
+        storage_service: "StorageService | None" = None,
     ):
         """
         Initialize the UserService.
@@ -29,19 +38,23 @@ class UserService:
         Args:
             user_repository: Repository instance for user data access.
             timezone: Client's timezone for datetime conversion in responses.
+            storage_service: Storage service for handling profile pictures (optional).
         """
         self.user_repository = user_repository
         self.timezone = timezone or ZoneInfo("UTC")
+        self.storage_service = storage_service
 
     async def get_user(self, user_id: str) -> UserResponse:
         """
-        Retrieve a user by their ID.
+        Retrieve a user by their ID with profile picture URL.
+
+        Always returns a profile picture URL - either custom or default.
 
         Args:
             user_id: The UUID string of the user to retrieve.
 
         Returns:
-            UserResponse: The user data.
+            UserResponse: The user data with profile_picture_url.
 
         Raises:
             NotFoundError: If the user does not exist.
@@ -49,7 +62,19 @@ class UserService:
         user = await self.user_repository.get_by_id(user_id)
         if not user:
             raise NotFoundError("User not found")
-        return UserResponse.model_validate_with_timezone(user, self.timezone)
+
+        user_response = UserResponse.model_validate_with_timezone(user, self.timezone)
+
+        # Always generate profile picture URL (custom or default)
+        try:
+            url, _ = await self.get_profile_picture_url(user_id)
+            user_response.profile_picture_url = url
+        except Exception as e:
+            logger.warning(f"Failed to generate profile picture URL: {e}")
+            # Fallback to default if something goes wrong
+            user_response.profile_picture_url = settings.DEFAULT_PROFILE_PICTURE_URL
+
+        return user_response
 
     async def update_user(self, user_id: str, user_data: UserUpdate) -> UserResponse:
         """
@@ -173,3 +198,124 @@ class UserService:
                 regular_user = await self.user_repository.create(user_dict)
                 print(f"Created default regular user: {regular_user.email}")
                 logger.info(f"Created default regular user: {regular_user.email}")
+
+    async def upload_profile_picture(
+        self, user_id: str, image_data: bytes, filename: str, content_type: str
+    ) -> str:
+        """
+        Upload a user's profile picture.
+
+        Args:
+            user_id: The UUID string of the user.
+            image_data: The image file data as bytes.
+            filename: Original filename.
+            content_type: MIME type of the image.
+
+        Returns:
+            str: The storage path of the uploaded image.
+
+        Raises:
+            NotFoundError: If the user does not exist.
+            BadRequestError: If storage service is not available.
+        """
+        if not self.storage_service:
+            raise BadRequestError("Storage service not configured")
+
+        user = await self.user_repository.get_by_id(user_id)
+        if not user:
+            raise NotFoundError("User not found")
+
+        # Delete old profile picture if exists
+        if user.profile_picture_path:
+            try:
+                await self.storage_service.remove_object(user.profile_picture_path)
+            except Exception as e:
+                logger.warning(f"Failed to delete old profile picture: {e}")
+
+        # Upload new profile picture to users directory
+        result = await self.storage_service.upload_file(
+            file_data=image_data,
+            original_filename=filename,
+            path_prefix=StorageDir.USERS,
+            content_type=content_type,
+        )
+
+        # Update user record with new profile picture path
+        user.profile_picture_path = result["object_path"]
+        await self.user_repository.save(user)
+
+        logger.info(f"User {user_id} uploaded profile picture: {result['object_path']}")
+        return result["object_path"]
+
+    async def get_profile_picture_url(
+        self, user_id: str, expires: timedelta | None = None
+    ) -> tuple[str, int]:
+        """
+        Get a presigned URL for a user's profile picture.
+
+        If the user has no custom profile picture, returns the default picture URL.
+
+        Args:
+            user_id: The UUID string of the user.
+            expires: Optional custom expiration time for the URL.
+
+        Returns:
+            tuple[str, int]: (presigned_url or default_url, expiration_seconds)
+
+        Raises:
+            NotFoundError: If the user does not exist.
+            BadRequestError: If storage service is not available for custom pictures.
+        """
+        user = await self.user_repository.get_by_id(user_id)
+        if not user:
+            raise NotFoundError("User not found")
+
+        # Return default profile picture URL if user has no custom picture
+        if not user.profile_picture_path:
+            return settings.DEFAULT_PROFILE_PICTURE_URL, 0  # 0 means never expires (static file)
+
+        # User has custom profile picture - generate presigned URL
+        if not self.storage_service:
+            raise BadRequestError("Storage service not configured")
+
+        # Generate presigned URL
+        url = await self.storage_service.get_image_url(
+            user.profile_picture_path, expires=expires
+        )
+
+        # Get expiration seconds
+        expiration_seconds = int(
+            (expires or self.storage_service.default_url_expiry).total_seconds()
+        )
+
+        return url, expiration_seconds
+
+    async def delete_profile_picture(self, user_id: str) -> None:
+        """
+        Delete a user's profile picture.
+
+        Args:
+            user_id: The UUID string of the user.
+
+        Raises:
+            NotFoundError: If the user does not exist or has no profile picture.
+            BadRequestError: If storage service is not available.
+        """
+        if not self.storage_service:
+            raise BadRequestError("Storage service not configured")
+
+        user = await self.user_repository.get_by_id(user_id)
+        if not user:
+            raise NotFoundError("User not found")
+
+        if not user.profile_picture_path:
+            raise NotFoundError("User has no profile picture")
+
+        # Delete from storage
+        await self.storage_service.remove_object(user.profile_picture_path)
+
+        # Update user record
+        user.profile_picture_path = None
+        await self.user_repository.save(user)
+
+        logger.info(f"User {user_id} deleted profile picture")

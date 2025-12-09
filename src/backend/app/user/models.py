@@ -22,6 +22,9 @@ class User(Base):
     username: Mapped[str] = mapped_column(unique=True, index=True, nullable=False)
     email: Mapped[str] = mapped_column(unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(nullable=False)
+    profile_picture_path: Mapped[str | None] = mapped_column(
+        nullable=True, default=None, comment="Path to profile picture in MinIO storage"
+    )
     is_superuser: Mapped[bool] = mapped_column(
         default=False, nullable=False, index=True
     )
