@@ -28,13 +28,40 @@ class AreaCreate(AreaBase):
 
     model_config = ConfigDict(extra="forbid")
 
+    @field_validator("image_file", "badge_file", mode="before")
+    @classmethod
+    def validate_file_fields(cls, v):
+        """Convert empty string to None for optional file upload fields"""
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+
+        # If it's an UploadFile object, return it
+        if isinstance(v, UploadFile):
+            return v
+
+        # Handle any other type
+        raise ValueError(f"File field must be an UploadFile or None, got {type(v).__name__}")
+
     @field_validator("parent_area_id", mode="before")
     @classmethod
     def validate_parent_area_id(cls, v):
-        """Convert empty string to None for optional UUID field"""
-        if v == "" or v is None:
+        """Convert empty string to None and validate UUID format"""
+        if v is None or (isinstance(v, str) and v.strip() == ""):
             return None
-        return v
+
+        # If it's already a UUID object, return it
+        if isinstance(v, UUID):
+            return v
+
+        # Try to convert string to UUID to validate format
+        if isinstance(v, str):
+            try:
+                return UUID(v.strip())
+            except (ValueError, AttributeError) as e:
+                raise ValueError(f"Invalid UUID format for parent_area_id: {v}") from e
+
+        # Handle any other type
+        raise ValueError(f"parent_area_id must be a valid UUID or None, got {type(v).__name__}")
 
 
 class AreaUpdate(BaseModel):

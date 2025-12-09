@@ -113,6 +113,8 @@ class AreaService:
                 or "application/octet-stream",
             )
             area_dict["image_url"] = result["object_path"]
+        else:
+            area_dict["image_url"] = f"{StorageDir.AREAS.value}/default_area_image.png"
 
         if area_data.badge_file:
             result = await self.storage.upload_file(
@@ -123,6 +125,8 @@ class AreaService:
                 or "application/octet-stream",
             )
             area_dict["badge_url"] = result["object_path"]
+        else:
+            area_dict["badge_url"] = f"{StorageDir.AREAS.value}/default_area_badge.png"
 
         area_dict["creator_id"] = user.id
 
