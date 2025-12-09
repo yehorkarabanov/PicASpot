@@ -16,46 +16,55 @@ class KafkaConsumer:
         self.running = False
         self._task: asyncio.Task | None = None
 
-    async def start(self):
+    async def start(self, max_retries: int = 5, retry_delay: int = 2):
         """Start the Kafka consumer and subscribe to topics."""
-        logger.info(
-            "Starting Kafka consumer",
-            extra={
-                "bootstrap_servers": settings.KAFKA_BOOTSTRAP_SERVERS,
-                "consumer_group": settings.KAFKA_EMAIL_CONSUMER_GROUP,
-                "topics": [
+        for attempt in range(max_retries + 1):
+            try:
+                logger.info(
+                    "Starting Kafka consumer",
+                    extra={
+                        "bootstrap_servers": settings.KAFKA_BOOTSTRAP_SERVERS,
+                        "consumer_group": settings.KAFKA_EMAIL_CONSUMER_GROUP,
+                        "topics": [
+                            settings.KAFKA_VERIFICATION_EMAIL_TOPIC,
+                            settings.KAFKA_RESET_PASSWORD_EMAIL_TOPIC,
+                        ],
+                    },
+                )
+                self.consumer = AIOKafkaConsumer(
                     settings.KAFKA_VERIFICATION_EMAIL_TOPIC,
                     settings.KAFKA_RESET_PASSWORD_EMAIL_TOPIC,
-                ],
-            },
-        )
-        try:
-            self.consumer = AIOKafkaConsumer(
-                settings.KAFKA_VERIFICATION_EMAIL_TOPIC,
-                settings.KAFKA_RESET_PASSWORD_EMAIL_TOPIC,
-                bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
-                group_id=settings.KAFKA_EMAIL_CONSUMER_GROUP,
-                auto_offset_reset="earliest",
-                enable_auto_commit=False,
-            )
+                    bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
+                    group_id=settings.KAFKA_EMAIL_CONSUMER_GROUP,
+                    auto_offset_reset="earliest",
+                    enable_auto_commit=False,
+                )
 
-            await self.consumer.start()
-            logger.info(
-                "Kafka consumer started successfully",
-                extra={
-                    "consumer_group": settings.KAFKA_EMAIL_CONSUMER_GROUP,
-                },
-            )
-        except Exception as e:
-            logger.error(
-                "Failed to start Kafka consumer",
-                exc_info=True,
-                extra={
-                    "error": str(e),
-                    "bootstrap_servers": settings.KAFKA_BOOTSTRAP_SERVERS,
-                },
-            )
-            raise
+                await self.consumer.start()
+                logger.info(
+                    "Kafka consumer started successfully",
+                    extra={
+                        "consumer_group": settings.KAFKA_EMAIL_CONSUMER_GROUP,
+                    },
+                )
+                break  # Success, exit retry loop
+            except Exception as e:
+                if attempt < max_retries:
+                    logger.warning(
+                        f"Attempt {attempt + 1} failed, retrying in {retry_delay} seconds",
+                        extra={"error": str(e)},
+                    )
+                    await asyncio.sleep(retry_delay)
+                else:
+                    logger.error(
+                        "Failed to start Kafka consumer after all retries",
+                        exc_info=True,
+                        extra={
+                            "error": str(e),
+                            "bootstrap_servers": settings.KAFKA_BOOTSTRAP_SERVERS,
+                        },
+                    )
+                    raise
 
     async def stop(self):
         """Stop the Kafka consumer gracefully."""
