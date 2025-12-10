@@ -192,17 +192,12 @@ class LandmarkService:
 
         # Handle location update if latitude or longitude are provided
         landmark_dict = landmark_data.model_dump(
-            exclude_unset=True, exclude={"latitude", "longitude"}
+            exclude_unset=True, exclude={"latitude", "longitude", "image_file"}
         )
 
-        # Remove file objects from dict as they shouldn't be stored directly
-        landmark_dict.pop("image_file", None)
-
         # Filter out None values to prevent setting required fields to null
-        # Only keep None for area_id (which can be explicitly set to null)
-        landmark_dict = {
-            k: v for k, v in landmark_dict.items() if v is not None or k == "area_id"
-        }
+        # For PATCH updates, we only want to update fields that were actually provided
+        landmark_dict = {k: v for k, v in landmark_dict.items() if v is not None}
 
         if landmark_data.image_file:
             result = await self.storage.upload_file(

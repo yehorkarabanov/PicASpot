@@ -184,6 +184,8 @@ class LandmarkResponse(LandmarkBase, TimezoneAwareSchema):
     creator_id: UUID = Field(..., description="User ID who created the landmark")
     image_url: str | None = Field(None, description="URL to landmark image")
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class LandmarkListResponse(TimezoneAwareSchema):
     """Schema for paginated list of landmarks with timezone-aware timestamps"""

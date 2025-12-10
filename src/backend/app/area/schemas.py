@@ -136,6 +136,8 @@ class AreaResponse(AreaBase, TimezoneAwareSchema):
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class AreaListResponse(TimezoneAwareSchema):
     """Schema for paginated list of areas with timezone-aware timestamps"""
