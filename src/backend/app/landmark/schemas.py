@@ -1,6 +1,7 @@
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from fastapi import UploadFile
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.schemas import BaseReturn
 from app.core.schemas_base import TimezoneAwareSchema
@@ -13,7 +14,6 @@ class LandmarkBase(BaseModel):
     description: str | None = Field(
         None, max_length=1000, description="Landmark description"
     )
-    image_url: str = Field(..., max_length=500, description="URL to landmark image")
     latitude: float = Field(..., ge=-90, le=90, description="Latitude coordinate")
     longitude: float = Field(..., ge=-180, le=180, description="Longitude coordinate")
     unlock_radius_meters: int = Field(
@@ -28,6 +28,17 @@ class LandmarkCreate(LandmarkBase):
     """Schema for creating a new landmark"""
 
     area_id: UUID = Field(..., description="Area ID where landmark is located")
+    image_file: UploadFile | None = None
+
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+
+    @field_validator("image_file", mode="before")
+    @classmethod
+    def validate_file_fields(cls, v):
+        """Convert empty string to None for file upload fields"""
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
 
 
 class LandmarkUpdate(BaseModel):
@@ -38,9 +49,6 @@ class LandmarkUpdate(BaseModel):
     )
     description: str | None = Field(
         None, max_length=1000, description="Landmark description"
-    )
-    image_url: str | None = Field(
-        None, max_length=500, description="URL to landmark image"
     )
     latitude: float | None = Field(
         None, ge=-90, le=90, description="Latitude coordinate"
@@ -55,6 +63,17 @@ class LandmarkUpdate(BaseModel):
         None, ge=1, le=5000, description="Radius in meters for taking photos"
     )
     area_id: UUID | None = Field(None, description="Area ID where landmark is located")
+    image_file: UploadFile | None = None
+
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+
+    @field_validator("image_file", mode="before")
+    @classmethod
+    def validate_file_fields(cls, v):
+        """Convert empty string to None for file upload fields"""
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
 
 
 class LandmarkResponse(LandmarkBase, TimezoneAwareSchema):
@@ -63,6 +82,7 @@ class LandmarkResponse(LandmarkBase, TimezoneAwareSchema):
     id: UUID = Field(..., description="Unique landmark identifier")
     area_id: UUID = Field(..., description="Area ID where landmark is located")
     creator_id: UUID = Field(..., description="User ID who created the landmark")
+    image_url: str | None = Field(None, description="URL to landmark image")
 
 
 class LandmarkListResponse(TimezoneAwareSchema):

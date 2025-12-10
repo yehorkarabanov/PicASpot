@@ -5,6 +5,7 @@ from fastapi import Depends, Request
 
 from app.area.dependencies import AreaRepDep
 from app.database import SessionDep
+from app.storage import StorageServiceDep
 
 from .models import Landmark
 from .repository import LandmarkRepository
@@ -32,12 +33,14 @@ LandmarkRepDep = Annotated[LandmarkRepository, Depends(get_landmark_repository)]
 def get_landmark_service(
     landmark_repository: LandmarkRepDep,
     area_repository: AreaRepDep,
+    storage: StorageServiceDep,
     timezone: TimeZoneDep,
 ) -> LandmarkService:
     """Get an instance of LandmarkService with timezone support."""
     return LandmarkService(
         landmark_repository=landmark_repository,
         area_repository=area_repository,
+        storage=storage,
         timezone=timezone,
     )
 

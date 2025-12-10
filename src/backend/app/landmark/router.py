@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Form
 
 from app.auth.dependencies import CurrentUserDep
 
@@ -18,13 +18,13 @@ router = APIRouter(prefix="/landmark", tags=["landmark"])
 
 @router.post("/", response_model=LandmarkReturn, response_model_exclude_none=True)
 async def create_landmark(
-    landmark_data: LandmarkCreate,
     landmark_service: LandmarkServiceDep,
     current_user: CurrentUserDep,
+    landmark_data: LandmarkCreate = Form(..., media_type="multipart/form-data"),
 ) -> LandmarkReturn:
     """Create a new landmark."""
     landmark_response = await landmark_service.create_landmark(
-        landmark_data=landmark_data, creator_id=current_user.id
+        landmark_data=landmark_data, user=current_user
     )
     return LandmarkReturn(
         message="Landmark created successfully", data=landmark_response
@@ -66,9 +66,9 @@ async def delete_landmark(
 )
 async def update_landmark(
     landmark_id: uuid.UUID,
-    landmark_data: LandmarkUpdate,
     landmark_service: LandmarkServiceDep,
     current_user: CurrentUserDep,
+    landmark_data: LandmarkUpdate = Form(..., media_type="multipart/form-data"),
 ) -> LandmarkReturn:
     """Update landmark by ID."""
     landmark_response = await landmark_service.update_landmark(

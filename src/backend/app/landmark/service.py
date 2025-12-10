@@ -6,6 +6,7 @@ from geoalchemy2.elements import WKTElement
 
 from app.area.repository import AreaRepository
 from app.core.exceptions import ForbiddenError, NotFoundError
+from app.storage import StorageDir, StorageService
 from app.user.models import User
 
 from .repository import LandmarkRepository
@@ -32,6 +33,7 @@ class LandmarkService:
         self,
         landmark_repository: LandmarkRepository,
         area_repository: AreaRepository,
+        storage: StorageService,
         timezone: ZoneInfo | None = None,
     ):
         """
@@ -40,21 +42,23 @@ class LandmarkService:
         Args:
             landmark_repository: Repository instance for landmark data access.
             area_repository: Repository instance for area data access.
+            storage: Storage service for file uploads.
             timezone: Client's timezone for datetime conversion in responses.
         """
         self.landmark_repository = landmark_repository
         self.area_repository = area_repository
+        self.storage = storage
         self.timezone = timezone or ZoneInfo("UTC")
 
     async def create_landmark(
-        self, landmark_data: LandmarkCreate, creator_id: uuid.UUID
+        self, landmark_data: LandmarkCreate, user: User
     ) -> LandmarkResponse:
         """
         Create a new landmark.
 
         Args:
             landmark_data: Data for the new landmark.
-            creator_id: ID of the user creating the landmark.
+            user: The user creating the landmark.
 
         Returns:
             The created landmark response.
@@ -65,8 +69,25 @@ class LandmarkService:
         await self._validate_area_exists(landmark_data.area_id)
 
         # Convert landmark data to dict
-        landmark_dict = landmark_data.model_dump(exclude={"latitude", "longitude"})
-        landmark_dict["creator_id"] = creator_id
+        landmark_dict = landmark_data.model_dump(
+            exclude={"latitude", "longitude", "image_file"}
+        )
+        landmark_dict["creator_id"] = user.id
+
+        # TODO: Refactor file upload logic to a separate utility/helper if reused elsewhere
+        if landmark_data.image_file:
+            result = await self.storage.upload_file(
+                file_data=await landmark_data.image_file.read(),
+                original_filename=landmark_data.image_file.filename,
+                path_prefix=StorageDir.LANDMARKS,
+                content_type=landmark_data.image_file.content_type
+                or "application/octet-stream",
+            )
+            landmark_dict["image_url"] = result["object_path"]
+        else:
+            landmark_dict["image_url"] = (
+                f"{StorageDir.LANDMARKS.value}/default_landmark_image.png"
+            )
 
         # Create a WKT POINT from latitude and longitude for PostGIS
         # POINT(longitude latitude) - note the order!
@@ -76,7 +97,7 @@ class LandmarkService:
         landmark = await self.landmark_repository.create(landmark_dict)
 
         logger.info(
-            "Landmark created successfully: %s by user %s", landmark.name, creator_id
+            "Landmark created successfully: %s by user %s", landmark.name, user.id
         )
         return LandmarkResponse.model_validate_with_timezone(landmark, self.timezone)
 
@@ -173,6 +194,25 @@ class LandmarkService:
         landmark_dict = landmark_data.model_dump(
             exclude_unset=True, exclude={"latitude", "longitude"}
         )
+
+        # Remove file objects from dict as they shouldn't be stored directly
+        landmark_dict.pop("image_file", None)
+
+        # Filter out None values to prevent setting required fields to null
+        # Only keep None for area_id (which can be explicitly set to null)
+        landmark_dict = {
+            k: v for k, v in landmark_dict.items() if v is not None or k == "area_id"
+        }
+
+        if landmark_data.image_file:
+            result = await self.storage.upload_file(
+                file_data=await landmark_data.image_file.read(),
+                original_filename=landmark_data.image_file.filename,
+                path_prefix=StorageDir.LANDMARKS,
+                content_type=landmark_data.image_file.content_type
+                or "application/octet-stream",
+            )
+            landmark_dict["image_url"] = result["object_path"]
 
         # If either latitude or longitude is provided, update location
         if landmark_data.latitude is not None or landmark_data.longitude is not None:
