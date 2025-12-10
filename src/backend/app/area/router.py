@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, UploadFile, Form
+from fastapi import APIRouter, Form
 
 from app.auth.dependencies import CurrentSuperuserDep, CurrentUserDep
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException, status
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 from app.auth.dependencies import CurrentUserDep
 from app.core.schemas import BaseReturn
@@ -6,11 +6,11 @@ from app.settings import settings
 
 from .dependencies import UserServiceDep
 from .schemas import (
+    UserProfilePictureReturn,
+    UserProfilePictureUrl,
     UserReturn,
     UserUpdate,
     UserUpdatePassword,
-    UserProfilePictureReturn,
-    UserProfilePictureUrl,
 )
 
 router = APIRouter(tags=["user"], prefix="/user")

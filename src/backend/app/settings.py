@@ -39,7 +39,6 @@ class Settings(BaseSettings):
     def DATABASE_URL(self) -> str:  # noqa: N802
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
-
     EMAIL_VERIFY_PATH: str
     EMAIL_RESET_PASSWORD_PATH: str
 

@@ -272,7 +272,10 @@ class UserService:
 
         # Return default profile picture URL if user has no custom picture
         if not user.profile_picture_path:
-            return settings.DEFAULT_PROFILE_PICTURE_URL, 0  # 0 means never expires (static file)
+            return (
+                settings.DEFAULT_PROFILE_PICTURE_URL,
+                0,
+            )  # 0 means never expires (static file)
 
         # User has custom profile picture - generate presigned URL
         if not self.storage_service:

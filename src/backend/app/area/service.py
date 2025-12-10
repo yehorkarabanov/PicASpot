@@ -2,7 +2,6 @@ import logging
 import uuid
 from zoneinfo import ZoneInfo
 
-
 from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
 from app.storage import StorageDir, StorageService
 from app.user.models import User
@@ -228,8 +227,7 @@ class AreaService:
         # Filter out None values to prevent setting required fields to null
         # Only keep None for parent_area_id (which can be explicitly set to null)
         area_dict = {
-            k: v for k, v in area_dict.items()
-            if v is not None or k == "parent_area_id"
+            k: v for k, v in area_dict.items() if v is not None or k == "parent_area_id"
         }
 
         if area_data.image_file:

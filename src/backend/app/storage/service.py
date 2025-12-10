@@ -9,9 +9,10 @@ from urllib.parse import quote, unquote
 from miniopy_async import Minio
 from miniopy_async.error import S3Error
 
-from .exceptions import StorageError
-from .directories import StorageDir
 from app.settings import settings
+
+from .directories import StorageDir
+from .exceptions import StorageError
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,9 @@ class StorageService:
         """
         self.client = client
         self.bucket_name = bucket_name
-        self.default_url_expiry = timedelta(seconds=settings.STORAGE_URL_DEFAULT_EXPIRY_SECONDS)
+        self.default_url_expiry = timedelta(
+            seconds=settings.STORAGE_URL_DEFAULT_EXPIRY_SECONDS
+        )
         self.max_url_expiry = timedelta(seconds=settings.STORAGE_URL_MAX_EXPIRY_SECONDS)
 
     async def upload_file(

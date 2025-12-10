@@ -11,10 +11,10 @@ Public API:
 """
 
 from .dependencies import StorageServiceDep
+from .directories import StorageDir
 from .manager import check_minio_health, ensure_bucket_exists
 from .router import router
 from .service import StorageService
-from .directories import StorageDir
 
 __all__ = [
     "StorageServiceDep",

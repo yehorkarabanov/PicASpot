@@ -264,4 +264,3 @@ def shutdown_logging() -> None:
     if _queue_listener:
         _queue_listener.stop()
         _queue_listener = None
-

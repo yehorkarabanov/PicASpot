@@ -36,7 +36,7 @@ def get_user_service(
     return UserService(
         user_repository=user_repository,
         timezone=timezone,
-        storage_service=storage_service
+        storage_service=storage_service,
     )
 
 
