@@ -14,6 +14,7 @@ from .schemas import (
     LandmarkCreate,
     LandmarkResponse,
     LandmarkUpdate,
+    NearbyLandmarkResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -228,3 +229,82 @@ class LandmarkService:
         landmark = await self.landmark_repository.update(landmark_id, landmark_dict)
         logger.info("Landmark updated: %s by user %s", landmark.name, user.username)
         return LandmarkResponse.model_validate_with_timezone(landmark, self.timezone)
+
+    async def get_nearby_landmarks(
+        self,
+        latitude: float,
+        longitude: float,
+        radius_meters: int,
+        user: User,
+        area_id: uuid.UUID | None = None,
+        only_verified: bool = False,
+        load_from_same_area: bool = False,
+    ) -> list[NearbyLandmarkResponse]:
+        """
+        Get nearby landmarks with unlock status and area information.
+
+        Args:
+            latitude: Current user latitude
+            longitude: Current user longitude
+            radius_meters: Search radius in meters
+            user: Current user
+            area_id: Optional area ID to filter landmarks
+            only_verified: Only return landmarks from verified areas
+            load_from_same_area: Load all landmarks from same areas as found landmarks
+
+        Returns:
+            List of NearbyLandmarkResponse objects formatted for map display with unlock status
+        """
+        landmarks = await self.landmark_repository.get_nearby_landmarks(
+            latitude=latitude,
+            longitude=longitude,
+            radius_meters=radius_meters,
+            user_id=user.id,
+            area_id=area_id,
+            only_verified=only_verified,
+            load_from_same_area=load_from_same_area,
+        )
+
+        # Transform landmarks into the response format
+        result = []
+        for landmark in landmarks:
+            # Check if user has unlocked this landmark
+            # The unlocks relationship is loaded with the current user's unlocks only
+            is_unlocked = any(unlock.user_id == user.id for unlock in landmark.unlocks)
+
+            landmark_data = {
+                "id": landmark.id,
+                "unlocked": is_unlocked,
+                "coordinate": {
+                    "latitude": landmark.latitude,
+                    "longitude": landmark.longitude,
+                },
+                "title": landmark.name,
+                "description": landmark.description,
+                "image": landmark.image_url,
+                "radius": landmark.photo_radius_meters,
+                "unlock_radius": landmark.unlock_radius_meters,
+                "badge_url": landmark.area.badge_url,
+                "area_id": landmark.area_id,
+                "area_name": landmark.area.name,
+                "is_area_verified": landmark.area.is_verified,
+                "created_at": landmark.created_at,
+                "updated_at": landmark.updated_at,
+            }
+
+            # Convert to Pydantic model with timezone conversion
+            landmark_response = NearbyLandmarkResponse.model_validate_with_timezone(
+                landmark_data, self.timezone
+            )
+            result.append(landmark_response)
+
+        logger.info(
+            "Retrieved %d nearby landmarks for user %s at (%.6f, %.6f) within %dm",
+            len(result),
+            user.username,
+            latitude,
+            longitude,
+            radius_meters,
+        )
+
+        return result

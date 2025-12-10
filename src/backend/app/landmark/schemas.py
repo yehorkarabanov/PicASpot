@@ -226,3 +226,59 @@ class LandmarkNearbyRequest(BaseModel):
         default=False,
         description="Load all landmarks from same areas as found landmarks, even outside radius",
     )
+
+
+class CoordinateSchema(BaseModel):
+    """Schema for coordinate data"""
+
+    latitude: float = Field(..., description="Latitude coordinate")
+    longitude: float = Field(..., description="Longitude coordinate")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NearbyLandmarkResponse(TimezoneAwareSchema):
+    """
+    Enhanced schema for nearby landmarks response.
+    Includes unlock status and area information for map display.
+    """
+
+    id: UUID = Field(..., description="Unique landmark identifier")
+    unlocked: bool = Field(
+        ..., description="Whether the current user has unlocked this landmark"
+    )
+    coordinate: CoordinateSchema = Field(
+        ..., description="Position of the landmark on the map"
+    )
+    title: str = Field(..., description="Title/name of the landmark")
+    description: str | None = Field(None, description="Description of the landmark")
+    image: str | None = Field(None, description="URL to landmark image")
+    radius: int = Field(..., description="Photo radius in meters for this landmark")
+    unlock_radius: int = Field(
+        ..., description="Unlock radius in meters for this landmark"
+    )
+    badge_url: str | None = Field(
+        None, description="URL to area badge associated with this landmark"
+    )
+    area_id: UUID = Field(..., description="Area ID where landmark is located")
+    area_name: str = Field(..., description="Name of the area")
+    is_area_verified: bool = Field(..., description="Whether the area is verified")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NearbyLandmarksListResponse(BaseModel):
+    """Schema for list of nearby landmarks"""
+
+    landmarks: list[NearbyLandmarkResponse] = Field(
+        default_factory=list, description="List of nearby landmarks"
+    )
+    total: int = Field(..., ge=0, description="Total number of landmarks found")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NearbyLandmarksReturn(BaseReturn):
+    """API response wrapper for nearby landmarks"""
+
+    data: NearbyLandmarksListResponse | None = None

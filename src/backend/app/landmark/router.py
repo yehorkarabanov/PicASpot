@@ -11,6 +11,8 @@ from .schemas import (
     LandmarkListReturn,
     LandmarkReturn,
     LandmarkUpdate,
+    NearbyLandmarksListResponse,
+    NearbyLandmarksReturn,
 )
 
 router = APIRouter(prefix="/landmark", tags=["landmark"])
@@ -21,7 +23,7 @@ router = APIRouter(prefix="/landmark", tags=["landmark"])
 
 
 @router.get(
-    "/nearby", response_model=LandmarkListReturn, response_model_exclude_none=True
+    "/nearby", response_model=NearbyLandmarksReturn, response_model_exclude_none=True
 )
 async def get_nearby_landmarks(
     landmark_service: LandmarkServiceDep,
@@ -42,10 +44,25 @@ async def get_nearby_landmarks(
     load_from_same_area: Annotated[
         bool, Query(description="Load all landmarks from same areas as found landmarks")
     ] = False,
-) -> LandmarkListReturn:
-    """[WIP] Get nearby landmarks based on coordinates and optional filters."""
-    # TODO: Implement nearby landmarks logic in service
-    return LandmarkListReturn(message="Not implemented yet", data=None)
+) -> NearbyLandmarksReturn:
+    """Get nearby landmarks based on coordinates and optional filters."""
+    landmarks_data = await landmark_service.get_nearby_landmarks(
+        latitude=latitude,
+        longitude=longitude,
+        radius_meters=radius_meters,
+        user=current_user,
+        area_id=area_id,
+        only_verified=only_verified,
+        load_from_same_area=load_from_same_area,
+    )
+
+    response_data = NearbyLandmarksListResponse(
+        landmarks=landmarks_data, total=len(landmarks_data)
+    )
+
+    return NearbyLandmarksReturn(
+        message="Nearby landmarks retrieved successfully", data=response_data
+    )
 
 
 @router.get(
