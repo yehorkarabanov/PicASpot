@@ -1,6 +1,7 @@
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, Form
+from fastapi import APIRouter, Depends
 
 from app.auth.dependencies import CurrentSuperuserDep, CurrentUserDep
 
@@ -14,7 +15,7 @@ router = APIRouter(tags=["area"], prefix="/area")
 async def create_area(
     area_service: AreaServiceDep,
     current_user: CurrentUserDep,
-    area_data: AreaCreate = Form(..., media_type="multipart/form-data"),
+    area_data: Annotated[AreaCreate, Depends()],
 ) -> AreaReturn:
     """Create a new area. If the user is a superuser, the area will be automatically verified."""
     area_response = await area_service.create_area(
@@ -55,7 +56,7 @@ async def update_area(
     area_id: uuid.UUID,
     area_service: AreaServiceDep,
     current_user: CurrentUserDep,
-    area_data: AreaUpdate = Form(..., media_type="multipart/form-data"),
+    area_data: Annotated[AreaUpdate, Depends()],
 ) -> AreaReturn:
     """Update area by ID."""
     area_response = await area_service.update_area(

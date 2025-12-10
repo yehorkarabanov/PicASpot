@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import UploadFile
+from fastapi import File, Form, UploadFile
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.schemas import BaseReturn
@@ -24,11 +24,23 @@ class LandmarkBase(BaseModel):
     )
 
 
-class LandmarkCreate(LandmarkBase):
-    """Schema for creating a new landmark"""
+class LandmarkCreate(BaseModel):
+    """Schema for creating a new landmark with multipart form data support"""
 
-    area_id: UUID = Field(..., description="Area ID where landmark is located")
-    image_file: UploadFile | None = None
+    name: str = Form(..., min_length=1, max_length=255, description="Landmark name")
+    description: str | None = Form(
+        None, max_length=1000, description="Landmark description"
+    )
+    latitude: float = Form(..., ge=-90, le=90, description="Latitude coordinate")
+    longitude: float = Form(..., ge=-180, le=180, description="Longitude coordinate")
+    unlock_radius_meters: int = Form(
+        100, ge=1, le=10000, description="Radius in meters for unlocking landmark"
+    )
+    photo_radius_meters: int = Form(
+        50, ge=1, le=5000, description="Radius in meters for taking photos"
+    )
+    area_id: UUID = Form(..., description="Area ID where landmark is located")
+    image_file: UploadFile | None = File(None, description="Landmark image file")
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
@@ -40,30 +52,61 @@ class LandmarkCreate(LandmarkBase):
             return None
         return v
 
+    @field_validator("area_id", mode="before")
+    @classmethod
+    def validate_area_id(cls, v):
+        """Convert empty string to None and validate UUID format"""
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+
+        # If it's already a UUID object, return it
+        if isinstance(v, UUID):
+            return v
+
+        # Try to convert string to UUID to validate format
+        if isinstance(v, str):
+            try:
+                return UUID(v.strip())
+            except (ValueError, AttributeError) as e:
+                raise ValueError(f"Invalid UUID format for area_id: {v}") from e
+
+        # Handle any other type
+        raise ValueError(
+            f"area_id must be a valid UUID or None, got {type(v).__name__}"
+        )
+
+    @field_validator("name", "description", mode="before")
+    @classmethod
+    def empty_string_to_none(cls, v):
+        """Convert empty string to None for string fields"""
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
+
 
 class LandmarkUpdate(BaseModel):
-    """Schema for updating an existing landmark - all fields optional"""
+    """Schema for updating an existing landmark with multipart form data support - all fields optional"""
 
-    name: str | None = Field(
+    name: str | None = Form(
         None, min_length=1, max_length=255, description="Landmark name"
     )
-    description: str | None = Field(
+    description: str | None = Form(
         None, max_length=1000, description="Landmark description"
     )
-    latitude: float | None = Field(
+    latitude: float | None = Form(
         None, ge=-90, le=90, description="Latitude coordinate"
     )
-    longitude: float | None = Field(
+    longitude: float | None = Form(
         None, ge=-180, le=180, description="Longitude coordinate"
     )
-    unlock_radius_meters: int | None = Field(
+    unlock_radius_meters: int | None = Form(
         None, ge=1, le=10000, description="Radius in meters for unlocking landmark"
     )
-    photo_radius_meters: int | None = Field(
+    photo_radius_meters: int | None = Form(
         None, ge=1, le=5000, description="Radius in meters for taking photos"
     )
-    area_id: UUID | None = Field(None, description="Area ID where landmark is located")
-    image_file: UploadFile | None = None
+    area_id: UUID | None = Form(None, description="Area ID where landmark is located")
+    image_file: UploadFile | None = File(None, description="Landmark image file")
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
@@ -73,6 +116,63 @@ class LandmarkUpdate(BaseModel):
         """Convert empty string to None for file upload fields"""
         if isinstance(v, str) and v.strip() == "":
             return None
+        return v
+
+    @field_validator("area_id", mode="before")
+    @classmethod
+    def validate_area_id(cls, v):
+        """Convert empty string to None and validate UUID format"""
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+
+        # If it's already a UUID object, return it
+        if isinstance(v, UUID):
+            return v
+
+        # Try to convert string to UUID to validate format
+        if isinstance(v, str):
+            try:
+                return UUID(v.strip())
+            except (ValueError, AttributeError) as e:
+                raise ValueError(f"Invalid UUID format for area_id: {v}") from e
+
+        # Handle any other type
+        raise ValueError(
+            f"area_id must be a valid UUID or None, got {type(v).__name__}"
+        )
+
+    @field_validator("name", "description", mode="before")
+    @classmethod
+    def empty_string_to_none(cls, v):
+        """Convert empty strings to None for optional fields"""
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
+
+    @field_validator("latitude", "longitude", mode="before")
+    @classmethod
+    def validate_coordinates(cls, v):
+        """Convert empty string to None and validate float values for coordinate fields"""
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        if isinstance(v, str):
+            try:
+                return float(v.strip())
+            except (ValueError, AttributeError) as e:
+                raise ValueError(f"Invalid float value for coordinate: {v}") from e
+        return v
+
+    @field_validator("unlock_radius_meters", "photo_radius_meters", mode="before")
+    @classmethod
+    def validate_radius_fields(cls, v):
+        """Convert empty string to None and validate int values for radius fields"""
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        if isinstance(v, str):
+            try:
+                return int(v.strip())
+            except (ValueError, AttributeError) as e:
+                raise ValueError(f"Invalid integer value for radius: {v}") from e
         return v
 
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import UploadFile
+from fastapi import File, Form, UploadFile
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.schemas import BaseReturn
@@ -17,12 +17,16 @@ class AreaBase(BaseModel):
     )
 
 
-class AreaCreate(AreaBase):
-    """Schema for creating a new area"""
+class AreaCreate(BaseModel):
+    """Schema for creating a new area with multipart form data support"""
 
-    image_file: UploadFile | None = None
-    badge_file: UploadFile | None = None
-    parent_area_id: UUID | None = Field(
+    name: str = Form(..., min_length=1, max_length=255, description="Area name")
+    description: str | None = Form(
+        None, max_length=1000, description="Area description"
+    )
+    image_file: UploadFile | None = File(None, description="Area image file")
+    badge_file: UploadFile | None = File(None, description="Area badge file")
+    parent_area_id: UUID | None = Form(
         None, description="Parent area ID for hierarchical structure"
     )
 
@@ -59,19 +63,25 @@ class AreaCreate(AreaBase):
             f"parent_area_id must be a valid UUID or None, got {type(v).__name__}"
         )
 
+    @field_validator("name", "description", mode="before")
+    @classmethod
+    def empty_string_to_none(cls, v):
+        """Convert empty string to None for string fields"""
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
+
 
 class AreaUpdate(BaseModel):
-    """Schema for updating an existing area - all fields optional"""
+    """Schema for updating an existing area with multipart form data support - all fields optional"""
 
-    name: str | None = Field(
-        None, min_length=1, max_length=255, description="Area name"
-    )
-    description: str | None = Field(
+    name: str | None = Form(None, min_length=1, max_length=255, description="Area name")
+    description: str | None = Form(
         None, max_length=1000, description="Area description"
     )
-    image_file: UploadFile | None = None
-    badge_file: UploadFile | None = None
-    parent_area_id: UUID | None = Field(None, description="Parent area ID")
+    image_file: UploadFile | None = File(None, description="Area image file")
+    badge_file: UploadFile | None = File(None, description="Area badge file")
+    parent_area_id: UUID | None = Form(None, description="Parent area ID")
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
