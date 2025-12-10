@@ -11,7 +11,6 @@ from .schemas import (
     LandmarkListReturn,
     LandmarkReturn,
     LandmarkUpdate,
-    NearbyLandmarksListResponse,
     NearbyLandmarksReturn,
 )
 
@@ -56,12 +55,8 @@ async def get_nearby_landmarks(
         load_from_same_area=load_from_same_area,
     )
 
-    response_data = NearbyLandmarksListResponse(
-        landmarks=landmarks_data, total=len(landmarks_data)
-    )
-
     return NearbyLandmarksReturn(
-        message="Nearby landmarks retrieved successfully", data=response_data
+        message="Nearby landmarks retrieved successfully", data=landmarks_data
     )
 
 

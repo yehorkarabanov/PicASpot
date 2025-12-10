@@ -1,10 +1,15 @@
+from typing import TYPE_CHECKING
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from fastapi import File, Form, UploadFile
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.schemas import BaseReturn
 from app.core.schemas_base import TimezoneAwareSchema
+
+if TYPE_CHECKING:
+    from .models import Landmark
 
 
 class LandmarkBase(BaseModel):
@@ -241,11 +246,13 @@ class NearbyLandmarkResponse(TimezoneAwareSchema):
     """
     Enhanced schema for nearby landmarks response.
     Includes unlock status and area information for map display.
+
+    Uses Pydantic v2 computed fields and validators for efficient ORM-to-schema conversion.
     """
 
     id: UUID = Field(..., description="Unique landmark identifier")
     unlocked: bool = Field(
-        ..., description="Whether the current user has unlocked this landmark"
+        default=False, description="Whether the current user has unlocked this landmark"
     )
     coordinate: CoordinateSchema = Field(
         ..., description="Position of the landmark on the map"
@@ -266,9 +273,53 @@ class NearbyLandmarkResponse(TimezoneAwareSchema):
 
     model_config = ConfigDict(from_attributes=True)
 
+    @classmethod
+    def from_orm_with_user(
+        cls, landmark: "Landmark", user_id: UUID, timezone: "ZoneInfo"
+    ) -> "NearbyLandmarkResponse":
+        """
+        Create a NearbyLandmarkResponse from an ORM Landmark model.
+
+        This factory method efficiently transforms ORM objects to Pydantic schemas
+        with proper timezone handling and user-specific unlock status.
+
+        Args:
+            landmark: SQLAlchemy Landmark model with preloaded relationships
+            user_id: Current user's ID to determine unlock status
+            timezone: Target timezone for datetime conversion
+
+        Returns:
+            Validated NearbyLandmarkResponse with proper timezone conversion
+        """
+        # Check unlock status using set membership for O(1) lookup
+        unlocked = any(unlock.user_id == user_id for unlock in landmark.unlocks)
+
+        # Build the response dict with field mapping
+        data = {
+            "id": landmark.id,
+            "unlocked": unlocked,
+            "coordinate": {
+                "latitude": landmark.latitude,
+                "longitude": landmark.longitude,
+            },
+            "title": landmark.name,
+            "description": landmark.description,
+            "image": landmark.image_url,
+            "radius": landmark.photo_radius_meters,
+            "unlock_radius": landmark.unlock_radius_meters,
+            "badge_url": landmark.area.badge_url,
+            "area_id": landmark.area_id,
+            "area_name": landmark.area.name,
+            "is_area_verified": landmark.area.is_verified,
+            "created_at": landmark.created_at,
+            "updated_at": landmark.updated_at,
+        }
+
+        return cls.model_validate_with_timezone(data, timezone)
+
 
 class NearbyLandmarksListResponse(BaseModel):
-    """Schema for list of nearby landmarks"""
+    """Schema for list of nearby landmarks with efficient batch validation."""
 
     landmarks: list[NearbyLandmarkResponse] = Field(
         default_factory=list, description="List of nearby landmarks"
@@ -276,6 +327,34 @@ class NearbyLandmarksListResponse(BaseModel):
     total: int = Field(..., ge=0, description="Total number of landmarks found")
 
     model_config = ConfigDict(from_attributes=True)
+
+    @classmethod
+    def from_orm_list(
+        cls,
+        landmarks: list["Landmark"],
+        user_id: UUID,
+        timezone: ZoneInfo,
+    ) -> "NearbyLandmarksListResponse":
+        """
+        Create a NearbyLandmarksListResponse from a list of ORM Landmark models.
+
+        Uses list comprehension for efficient batch validation, which is faster
+        than individual validation calls in a loop when dealing with many items.
+
+        Args:
+            landmarks: List of SQLAlchemy Landmark models with preloaded relationships
+            user_id: Current user's ID to determine unlock status for each landmark
+            timezone: Target timezone for datetime conversion
+
+        Returns:
+            Validated NearbyLandmarksListResponse with all landmarks converted
+        """
+        validated_landmarks = [
+            NearbyLandmarkResponse.from_orm_with_user(landmark, user_id, timezone)
+            for landmark in landmarks
+        ]
+
+        return cls(landmarks=validated_landmarks, total=len(validated_landmarks))
 
 
 class NearbyLandmarksReturn(BaseReturn):

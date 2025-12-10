@@ -14,7 +14,7 @@ from .schemas import (
     LandmarkCreate,
     LandmarkResponse,
     LandmarkUpdate,
-    NearbyLandmarkResponse,
+    NearbyLandmarksListResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -239,7 +239,7 @@ class LandmarkService:
         area_id: uuid.UUID | None = None,
         only_verified: bool = False,
         load_from_same_area: bool = False,
-    ) -> list[NearbyLandmarkResponse]:
+    ) -> NearbyLandmarksListResponse:
         """
         Get nearby landmarks with unlock status and area information.
 
@@ -253,7 +253,7 @@ class LandmarkService:
             load_from_same_area: Load all landmarks from same areas as found landmarks
 
         Returns:
-            List of NearbyLandmarkResponse objects formatted for map display with unlock status
+            NearbyLandmarksListResponse with validated Pydantic models
         """
         landmarks = await self.landmark_repository.get_nearby_landmarks(
             latitude=latitude,
@@ -265,46 +265,20 @@ class LandmarkService:
             load_from_same_area=load_from_same_area,
         )
 
-        # Transform landmarks into the response format
-        result = []
-        for landmark in landmarks:
-            # Check if user has unlocked this landmark
-            # The unlocks relationship is loaded with the current user's unlocks only
-            is_unlocked = any(unlock.user_id == user.id for unlock in landmark.unlocks)
-
-            landmark_data = {
-                "id": landmark.id,
-                "unlocked": is_unlocked,
-                "coordinate": {
-                    "latitude": landmark.latitude,
-                    "longitude": landmark.longitude,
-                },
-                "title": landmark.name,
-                "description": landmark.description,
-                "image": landmark.image_url,
-                "radius": landmark.photo_radius_meters,
-                "unlock_radius": landmark.unlock_radius_meters,
-                "badge_url": landmark.area.badge_url,
-                "area_id": landmark.area_id,
-                "area_name": landmark.area.name,
-                "is_area_verified": landmark.area.is_verified,
-                "created_at": landmark.created_at,
-                "updated_at": landmark.updated_at,
-            }
-
-            # Convert to Pydantic model with timezone conversion
-            landmark_response = NearbyLandmarkResponse.model_validate_with_timezone(
-                landmark_data, self.timezone
-            )
-            result.append(landmark_response)
+        # Use optimized batch validation via schema factory method
+        response = NearbyLandmarksListResponse.from_orm_list(
+            landmarks=landmarks,
+            user_id=user.id,
+            timezone=self.timezone,
+        )
 
         logger.info(
             "Retrieved %d nearby landmarks for user %s at (%.6f, %.6f) within %dm",
-            len(result),
+            response.total,
             user.username,
             latitude,
             longitude,
             radius_meters,
         )
 
-        return result
+        return response
