@@ -111,9 +111,11 @@ class AreaService:
                 content_type=area_data.image_file.content_type
                 or "application/octet-stream",
             )
-            area_dict["image_url"] = result["object_path"]
+            area_dict["image_url"] = result["public_url"]
         else:
-            area_dict["image_url"] = f"{StorageDir.AREAS.value}/default_area_image.png"
+            area_dict["image_url"] = self.storage.get_public_url(
+                f"{StorageDir.AREAS.value}/default_area_image.png"
+            )
 
         if area_data.badge_file:
             result = await self.storage.upload_file(
@@ -123,9 +125,11 @@ class AreaService:
                 content_type=area_data.badge_file.content_type
                 or "application/octet-stream",
             )
-            area_dict["badge_url"] = result["object_path"]
+            area_dict["badge_url"] = result["public_url"]
         else:
-            area_dict["badge_url"] = f"{StorageDir.AREAS.value}/default_area_badge.png"
+            area_dict["badge_url"] = self.storage.get_public_url(
+                f"{StorageDir.AREAS.value}/default_area_badge.png"
+            )
 
         area_dict["creator_id"] = user.id
 
@@ -238,7 +242,7 @@ class AreaService:
                 content_type=area_data.image_file.content_type
                 or "application/octet-stream",
             )
-            area_dict["image_url"] = result["object_path"]
+            area_dict["image_url"] = result["public_url"]
         if area_data.badge_file:
             result = await self.storage.upload_file(
                 file_data=await area_data.badge_file.read(),
@@ -247,7 +251,7 @@ class AreaService:
                 content_type=area_data.badge_file.content_type
                 or "application/octet-stream",
             )
-            area_dict["badge_url"] = result["object_path"]
+            area_dict["badge_url"] = result["public_url"]
         area = await self.area_repository.update(area_id, area_dict)
         logger.info("Area updated: %s by user %s", area.name, user.username)
 

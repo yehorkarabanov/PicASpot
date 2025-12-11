@@ -76,6 +76,7 @@ class Settings(BaseSettings):
     MINIO_SECURE: bool = Field(default=False)
     MINIO_BUCKET_NAME: str = Field(default="picaspot-storage")
     MINIO_REGION: str = Field(default="us-east-1")
+    MINIO_PUBLIC_URL: str = Field(default="http://localhost/minio")
 
     # Upload limits
     MAX_UPLOAD_SIZE_MB: int = Field(default=10)
@@ -98,6 +99,20 @@ class Settings(BaseSettings):
     IMAGE_MAX_DIMENSION: int = Field(default=2048)
     IMAGE_QUALITY: int = Field(default=85)
 
+    @property
+    def PUBLIC_READ_POLICY(self) -> dict:
+        return {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {"AWS": "*"},
+                    "Action": ["s3:GetObject"],
+                    "Resource": [f"arn:aws:s3:::{self.MINIO_BUCKET_NAME}/*"],
+                }
+            ],
+        }
+
     # Static files configuration
     STATIC_FILES_PATH: str = Field(default="/code/static")
 
@@ -108,6 +123,20 @@ class Settings(BaseSettings):
     def DEFAULT_PROFILE_PICTURE_URL(self) -> str:  # noqa: N802
         """Default profile picture URL (full URL with base and API prefix)."""
         return f"{self.BASE_URL}/api/static/img/users/default_pfp.svg"
+
+    def get_storage_public_url(self, object_path: str | None) -> str | None:
+        """
+        Generate a public URL for a storage object path.
+
+        Args:
+            object_path: The object path in MinIO (e.g., "areas/uuid.jpg")
+
+        Returns:
+            Full public URL or None if object_path is None
+        """
+        if not object_path:
+            return None
+        return f"{self.MINIO_PUBLIC_URL.rstrip('/')}/{self.MINIO_BUCKET_NAME}/{object_path}"
 
     BASE_DIR: Path = Path(__file__).resolve().parent
     ROOT_DIR: Path = Path(__file__).resolve().parent.parent

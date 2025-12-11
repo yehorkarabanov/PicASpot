@@ -20,16 +20,20 @@ logger = logging.getLogger(__name__)
 class StorageService:
     """Service for managing MinIO object storage operations"""
 
-    def __init__(self, client: Minio, bucket_name: str):
+    def __init__(
+        self, client: Minio, bucket_name: str, public_url_base: str | None = None
+    ):
         """
         Initialize StorageService with MinIO client.
 
         Args:
             client: MinIO async client instance
             bucket_name: Name of the bucket to use
+            public_url_base: Base URL for public access (e.g., "http://localhost/minio")
         """
         self.client = client
         self.bucket_name = bucket_name
+        self.public_url_base = public_url_base
         self.default_url_expiry = timedelta(
             seconds=settings.STORAGE_URL_DEFAULT_EXPIRY_SECONDS
         )
@@ -91,8 +95,14 @@ class StorageService:
             metadata=metadata,
         )
 
+        # Generate the public URL for the uploaded file
+        public_url = (
+            self.get_public_url(object_path) if self.public_url_base else object_path
+        )
+
         return {
             "object_path": object_path,
+            "public_url": public_url,
             "original_filename": original_filename,
             "size": len(file_data),
         }
@@ -414,6 +424,118 @@ class StorageService:
             # Use URL in frontend: <img src="{url}" />
         """
         return await self.get_object_url(object_path, expires)
+
+    def get_public_url(self, object_path: str) -> str:
+        """
+        Generate a constant public URL for accessing an object through nginx proxy.
+
+        This creates a permanent URL that routes through nginx to MinIO.
+        The URL does not expire and is suitable for public image access.
+
+        Args:
+            object_path: Path in bucket (e.g., "users/123/profile.jpg")
+
+        Returns:
+            Public URL string in format: {public_url_base}/{bucket_name}/{object_path}
+
+        Raises:
+            StorageError: If public URL base is not configured
+
+        Example:
+            url = storage.get_public_url("users/123/photo.jpg")
+            # Returns: "http://localhost/minio/picaspot-storage/users/123/photo.jpg"
+        """
+        if not self.public_url_base:
+            raise StorageError("Public URL base is not configured")
+
+        # Construct the public URL: base/bucket/object_path
+        url = f"{self.public_url_base.rstrip('/')}/{self.bucket_name}/{object_path}"
+
+        logger.debug(
+            f"Generated public URL for {object_path}",
+            extra={"url": url},
+        )
+        return url
+
+    def get_public_image_url(self, object_path: str) -> str:
+        """
+        Generate a constant public URL for accessing an image through nginx proxy.
+
+        This is a convenience method that calls get_public_url but is more
+        semantically clear when working with images.
+
+        Args:
+            object_path: Path to image in bucket (e.g., "users/123/profile.jpg")
+
+        Returns:
+            Public URL string
+
+        Example:
+            url = storage.get_public_image_url("users/123/photo.jpg")
+            # Returns: "http://localhost/minio/picaspot-storage/users/123/photo.jpg"
+        """
+        return self.get_public_url(object_path)
+
+    def extract_object_path(self, public_url: str) -> str | None:
+        """
+        Extract the object path from a public URL.
+
+        This is useful when you need to delete or modify an object but only have
+        the public URL stored in the database.
+
+        Args:
+            public_url: Full public URL (e.g., "http://localhost/minio/bucket/path/file.jpg")
+
+        Returns:
+            Object path (e.g., "path/file.jpg") or None if URL format is invalid
+
+        Example:
+            path = storage.extract_object_path("http://localhost/minio/picaspot-storage/users/123/photo.jpg")
+            # Returns: "users/123/photo.jpg"
+        """
+        if not public_url or not self.public_url_base:
+            return None
+
+        # Expected format: {public_url_base}/{bucket_name}/{object_path}
+        prefix = f"{self.public_url_base.rstrip('/')}/{self.bucket_name}/"
+        if public_url.startswith(prefix):
+            return public_url[len(prefix) :]
+
+        return None
+
+    def get_multiple_public_image_urls(
+        self,
+        object_paths: list[str],
+    ) -> dict[str, str]:
+        """
+        Generate public URLs for multiple images at once.
+
+        Args:
+            object_paths: List of object paths
+
+        Returns:
+            Dictionary mapping object_path to public URL
+            Failed URLs will have None as value
+
+        Example:
+            paths = ["users/123/photo1.jpg", "users/123/photo2.jpg"]
+            urls = storage.get_multiple_public_image_urls(paths)
+            # Returns: {
+            #   "users/123/photo1.jpg": "http://localhost/minio/...",
+            #   "users/123/photo2.jpg": "http://localhost/minio/...",
+            # }
+        """
+        result = {}
+
+        for object_path in object_paths:
+            try:
+                url = self.get_public_image_url(object_path)
+                result[object_path] = url
+            except StorageError as e:
+                logger.error(f"Failed to generate public URL for {object_path}: {e}")
+                result[object_path] = None
+
+        return result
 
     async def get_multiple_image_urls(
         self,

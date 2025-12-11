@@ -84,9 +84,9 @@ class LandmarkService:
                 content_type=landmark_data.image_file.content_type
                 or "application/octet-stream",
             )
-            landmark_dict["image_url"] = result["object_path"]
+            landmark_dict["image_url"] = result["public_url"]
         else:
-            landmark_dict["image_url"] = (
+            landmark_dict["image_url"] = self.storage.get_public_url(
                 f"{StorageDir.LANDMARKS.value}/default_landmark_image.png"
             )
 
@@ -208,7 +208,7 @@ class LandmarkService:
                 content_type=landmark_data.image_file.content_type
                 or "application/octet-stream",
             )
-            landmark_dict["image_url"] = result["object_path"]
+            landmark_dict["image_url"] = result["public_url"]
 
         # If either latitude or longitude is provided, update location
         if landmark_data.latitude is not None or landmark_data.longitude is not None:

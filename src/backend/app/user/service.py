@@ -228,7 +228,11 @@ class UserService:
         # Delete old profile picture if exists
         if user.profile_picture_path:
             try:
-                await self.storage_service.remove_object(user.profile_picture_path)
+                object_path = self.storage_service.extract_object_path(
+                    user.profile_picture_path
+                )
+                if object_path:
+                    await self.storage_service.remove_object(object_path)
             except Exception as e:
                 logger.warning(f"Failed to delete old profile picture: {e}")
 
@@ -240,31 +244,32 @@ class UserService:
             content_type=content_type,
         )
 
-        # Update user record with new profile picture path
-        user.profile_picture_path = result["object_path"]
+        # Update user record with new profile picture public URL
+        user.profile_picture_path = result["public_url"]
         await self.user_repository.save(user)
 
-        logger.info(f"User {user_id} uploaded profile picture: {result['object_path']}")
-        return result["object_path"]
+        logger.info(f"User {user_id} uploaded profile picture: {result['public_url']}")
+        return result["public_url"]
 
     async def get_profile_picture_url(
         self, user_id: str, expires: timedelta | None = None
     ) -> tuple[str, int]:
         """
-        Get a presigned URL for a user's profile picture.
+        Get the public URL for a user's profile picture.
 
         If the user has no custom profile picture, returns the default picture URL.
+        Returns the stored public URL directly from the database.
 
         Args:
             user_id: The UUID string of the user.
-            expires: Optional custom expiration time for the URL.
+            expires: Ignored - URLs are permanent public URLs.
 
         Returns:
-            tuple[str, int]: (presigned_url or default_url, expiration_seconds)
+            tuple[str, int]: (public_url or default_url, expiration_seconds)
+                             expiration_seconds is always 0 (never expires).
 
         Raises:
             NotFoundError: If the user does not exist.
-            BadRequestError: If storage service is not available for custom pictures.
         """
         user = await self.user_repository.get_by_id(user_id)
         if not user:
@@ -277,21 +282,8 @@ class UserService:
                 0,
             )  # 0 means never expires (static file)
 
-        # User has custom profile picture - generate presigned URL
-        if not self.storage_service:
-            raise BadRequestError("Storage service not configured")
-
-        # Generate presigned URL
-        url = await self.storage_service.get_image_url(
-            user.profile_picture_path, expires=expires
-        )
-
-        # Get expiration seconds
-        expiration_seconds = int(
-            (expires or self.storage_service.default_url_expiry).total_seconds()
-        )
-
-        return url, expiration_seconds
+        # Return stored public URL directly
+        return user.profile_picture_path, 0  # 0 means never expires (public URL)
 
     async def delete_profile_picture(self, user_id: str) -> None:
         """
@@ -314,8 +306,12 @@ class UserService:
         if not user.profile_picture_path:
             raise NotFoundError("User has no profile picture")
 
-        # Delete from storage
-        await self.storage_service.remove_object(user.profile_picture_path)
+        # Extract object path from public URL and delete from storage
+        object_path = self.storage_service.extract_object_path(
+            user.profile_picture_path
+        )
+        if object_path:
+            await self.storage_service.remove_object(object_path)
 
         # Update user record
         user.profile_picture_path = None
