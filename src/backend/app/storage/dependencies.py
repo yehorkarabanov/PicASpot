@@ -5,7 +5,7 @@ from miniopy_async import Minio
 
 from app.settings import settings
 
-from .manager import bucket_name, get_minio_client
+from .manager import get_minio_client
 from .service import StorageService
 
 
@@ -27,7 +27,7 @@ async def get_storage_service(
     """
     return StorageService(
         client=client,
-        bucket_name=bucket_name,
+        bucket_name=settings.MINIO_BUCKET_NAME,
         public_url_base=settings.MINIO_PUBLIC_URL,
     )
 

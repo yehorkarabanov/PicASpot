@@ -233,15 +233,6 @@ class LandmarkNearbyRequest(BaseModel):
     )
 
 
-class CoordinateSchema(BaseModel):
-    """Schema for coordinate data"""
-
-    latitude: float = Field(..., description="Latitude coordinate")
-    longitude: float = Field(..., description="Longitude coordinate")
-
-    model_config = ConfigDict(from_attributes=True)
-
-
 class NearbyLandmarkResponse(TimezoneAwareSchema):
     """
     Enhanced schema for nearby landmarks response.
@@ -254,9 +245,8 @@ class NearbyLandmarkResponse(TimezoneAwareSchema):
     unlocked: bool = Field(
         default=False, description="Whether the current user has unlocked this landmark"
     )
-    coordinate: CoordinateSchema = Field(
-        ..., description="Position of the landmark on the map"
-    )
+    latitude: float = Field(..., description="Latitude coordinate")
+    longitude: float = Field(..., description="Longitude coordinate")
     title: str = Field(..., description="Title/name of the landmark")
     description: str | None = Field(None, description="Description of the landmark")
     image: str | None = Field(None, description="URL to landmark image")
@@ -298,10 +288,8 @@ class NearbyLandmarkResponse(TimezoneAwareSchema):
         data = {
             "id": landmark.id,
             "unlocked": unlocked,
-            "coordinate": {
-                "latitude": landmark.latitude,
-                "longitude": landmark.longitude,
-            },
+            "latitude": landmark.latitude,
+            "longitude": landmark.longitude,
             "title": landmark.name,
             "description": landmark.description,
             "image": landmark.image_url,
@@ -311,8 +299,6 @@ class NearbyLandmarkResponse(TimezoneAwareSchema):
             "area_id": landmark.area_id,
             "area_name": landmark.area.name,
             "is_area_verified": landmark.area.is_verified,
-            "created_at": landmark.created_at,
-            "updated_at": landmark.updated_at,
         }
 
         return cls.model_validate_with_timezone(data, timezone)
