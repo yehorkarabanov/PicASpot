@@ -238,6 +238,8 @@ class LandmarkService:
         area_id: uuid.UUID | None = None,
         only_verified: bool = False,
         load_from_same_area: bool = False,
+        page: int = 1,
+        page_size: int = 50,
     ) -> NearbyLandmarksListResponse:
         """
         Get nearby landmarks with unlock status and area information.
@@ -250,11 +252,16 @@ class LandmarkService:
             area_id: Optional area ID to filter landmarks
             only_verified: Only return landmarks from verified areas
             load_from_same_area: Load all landmarks from same areas as found landmarks
+            page: Page number (1-based)
+            page_size: Number of items per page
 
         Returns:
-            NearbyLandmarksListResponse with validated Pydantic models
+            NearbyLandmarksListResponse with validated Pydantic models and pagination metadata
         """
-        landmarks = await self.landmark_repository.get_nearby_landmarks(
+        # Calculate offset from page number
+        offset = (page - 1) * page_size
+
+        landmarks, total_count = await self.landmark_repository.get_nearby_landmarks(
             latitude=latitude,
             longitude=longitude,
             radius_meters=radius_meters,
@@ -262,6 +269,8 @@ class LandmarkService:
             area_id=area_id,
             only_verified=only_verified,
             load_from_same_area=load_from_same_area,
+            limit=page_size,
+            offset=offset,
         )
 
         # Use optimized batch validation via schema factory method
@@ -269,15 +278,21 @@ class LandmarkService:
             landmarks=landmarks,
             user_id=user.id,
             timezone=self.timezone,
+            total=total_count,
+            page=page,
+            page_size=page_size,
         )
 
         logger.info(
-            "Retrieved %d nearby landmarks for user %s at (%.6f, %.6f) within %dm",
-            response.total,
+            "Retrieved %d/%d nearby landmarks for user %s at (%.6f, %.6f) within %dm (page %d, size %d)",
+            len(landmarks),
+            total_count,
             user.username,
             latitude,
             longitude,
             radius_meters,
+            page,
+            page_size,
         )
 
         return response

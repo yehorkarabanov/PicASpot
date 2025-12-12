@@ -43,8 +43,12 @@ async def get_nearby_landmarks(
     load_from_same_area: Annotated[
         bool, Query(description="Load all landmarks from same areas as found landmarks")
     ] = False,
+    page: Annotated[int, Query(ge=1, description="Page number (1-based)")] = 1,
+    page_size: Annotated[
+        int, Query(ge=1, le=100, description="Number of items per page")
+    ] = 50,
 ) -> NearbyLandmarksReturn:
-    """Get nearby landmarks based on coordinates and optional filters."""
+    """Get nearby landmarks based on coordinates and optional filters with pagination."""
     landmarks_data = await landmark_service.get_nearby_landmarks(
         latitude=latitude,
         longitude=longitude,
@@ -53,6 +57,8 @@ async def get_nearby_landmarks(
         area_id=area_id,
         only_verified=only_verified,
         load_from_same_area=load_from_same_area,
+        page=page,
+        page_size=page_size,
     )
 
     return NearbyLandmarksReturn(

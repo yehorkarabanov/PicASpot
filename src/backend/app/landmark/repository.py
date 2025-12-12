@@ -1,7 +1,7 @@
 import uuid
 
 from geoalchemy2.functions import ST_DWithin, ST_MakePoint, ST_SetSRID
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.area.models import Area
@@ -23,9 +23,11 @@ class LandmarkRepository(BaseRepository[Landmark]):
         area_id: uuid.UUID | None = None,
         only_verified: bool = False,
         load_from_same_area: bool = False,
-    ) -> list[Landmark]:
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[Landmark], int]:
         """
-        Get landmarks within a given radius from a point.
+        Get landmarks within a given radius from a point with pagination.
 
         Args:
             latitude: Latitude of the center point
@@ -35,9 +37,11 @@ class LandmarkRepository(BaseRepository[Landmark]):
             area_id: Optional area ID to filter landmarks
             only_verified: If True, only return landmarks from verified areas
             load_from_same_area: If True, load all landmarks from areas found within radius
+            limit: Maximum number of results to return
+            offset: Number of results to skip
 
         Returns:
-            List of landmarks with their relationships loaded
+            Tuple of (list of landmarks with their relationships loaded, total count)
         """
         # Create a point from the given coordinates
         user_point = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)
@@ -75,34 +79,89 @@ class LandmarkRepository(BaseRepository[Landmark]):
         if only_verified:
             query = query.where(Area.is_verified == True)  # noqa: E712
 
-        # Execute the query to get landmarks within radius
-        result = await self.session.execute(query)
-        landmarks = list(result.scalars().unique().all())
+        # Initialize area_ids for use in count query later
+        area_ids = []
 
         # If load_from_same_area is True, load all landmarks from the same areas
-        if load_from_same_area and landmarks:
-            area_ids = list({landmark.area_id for landmark in landmarks})
-
-            # Query all landmarks from these areas
-            area_query = (
-                select(Landmark)
+        if load_from_same_area:
+            # First, get area_ids from landmarks within radius
+            area_query_for_ids = (
+                select(Landmark.area_id)
                 .join(Area, Landmark.area_id == Area.id)
-                .outerjoin(
-                    Unlock,
-                    (Unlock.landmark_id == Landmark.id) & (Unlock.user_id == user_id),
-                )
-                .where(Landmark.area_id.in_(area_ids))
-                .options(
-                    joinedload(Landmark.area),
-                    joinedload(Landmark.creator),
-                    selectinload(Landmark.unlocks).joinedload(Unlock.user),
+                .where(
+                    ST_DWithin(
+                        Landmark.location,
+                        user_point,
+                        radius_meters,
+                        True,
+                    )
                 )
             )
 
+            if area_id is not None:
+                area_query_for_ids = area_query_for_ids.where(
+                    Landmark.area_id == area_id
+                )
+
             if only_verified:
-                area_query = area_query.where(Area.is_verified == True)  # noqa: E712
+                area_query_for_ids = area_query_for_ids.where(Area.is_verified == True)  # noqa: E712
 
-            area_result = await self.session.execute(area_query)
-            landmarks = list(area_result.scalars().unique().all())
+            area_ids_result = await self.session.execute(area_query_for_ids)
+            area_ids = list({row[0] for row in area_ids_result.all()})
 
-        return landmarks
+            if area_ids:
+                # Replace query to get all landmarks from these areas
+                query = (
+                    select(Landmark)
+                    .join(Area, Landmark.area_id == Area.id)
+                    .outerjoin(
+                        Unlock,
+                        (Unlock.landmark_id == Landmark.id)
+                        & (Unlock.user_id == user_id),
+                    )
+                    .where(Landmark.area_id.in_(area_ids))
+                    .options(
+                        joinedload(Landmark.area),
+                        joinedload(Landmark.creator),
+                        selectinload(Landmark.unlocks).joinedload(Unlock.user),
+                    )
+                )
+
+                if only_verified:
+                    query = query.where(Area.is_verified == True)  # noqa: E712
+
+        # Count query - create a count query without joins that are only for loading relationships
+        count_query = select(func.count(Landmark.id)).join(
+            Area, Landmark.area_id == Area.id
+        )
+
+        # Apply the same filters as the main query
+        if load_from_same_area and area_ids:
+            count_query = count_query.where(Landmark.area_id.in_(area_ids))
+        else:
+            count_query = count_query.where(
+                ST_DWithin(
+                    Landmark.location,
+                    user_point,
+                    radius_meters,
+                    True,
+                )
+            )
+            if area_id is not None:
+                count_query = count_query.where(Landmark.area_id == area_id)
+
+        if only_verified:
+            count_query = count_query.where(Area.is_verified == True)  # noqa: E712
+
+        # Execute count query
+        count_result = await self.session.execute(count_query)
+        total_count = count_result.scalar_one()
+
+        # Apply pagination to main query
+        query = query.limit(limit).offset(offset)
+
+        # Execute the main query to get landmarks
+        result = await self.session.execute(query)
+        landmarks = list(result.scalars().unique().all())
+
+        return landmarks, total_count

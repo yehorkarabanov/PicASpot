@@ -305,12 +305,15 @@ class NearbyLandmarkResponse(TimezoneAwareSchema):
 
 
 class NearbyLandmarksListResponse(BaseModel):
-    """Schema for list of nearby landmarks with efficient batch validation."""
+    """Schema for list of nearby landmarks with efficient batch validation and pagination."""
 
     landmarks: list[NearbyLandmarkResponse] = Field(
         default_factory=list, description="List of nearby landmarks"
     )
     total: int = Field(..., ge=0, description="Total number of landmarks found")
+    page: int = Field(..., ge=1, description="Current page number")
+    page_size: int = Field(..., ge=1, description="Number of items per page")
+    total_pages: int = Field(..., ge=0, description="Total number of pages")
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -320,6 +323,9 @@ class NearbyLandmarksListResponse(BaseModel):
         landmarks: list["Landmark"],
         user_id: UUID,
         timezone: ZoneInfo,
+        total: int,
+        page: int,
+        page_size: int,
     ) -> "NearbyLandmarksListResponse":
         """
         Create a NearbyLandmarksListResponse from a list of ORM Landmark models.
@@ -331,16 +337,28 @@ class NearbyLandmarksListResponse(BaseModel):
             landmarks: List of SQLAlchemy Landmark models with preloaded relationships
             user_id: Current user's ID to determine unlock status for each landmark
             timezone: Target timezone for datetime conversion
+            total: Total count of all landmarks (before pagination)
+            page: Current page number
+            page_size: Number of items per page
 
         Returns:
-            Validated NearbyLandmarksListResponse with all landmarks converted
+            Validated NearbyLandmarksListResponse with all landmarks converted and pagination metadata
         """
         validated_landmarks = [
             NearbyLandmarkResponse.from_orm_with_user(landmark, user_id, timezone)
             for landmark in landmarks
         ]
 
-        return cls(landmarks=validated_landmarks, total=len(validated_landmarks))
+        # Calculate total pages
+        total_pages = (total + page_size - 1) // page_size if page_size > 0 else 0
+
+        return cls(
+            landmarks=validated_landmarks,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages,
+        )
 
 
 class NearbyLandmarksReturn(BaseReturn):
