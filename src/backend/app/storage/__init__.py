@@ -12,7 +12,7 @@ Public API:
 
 from .dependencies import StorageServiceDep
 from .directories import StorageDir
-from .manager import check_minio_health, ensure_bucket_exists, load_default_photos
+from .manager import check_minio_health, ensure_bucket_exists
 from .router import router
 from .service import StorageService
 
@@ -23,5 +23,4 @@ __all__ = [
     "ensure_bucket_exists",
     "check_minio_health",
     "router",
-    "load_default_photos",
 ]

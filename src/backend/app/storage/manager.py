@@ -1,7 +1,6 @@
 import json
 import logging
 from collections.abc import AsyncGenerator
-from pathlib import Path
 
 from miniopy_async import Minio
 from miniopy_async.error import S3Error
@@ -90,31 +89,3 @@ async def get_minio_client() -> AsyncGenerator[Minio, None]:
         # Cleanup handled by miniopy-async :)
         await client.close_session()
         pass
-
-
-async def load_default_photos(photo_paths: dict[str, Path]) -> None:
-    """
-    Load default photos into MinIO from specified file paths.
-
-    Args:
-        photo_paths: List of file paths to default photos
-    """
-    client = create_minio_client()
-    try:
-        for photo_name, file_path in photo_paths.items():
-            object_path = f"{photo_name}.png"
-            with open(file_path, "rb") as file_data:
-                await client.put_object(
-                    bucket_name=settings.MINIO_BUCKET_NAME,
-                    object_name=photo_name,
-                    data=file_data,
-                    length=file_path.stat().st_size,
-                    content_type="image/png",
-                )
-            logger.info(f"Uploaded default photo to MinIO: {object_path}")
-    except S3Error as e:
-        logger.error(f"Failed to upload default photos to MinIO: {e}")
-        raise
-    except Exception as e:
-        logger.error(f"Unexpected error uploading default photos: {e}")
-        raise

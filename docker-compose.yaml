@@ -63,7 +63,6 @@ services:
   backend:
     volumes:
       - ./src/backend/:/code
-      - ./src/img/:/code/static/img
       - /code/.venv
     env_file:
       - ./.env
@@ -261,7 +260,7 @@ services:
     networks:
       - app-network
     expose:
-        - ${EMAIL_SERVICE_PORT_INTERNAL}
+      - ${EMAIL_SERVICE_PORT_INTERNAL}
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:${EMAIL_SERVICE_PORT_INTERNAL}/health || exit 1" ]
       interval: 10s

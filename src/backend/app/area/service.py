@@ -3,6 +3,7 @@ import uuid
 from zoneinfo import ZoneInfo
 
 from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
+from app.settings import settings
 from app.storage import StorageDir, StorageService
 from app.user.models import User
 
@@ -113,9 +114,7 @@ class AreaService:
             )
             area_dict["image_url"] = result["public_url"]
         else:
-            area_dict["image_url"] = self.storage.get_public_url(
-                f"{StorageDir.AREAS.value}/default_area_image.png"
-            )
+            area_dict["image_url"] = settings.DEFAULT_AREA_IMAGE_URL
 
         if area_data.badge_file:
             result = await self.storage.upload_file(
@@ -127,9 +126,7 @@ class AreaService:
             )
             area_dict["badge_url"] = result["public_url"]
         else:
-            area_dict["badge_url"] = self.storage.get_public_url(
-                f"{StorageDir.AREAS.value}/default_area_badge.png"
-            )
+            area_dict["image_url"] = settings.DEFAULT_AREA_IMAGE_URL
 
         area_dict["creator_id"] = user.id
 

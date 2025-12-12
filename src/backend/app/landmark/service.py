@@ -6,6 +6,7 @@ from geoalchemy2.elements import WKTElement
 
 from app.area.repository import AreaRepository
 from app.core.exceptions import ForbiddenError, NotFoundError
+from app.settings import settings
 from app.storage import StorageDir, StorageService
 from app.user.models import User
 
@@ -86,9 +87,7 @@ class LandmarkService:
             )
             landmark_dict["image_url"] = result["public_url"]
         else:
-            landmark_dict["image_url"] = self.storage.get_public_url(
-                f"{StorageDir.LANDMARKS.value}/default_landmark_image.png"
-            )
+            landmark_dict["image_url"] = settings.DEFAULT_LANDMARK_IMAGE_URL
 
         # Create a WKT POINT from latitude and longitude for PostGIS
         # POINT(longitude latitude) - note the order!
