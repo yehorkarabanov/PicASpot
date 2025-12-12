@@ -141,8 +141,8 @@ class Settings(BaseSettings):
     BASE_DIR: Path = Path(__file__).resolve().parent
     ROOT_DIR: Path = Path(__file__).resolve().parent.parent
 
-    DEFAULT_AREA_IMAGE_URL: Path
-    DEFAULT_LANDMARK_IMAGE_URL: Path
+    DEFAULT_AREA_IMAGE_URL: str
+    DEFAULT_LANDMARK_IMAGE_URL: str
 
 
 @lru_cache

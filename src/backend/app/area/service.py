@@ -126,7 +126,7 @@ class AreaService:
             )
             area_dict["badge_url"] = result["public_url"]
         else:
-            area_dict["image_url"] = settings.DEFAULT_AREA_IMAGE_URL
+            area_dict["badge_url"] = settings.DEFAULT_AREA_IMAGE_URL
 
         area_dict["creator_id"] = user.id
 
