@@ -141,6 +141,12 @@ class Settings(BaseSettings):
     BASE_DIR: Path = Path(__file__).resolve().parent
     ROOT_DIR: Path = Path(__file__).resolve().parent.parent
 
+    DEFAULT_PHOTO_PATHS: dict[str, Path] = {
+        "default_area_image": ROOT_DIR / "static" / "img" / "default" / "area.png",
+        "default_area_badge": ROOT_DIR / "static" / "img" / "default" / "area.png",
+        "landmark": ROOT_DIR / "static" / "img" / "default" / "landmark.png",
+    }
+
 
 @lru_cache
 def get_settings() -> Settings:

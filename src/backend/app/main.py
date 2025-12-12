@@ -25,7 +25,7 @@ from app.middleware import (
 )
 from app.router import router
 from app.settings import settings
-from app.storage import check_minio_health, ensure_bucket_exists
+from app.storage import check_minio_health, ensure_bucket_exists, load_default_photos
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -43,6 +43,8 @@ async def lifespan(_app: FastAPI):
     logger.info("Kafka producer initialized")
     await ensure_bucket_exists()
     logger.info("MinIO bucket initialized")
+    await load_default_photos(settings.DEFAULT_PHOTO_PATHS)
+    logger.info("Default photos loaded into MinIO")
     await generate_users()
     logger.info("Default users created/verified")
 
