@@ -13,6 +13,7 @@ from app.user.models import User
 from .repository import LandmarkRepository
 from .schemas import (
     LandmarkCreate,
+    LandmarkNearbyRequest,
     LandmarkResponse,
     LandmarkUpdate,
     NearbyLandmarksListResponse,
@@ -231,68 +232,56 @@ class LandmarkService:
 
     async def get_nearby_landmarks(
         self,
-        latitude: float,
-        longitude: float,
-        radius_meters: int,
+        data: LandmarkNearbyRequest,
         user: User,
-        area_id: uuid.UUID | None = None,
-        only_verified: bool = False,
-        load_from_same_area: bool = False,
-        page: int = 1,
-        page_size: int = 50,
     ) -> NearbyLandmarksListResponse:
         """
         Get nearby landmarks with unlock status and area information.
 
         Args:
-            latitude: Current user latitude
-            longitude: Current user longitude
-            radius_meters: Search radius in meters
+            data: Request data containing coordinates and filters
             user: Current user
-            area_id: Optional area ID to filter landmarks
-            only_verified: Only return landmarks from verified areas
-            load_from_same_area: Load all landmarks from same areas as found landmarks
-            page: Page number (1-based)
-            page_size: Number of items per page
 
         Returns:
             NearbyLandmarksListResponse with validated Pydantic models and pagination metadata
         """
         # Calculate offset from page number
-        offset = (page - 1) * page_size
+        offset = (data.page - 1) * data.page_size
 
-        landmarks, total_count = await self.landmark_repository.get_nearby_landmarks(
-            latitude=latitude,
-            longitude=longitude,
-            radius_meters=radius_meters,
+        (
+            landmarks_with_status,
+            total_count,
+        ) = await self.landmark_repository.get_nearby_landmarks(
+            latitude=data.latitude,
+            longitude=data.longitude,
+            radius_meters=data.radius_meters,
             user_id=user.id,
-            area_id=area_id,
-            only_verified=only_verified,
-            load_from_same_area=load_from_same_area,
-            limit=page_size,
+            area_id=data.area_id,
+            only_verified=data.only_verified,
+            load_from_same_area=data.load_from_same_area,
+            limit=data.page_size,
             offset=offset,
         )
 
         # Use optimized batch validation via schema factory method
         response = NearbyLandmarksListResponse.from_orm_list(
-            landmarks=landmarks,
-            user_id=user.id,
+            items=landmarks_with_status,
             timezone=self.timezone,
             total=total_count,
-            page=page,
-            page_size=page_size,
+            page=data.page,
+            page_size=data.page_size,
         )
 
         logger.info(
             "Retrieved %d/%d nearby landmarks for user %s at (%.6f, %.6f) within %dm (page %d, size %d)",
-            len(landmarks),
+            len(landmarks_with_status),
             total_count,
             user.username,
-            latitude,
-            longitude,
-            radius_meters,
-            page,
-            page_size,
+            data.latitude,
+            data.longitude,
+            data.radius_meters,
+            data.page,
+            data.page_size,
         )
 
         return response

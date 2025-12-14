@@ -231,6 +231,8 @@ class LandmarkNearbyRequest(BaseModel):
         default=False,
         description="Load all landmarks from same areas as found landmarks, even outside radius",
     )
+    page: int = Field(1, ge=1, description="Page number (1-based)")
+    page_size: int = Field(50, ge=1, le=100, description="Number of items per page")
 
 
 class NearbyLandmarkResponse(TimezoneAwareSchema):
@@ -264,30 +266,24 @@ class NearbyLandmarkResponse(TimezoneAwareSchema):
     model_config = ConfigDict(from_attributes=True)
 
     @classmethod
-    def from_orm_with_user(
-        cls, landmark: "Landmark", user_id: UUID, timezone: "ZoneInfo"
+    def from_orm_with_status(
+        cls, landmark: "Landmark", is_unlocked: bool, timezone: "ZoneInfo"
     ) -> "NearbyLandmarkResponse":
         """
-        Create a NearbyLandmarkResponse from an ORM Landmark model.
-
-        This factory method efficiently transforms ORM objects to Pydantic schemas
-        with proper timezone handling and user-specific unlock status.
+        Create a NearbyLandmarkResponse from an ORM Landmark model and unlock status.
 
         Args:
             landmark: SQLAlchemy Landmark model with preloaded relationships
-            user_id: Current user's ID to determine unlock status
+            is_unlocked: Whether the current user has unlocked this landmark
             timezone: Target timezone for datetime conversion
 
         Returns:
             Validated NearbyLandmarkResponse with proper timezone conversion
         """
-        # Check unlock status using set membership for O(1) lookup
-        unlocked = any(unlock.user_id == user_id for unlock in landmark.unlocks)
-
         # Build the response dict with field mapping
         data = {
             "id": landmark.id,
-            "unlocked": unlocked,
+            "unlocked": is_unlocked,
             "latitude": landmark.latitude,
             "longitude": landmark.longitude,
             "title": landmark.name,
@@ -303,6 +299,20 @@ class NearbyLandmarkResponse(TimezoneAwareSchema):
 
         return cls.model_validate_with_timezone(data, timezone)
 
+    @classmethod
+    def from_orm_with_user(
+        cls, landmark: "Landmark", user_id: UUID, timezone: "ZoneInfo"
+    ) -> "NearbyLandmarkResponse":
+        """
+        Create a NearbyLandmarkResponse from an ORM Landmark model.
+
+        Deprecated: Use from_orm_with_status instead.
+        """
+        # Check unlock status using set membership for O(1) lookup
+        # Note: This requires unlocks relationship to be loaded which can be expensive
+        unlocked = any(unlock.user_id == user_id for unlock in landmark.unlocks)
+        return cls.from_orm_with_status(landmark, unlocked, timezone)
+
 
 class NearbyLandmarksListResponse(BaseModel):
     """Schema for list of nearby landmarks with efficient batch validation and pagination."""
@@ -314,28 +324,24 @@ class NearbyLandmarksListResponse(BaseModel):
     page: int = Field(..., ge=1, description="Current page number")
     page_size: int = Field(..., ge=1, description="Number of items per page")
     total_pages: int = Field(..., ge=0, description="Total number of pages")
+    count: int = Field(..., ge=0, description="Number of items on the current page")
 
     model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm_list(
         cls,
-        landmarks: list["Landmark"],
-        user_id: UUID,
+        items: list[tuple["Landmark", bool]],
         timezone: ZoneInfo,
         total: int,
         page: int,
         page_size: int,
     ) -> "NearbyLandmarksListResponse":
         """
-        Create a NearbyLandmarksListResponse from a list of ORM Landmark models.
-
-        Uses list comprehension for efficient batch validation, which is faster
-        than individual validation calls in a loop when dealing with many items.
+        Create a NearbyLandmarksListResponse from a list of (Landmark, is_unlocked) tuples.
 
         Args:
-            landmarks: List of SQLAlchemy Landmark models with preloaded relationships
-            user_id: Current user's ID to determine unlock status for each landmark
+            items: List of tuples containing (Landmark model, is_unlocked boolean)
             timezone: Target timezone for datetime conversion
             total: Total count of all landmarks (before pagination)
             page: Current page number
@@ -345,8 +351,8 @@ class NearbyLandmarksListResponse(BaseModel):
             Validated NearbyLandmarksListResponse with all landmarks converted and pagination metadata
         """
         validated_landmarks = [
-            NearbyLandmarkResponse.from_orm_with_user(landmark, user_id, timezone)
-            for landmark in landmarks
+            NearbyLandmarkResponse.from_orm_with_status(landmark, is_unlocked, timezone)
+            for landmark, is_unlocked in items
         ]
 
         # Calculate total pages
@@ -358,6 +364,7 @@ class NearbyLandmarksListResponse(BaseModel):
             page=page,
             page_size=page_size,
             total_pages=total_pages,
+            count=len(validated_landmarks),
         )
 
 

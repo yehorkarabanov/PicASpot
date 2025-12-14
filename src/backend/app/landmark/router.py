@@ -9,6 +9,7 @@ from .dependencies import LandmarkServiceDep
 from .schemas import (
     LandmarkCreate,
     LandmarkListReturn,
+    LandmarkNearbyRequest,
     LandmarkReturn,
     LandmarkUpdate,
     NearbyLandmarksReturn,
@@ -27,38 +28,12 @@ router = APIRouter(prefix="/landmark", tags=["landmark"])
 async def get_nearby_landmarks(
     landmark_service: LandmarkServiceDep,
     current_user: CurrentUserDep,
-    latitude: Annotated[float, Query(ge=-90, le=90, description="Current latitude")],
-    longitude: Annotated[
-        float, Query(ge=-180, le=180, description="Current longitude")
-    ],
-    radius_meters: Annotated[
-        int, Query(ge=1, le=50000, description="Search radius in meters")
-    ] = 1000,
-    area_id: Annotated[
-        uuid.UUID | None, Query(description="Optional area ID to filter landmarks")
-    ] = None,
-    only_verified: Annotated[
-        bool, Query(description="Only return landmarks from verified areas")
-    ] = False,
-    load_from_same_area: Annotated[
-        bool, Query(description="Load all landmarks from same areas as found landmarks")
-    ] = False,
-    page: Annotated[int, Query(ge=1, description="Page number (1-based)")] = 1,
-    page_size: Annotated[
-        int, Query(ge=1, le=100, description="Number of items per page")
-    ] = 50,
+    params: Annotated[LandmarkNearbyRequest, Query()],
 ) -> NearbyLandmarksReturn:
     """Get nearby landmarks based on coordinates and optional filters with pagination."""
     landmarks_data = await landmark_service.get_nearby_landmarks(
-        latitude=latitude,
-        longitude=longitude,
-        radius_meters=radius_meters,
+        data=params,
         user=current_user,
-        area_id=area_id,
-        only_verified=only_verified,
-        load_from_same_area=load_from_same_area,
-        page=page,
-        page_size=page_size,
     )
 
     return NearbyLandmarksReturn(

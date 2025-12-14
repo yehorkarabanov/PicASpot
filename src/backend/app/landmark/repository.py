@@ -2,7 +2,7 @@ import uuid
 
 from geoalchemy2.functions import ST_DWithin, ST_MakePoint, ST_SetSRID
 from sqlalchemy import func, select
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload
 
 from app.area.models import Area
 from app.core.repository import BaseRepository
@@ -25,7 +25,7 @@ class LandmarkRepository(BaseRepository[Landmark]):
         load_from_same_area: bool = False,
         limit: int = 50,
         offset: int = 0,
-    ) -> tuple[list[Landmark], int]:
+    ) -> tuple[list[tuple[Landmark, bool]], int]:
         """
         Get landmarks within a given radius from a point with pagination.
 
@@ -41,14 +41,15 @@ class LandmarkRepository(BaseRepository[Landmark]):
             offset: Number of results to skip
 
         Returns:
-            Tuple of (list of landmarks with their relationships loaded, total count)
+            Tuple of (list of (landmark, is_unlocked) tuples, total count)
         """
         # Create a point from the given coordinates
         user_point = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)
 
         # Base query with necessary joins
+        # Select Landmark and a boolean indicating if the user has unlocked it
         query = (
-            select(Landmark)
+            select(Landmark, Unlock.user_id.is_not(None).label("is_unlocked"))
             .join(Area, Landmark.area_id == Area.id)
             .outerjoin(
                 Unlock,
@@ -56,8 +57,8 @@ class LandmarkRepository(BaseRepository[Landmark]):
             )
             .options(
                 joinedload(Landmark.area),
-                joinedload(Landmark.creator),
-                selectinload(Landmark.unlocks).joinedload(Unlock.user),
+                # Removed joinedload(Landmark.creator) as it's not used in response
+                # Removed selectinload(Landmark.unlocks) to avoid N+1 query for all unlocks
             )
         )
 
@@ -112,7 +113,7 @@ class LandmarkRepository(BaseRepository[Landmark]):
             if area_ids:
                 # Replace query to get all landmarks from these areas
                 query = (
-                    select(Landmark)
+                    select(Landmark, Unlock.user_id.is_not(None).label("is_unlocked"))
                     .join(Area, Landmark.area_id == Area.id)
                     .outerjoin(
                         Unlock,
@@ -122,8 +123,6 @@ class LandmarkRepository(BaseRepository[Landmark]):
                     .where(Landmark.area_id.in_(area_ids))
                     .options(
                         joinedload(Landmark.area),
-                        joinedload(Landmark.creator),
-                        selectinload(Landmark.unlocks).joinedload(Unlock.user),
                     )
                 )
 
@@ -131,9 +130,13 @@ class LandmarkRepository(BaseRepository[Landmark]):
                     query = query.where(Area.is_verified == True)  # noqa: E712
 
         # Count query - create a count query without joins that are only for loading relationships
-        count_query = select(func.count(Landmark.id)).join(
-            Area, Landmark.area_id == Area.id
-        )
+        # Optimize: Only join Area if we need to filter by verified status
+        if only_verified:
+            count_query = select(func.count(Landmark.id)).join(
+                Area, Landmark.area_id == Area.id
+            )
+        else:
+            count_query = select(func.count(Landmark.id))
 
         # Apply the same filters as the main query
         if load_from_same_area and area_ids:
@@ -162,6 +165,7 @@ class LandmarkRepository(BaseRepository[Landmark]):
 
         # Execute the main query to get landmarks
         result = await self.session.execute(query)
-        landmarks = list(result.scalars().unique().all())
+        # Result contains tuples of (Landmark, is_unlocked)
+        landmarks_with_status = list(result.all())
 
-        return landmarks, total_count
+        return landmarks_with_status, total_count
