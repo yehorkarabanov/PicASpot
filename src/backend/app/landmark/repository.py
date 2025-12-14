@@ -80,13 +80,11 @@ class LandmarkRepository(BaseRepository[Landmark]):
         if only_verified:
             query = query.where(Area.is_verified == True)  # noqa: E712
 
-        # Initialize area_ids for use in count query later
-        area_ids = []
-
         # If load_from_same_area is True, load all landmarks from the same areas
+        area_ids_subquery = None
         if load_from_same_area:
-            # First, get area_ids from landmarks within radius
-            area_query_for_ids = (
+            # Subquery to get area_ids from landmarks within radius
+            area_ids_subquery = (
                 select(Landmark.area_id)
                 .join(Area, Landmark.area_id == Area.id)
                 .where(
@@ -100,34 +98,27 @@ class LandmarkRepository(BaseRepository[Landmark]):
             )
 
             if area_id is not None:
-                area_query_for_ids = area_query_for_ids.where(
-                    Landmark.area_id == area_id
-                )
+                area_ids_subquery = area_ids_subquery.where(Landmark.area_id == area_id)
 
             if only_verified:
-                area_query_for_ids = area_query_for_ids.where(Area.is_verified == True)  # noqa: E712
+                area_ids_subquery = area_ids_subquery.where(Area.is_verified == True)  # noqa: E712
 
-            area_ids_result = await self.session.execute(area_query_for_ids)
-            area_ids = list({row[0] for row in area_ids_result.all()})
-
-            if area_ids:
-                # Replace query to get all landmarks from these areas
-                query = (
-                    select(Landmark, Unlock.user_id.is_not(None).label("is_unlocked"))
-                    .join(Area, Landmark.area_id == Area.id)
-                    .outerjoin(
-                        Unlock,
-                        (Unlock.landmark_id == Landmark.id)
-                        & (Unlock.user_id == user_id),
-                    )
-                    .where(Landmark.area_id.in_(area_ids))
-                    .options(
-                        joinedload(Landmark.area),
-                    )
+            # Replace query to get all landmarks from these areas
+            query = (
+                select(Landmark, Unlock.user_id.is_not(None).label("is_unlocked"))
+                .join(Area, Landmark.area_id == Area.id)
+                .outerjoin(
+                    Unlock,
+                    (Unlock.landmark_id == Landmark.id) & (Unlock.user_id == user_id),
                 )
+                .where(Landmark.area_id.in_(area_ids_subquery))
+                .options(
+                    joinedload(Landmark.area),
+                )
+            )
 
-                if only_verified:
-                    query = query.where(Area.is_verified == True)  # noqa: E712
+            if only_verified:
+                query = query.where(Area.is_verified == True)  # noqa: E712
 
         # Count query - create a count query without joins that are only for loading relationships
         # Optimize: Only join Area if we need to filter by verified status
@@ -139,8 +130,8 @@ class LandmarkRepository(BaseRepository[Landmark]):
             count_query = select(func.count(Landmark.id))
 
         # Apply the same filters as the main query
-        if load_from_same_area and area_ids:
-            count_query = count_query.where(Landmark.area_id.in_(area_ids))
+        if load_from_same_area and area_ids_subquery is not None:
+            count_query = count_query.where(Landmark.area_id.in_(area_ids_subquery))
         else:
             count_query = count_query.where(
                 ST_DWithin(
