@@ -8,7 +8,6 @@ from app.auth.dependencies import CurrentUserDep
 from .dependencies import LandmarkServiceDep
 from .schemas import (
     LandmarkCreate,
-    LandmarkListReturn,
     LandmarkNearbyRequest,
     LandmarkReturn,
     LandmarkUpdate,
@@ -39,34 +38,6 @@ async def get_nearby_landmarks(
     return NearbyLandmarksReturn(
         message="Nearby landmarks retrieved successfully", data=landmarks_data
     )
-
-
-@router.get(
-    "/nearby-area", response_model=LandmarkListReturn, response_model_exclude_none=True
-)
-async def get_nearby_landmarks_grouped_by_area(
-    landmark_service: LandmarkServiceDep,
-    current_user: CurrentUserDep,
-    latitude: Annotated[float, Query(ge=-90, le=90, description="Current latitude")],
-    longitude: Annotated[
-        float, Query(ge=-180, le=180, description="Current longitude")
-    ],
-    radius_meters: Annotated[
-        int, Query(ge=1, le=50000, description="Search radius in meters")
-    ] = 1000,
-    area_id: Annotated[
-        uuid.UUID | None, Query(description="Optional area ID to filter landmarks")
-    ] = None,
-    only_verified: Annotated[
-        bool, Query(description="Only return landmarks from verified areas")
-    ] = False,
-    load_from_same_area: Annotated[
-        bool, Query(description="Load all landmarks from same areas as found landmarks")
-    ] = False,
-) -> LandmarkListReturn:
-    """[WIP] Get nearby landmarks grouped by area based on coordinates and optional filters."""
-    # TODO: Implement nearby landmarks grouped by area logic in service
-    return LandmarkListReturn(message="Not implemented yet", data=None)
 
 
 @router.post("/", response_model=LandmarkReturn, response_model_exclude_none=True)
