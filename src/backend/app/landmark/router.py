@@ -1,30 +1,54 @@
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Query
 
 from app.auth.dependencies import CurrentUserDep
 
 from .dependencies import LandmarkServiceDep
 from .schemas import (
     LandmarkCreate,
-    LandmarkListReturn,
     LandmarkNearbyRequest,
     LandmarkReturn,
     LandmarkUpdate,
+    NearbyLandmarksReturn,
 )
 
 router = APIRouter(prefix="/landmark", tags=["landmark"])
 
 
-@router.post("/", response_model=LandmarkReturn, response_model_exclude_none=True)
-async def create_landmark(
-    landmark_data: LandmarkCreate,
+# IMPORTANT: Static routes (/nearby, /nearby-area) must be defined BEFORE
+# dynamic routes (/{landmark_id}) to prevent "nearby" being interpreted as a UUID
+
+
+@router.get(
+    "/nearby", response_model=NearbyLandmarksReturn, response_model_exclude_none=True
+)
+async def get_nearby_landmarks(
     landmark_service: LandmarkServiceDep,
     current_user: CurrentUserDep,
+    params: Annotated[LandmarkNearbyRequest, Query()],
+) -> NearbyLandmarksReturn:
+    """Get nearby landmarks based on coordinates and optional filters with pagination."""
+    landmarks_data = await landmark_service.get_nearby_landmarks(
+        data=params,
+        user=current_user,
+    )
+
+    return NearbyLandmarksReturn(
+        message="Nearby landmarks retrieved successfully", data=landmarks_data
+    )
+
+
+@router.post("/", response_model=LandmarkReturn, response_model_exclude_none=True)
+async def create_landmark(
+    landmark_service: LandmarkServiceDep,
+    current_user: CurrentUserDep,
+    landmark_data: Annotated[LandmarkCreate, Depends()],
 ) -> LandmarkReturn:
     """Create a new landmark."""
     landmark_response = await landmark_service.create_landmark(
-        landmark_data=landmark_data, creator_id=current_user.id
+        landmark_data=landmark_data, user=current_user
     )
     return LandmarkReturn(
         message="Landmark created successfully", data=landmark_response
@@ -66,9 +90,9 @@ async def delete_landmark(
 )
 async def update_landmark(
     landmark_id: uuid.UUID,
-    landmark_data: LandmarkUpdate,
     landmark_service: LandmarkServiceDep,
     current_user: CurrentUserDep,
+    landmark_data: Annotated[LandmarkUpdate, Depends()],
 ) -> LandmarkReturn:
     """Update landmark by ID."""
     landmark_response = await landmark_service.update_landmark(
@@ -77,25 +101,3 @@ async def update_landmark(
     return LandmarkReturn(
         message="Landmark updated successfully", data=landmark_response
     )
-
-
-@router.get(
-    "/nearby", response_model=LandmarkListReturn, response_model_exclude_none=True
-)
-async def get_nearby_landmarks(
-    request_data: LandmarkNearbyRequest,
-    landmark_service: LandmarkServiceDep,
-    current_user: CurrentUserDep,
-) -> LandmarkListReturn:
-    """[WIP] Get nearby landmarks based on coordinates and optional filters."""
-    return None
-
-
-@router.get("/nearby-area")
-async def get_nearby_landmarks_grouped_by_area(
-    request_data: LandmarkNearbyRequest,
-    landmark_service: LandmarkServiceDep,
-    current_user: CurrentUserDep,
-) -> LandmarkListReturn:
-    """[WIP] Get nearby landmarks grouped by area based on coordinates and optional filters."""
-    return None

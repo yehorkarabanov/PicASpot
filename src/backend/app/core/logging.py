@@ -99,7 +99,9 @@ class SensitiveDataFilter(logging.Filter):
         redacted_message = message
         for key in self.SENSITIVE_KEYS:
             if key in redacted_message.lower():
-                redacted_message = redacted_message.replace(key, f"{key.upper()}_REDACTED")
+                redacted_message = redacted_message.replace(
+                    key, f"{key.upper()}_REDACTED"
+                )
 
         # If redaction occurred, update the record to use the redacted message directly
         if redacted_message != message:

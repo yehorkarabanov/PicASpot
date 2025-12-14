@@ -71,16 +71,19 @@ class TimezoneAwareSchema(BaseModel):
         Returns:
             Validated model with converted timestamps
         """
-        if hasattr(obj, "__dict__"):
-            data = {k: v for k, v in obj.__dict__.items() if not k.startswith("_")}
-        elif isinstance(obj, dict):
-            data = obj
-        else:
-            return cls.model_validate(obj)
+        # First validate the model using from_attributes mode
+        # This properly accesses @property attributes from SQLAlchemy models
+        validated = cls.model_validate(obj)
 
-        # Convert timestamps
-        converted_data = cls.convert_timestamps_for_timezone(data, timezone)
+        # If timezone is UTC, no conversion needed
+        if timezone.key == "UTC":
+            return validated
 
+        # Convert datetime fields in the validated model
+        model_dict = validated.model_dump()
+        converted_data = cls.convert_timestamps_for_timezone(model_dict, timezone)
+
+        # Re-validate with converted data
         return cls.model_validate(converted_data)
 
 

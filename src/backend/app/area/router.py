@@ -1,20 +1,28 @@
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Query
 
 from app.auth.dependencies import CurrentSuperuserDep, CurrentUserDep
+from app.landmark.dependencies import LandmarkServiceDep
 
 from .dependencies import AreaServiceDep
-from .schemas import AreaCreate, AreaReturn, AreaUpdate
+from .schemas import (
+    AreaCreate,
+    AreaLandmarksResponse,
+    AreaLandmarksReturn,
+    AreaReturn,
+    AreaUpdate,
+)
 
 router = APIRouter(tags=["area"], prefix="/area")
 
 
 @router.post("/", response_model=AreaReturn, response_model_exclude_none=True)
 async def create_area(
-    area_data: AreaCreate,
     area_service: AreaServiceDep,
     current_user: CurrentUserDep,
+    area_data: Annotated[AreaCreate, Depends()],
 ) -> AreaReturn:
     """Create a new area. If the user is a superuser, the area will be automatically verified."""
     area_response = await area_service.create_area(
@@ -53,9 +61,9 @@ async def delete_area(
 @router.patch("/{area_id}", response_model=AreaReturn, response_model_exclude_none=True)
 async def update_area(
     area_id: uuid.UUID,
-    area_data: AreaUpdate,
     area_service: AreaServiceDep,
     current_user: CurrentUserDep,
+    area_data: Annotated[AreaUpdate, Depends()],
 ) -> AreaReturn:
     """Update area by ID."""
     area_response = await area_service.update_area(
@@ -77,3 +85,40 @@ async def verify_area(
         area_id=area_id, super_user=current_super_user
     )
     return AreaReturn(message="Area verified successfully", data=area_response)
+
+
+@router.get(
+    "/{area_id}/landmarks",
+    response_model=AreaLandmarksReturn,
+    response_model_exclude_none=True,
+)
+async def get_area_landmarks(
+    area_id: uuid.UUID,
+    area_service: AreaServiceDep,
+    landmark_service: LandmarkServiceDep,
+    current_user: CurrentUserDep,
+    page: Annotated[int, Query(ge=1, description="Page number")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 50,
+    only_verified: Annotated[
+        bool, Query(description="Only return if area is verified")
+    ] = False,
+) -> AreaLandmarksReturn:
+    """
+    Get area details and its landmarks with pagination.
+    """
+    # Get area details
+    area_response = await area_service.get_area(area_id=area_id)
+
+    # Get landmarks
+    landmarks_response = await landmark_service.get_landmarks_by_area(
+        area_id=area_id,
+        user=current_user,
+        page=page,
+        page_size=page_size,
+        only_verified=only_verified,
+    )
+
+    return AreaLandmarksReturn(
+        message="Area landmarks retrieved successfully",
+        data=AreaLandmarksResponse(area=area_response, landmarks=landmarks_response),
+    )

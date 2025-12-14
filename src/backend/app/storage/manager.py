@@ -1,3 +1,4 @@
+import json
 import logging
 from collections.abc import AsyncGenerator
 
@@ -7,9 +8,6 @@ from miniopy_async.error import S3Error
 from app.settings import settings
 
 logger = logging.getLogger(__name__)
-
-# Bucket configuration
-bucket_name = settings.MINIO_BUCKET_NAME
 
 
 def create_minio_client() -> Minio:
@@ -29,7 +27,7 @@ def create_minio_client() -> Minio:
 
 async def ensure_bucket_exists() -> None:
     """
-    Create MinIO bucket if it doesn't exist.
+    Create MinIO bucket if it doesn't exist and set public read policy.
 
     Should be called once at application startup.
 
@@ -38,14 +36,21 @@ async def ensure_bucket_exists() -> None:
     """
     client = create_minio_client()
     try:
-        exists = await client.bucket_exists(bucket_name)
+        exists = await client.bucket_exists(settings.MINIO_BUCKET_NAME)
         if not exists:
-            await client.make_bucket(bucket_name, location=settings.MINIO_REGION)
-            logger.info(f"Created MinIO bucket: {bucket_name}")
-        else:
-            logger.info(f"MinIO bucket already exists: {bucket_name}")
+            await client.make_bucket(
+                settings.MINIO_BUCKET_NAME, location=settings.MINIO_REGION
+            )
+            logger.info(f"Created MinIO bucket: {settings.MINIO_BUCKET_NAME}")
+
+        # Set public read policy for anonymous access through nginx
+        await client.set_bucket_policy(
+            settings.MINIO_BUCKET_NAME, json.dumps(settings.PUBLIC_READ_POLICY)
+        )
+        logger.info(f"Set public read policy on bucket: {settings.MINIO_BUCKET_NAME}")
+
     except S3Error as e:
-        logger.error(f"Failed to create MinIO bucket: {e}")
+        logger.error(f"Failed to create/configure MinIO bucket: {e}")
         raise
     except Exception as e:
         logger.error(f"Unexpected error creating MinIO bucket: {e}")
@@ -61,7 +66,7 @@ async def check_minio_health() -> bool:
     """
     client = create_minio_client()
     try:
-        return await client.bucket_exists(bucket_name)
+        return await client.bucket_exists(settings.MINIO_BUCKET_NAME)
     except Exception:
         logger.exception("MinIO health check failed")
         return False

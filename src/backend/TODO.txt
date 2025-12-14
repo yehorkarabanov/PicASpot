@@ -1,9 +1,10 @@
 #TODO: Email verification is disabled for now. For future - we will use OTP
 
+#TODO: Add check for duplicate landmark/area names/coordinates/photos
+
 #TODO: Landmarks should have hint images to help users identify them better [or null]
 #TODO: Landmarks should have location where photos should be taken from and radius [list, or null]
 #TODO: Landmarks [from_location, to_location] basically
-#TODO: Landmarks should also say how many of them are in the area
 #TODO: Filter landmarks by area_id
 
 #TODO: Get badges system for the user

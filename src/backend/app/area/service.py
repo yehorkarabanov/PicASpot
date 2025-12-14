@@ -3,6 +3,8 @@ import uuid
 from zoneinfo import ZoneInfo
 
 from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
+from app.settings import settings
+from app.storage import StorageDir, StorageService
 from app.user.models import User
 
 from .repository import AreaRepository
@@ -20,7 +22,10 @@ class AreaService:
     """
 
     def __init__(
-        self, area_repository: AreaRepository, timezone: ZoneInfo | None = None
+        self,
+        area_repository: AreaRepository,
+        storage: StorageService,
+        timezone: ZoneInfo | None = None,
     ):
         """
         Initialize the AreaService.
@@ -30,6 +35,7 @@ class AreaService:
             timezone: Client's timezone for datetime conversion in responses.
         """
         self.area_repository = area_repository
+        self.storage = storage
         self.timezone = timezone or ZoneInfo("UTC")
 
     async def _validate_parent_area_exists(self, parent_area_id: uuid.UUID) -> None:
@@ -95,7 +101,33 @@ class AreaService:
         if area_data.parent_area_id:
             await self._validate_parent_area_exists(area_data.parent_area_id)
 
-        area_dict = area_data.model_dump()
+        area_dict = area_data.model_dump(exclude={"image_file", "badge_file"})
+
+        # TODO: Refactor file upload logic to a separate utility/helper if reused elsewhere
+        if area_data.image_file:
+            result = await self.storage.upload_file(
+                file_data=await area_data.image_file.read(),
+                original_filename=area_data.image_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=area_data.image_file.content_type
+                or "application/octet-stream",
+            )
+            area_dict["image_url"] = result["public_url"]
+        else:
+            area_dict["image_url"] = settings.DEFAULT_AREA_IMAGE_URL
+
+        if area_data.badge_file:
+            result = await self.storage.upload_file(
+                file_data=await area_data.badge_file.read(),
+                original_filename=area_data.badge_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=area_data.badge_file.content_type
+                or "application/octet-stream",
+            )
+            area_dict["badge_url"] = result["public_url"]
+        else:
+            area_dict["badge_url"] = settings.DEFAULT_AREA_IMAGE_URL
+
         area_dict["creator_id"] = user.id
 
         # Automatically verify areas created by superusers
@@ -188,6 +220,35 @@ class AreaService:
             await self._validate_parent_area_exists(area_data.parent_area_id)
 
         area_dict = area_data.model_dump(exclude_unset=True)
+
+        # Remove file objects from dict as they shouldn't be stored directly
+        area_dict.pop("image_file", None)
+        area_dict.pop("badge_file", None)
+
+        # Filter out None values to prevent setting required fields to null
+        # Only keep None for parent_area_id (which can be explicitly set to null)
+        area_dict = {
+            k: v for k, v in area_dict.items() if v is not None or k == "parent_area_id"
+        }
+
+        if area_data.image_file:
+            result = await self.storage.upload_file(
+                file_data=await area_data.image_file.read(),
+                original_filename=area_data.image_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=area_data.image_file.content_type
+                or "application/octet-stream",
+            )
+            area_dict["image_url"] = result["public_url"]
+        if area_data.badge_file:
+            result = await self.storage.upload_file(
+                file_data=await area_data.badge_file.read(),
+                original_filename=area_data.badge_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=area_data.badge_file.content_type
+                or "application/octet-stream",
+            )
+            area_dict["badge_url"] = result["public_url"]
         area = await self.area_repository.update(area_id, area_dict)
         logger.info("Area updated: %s by user %s", area.name, user.username)
 

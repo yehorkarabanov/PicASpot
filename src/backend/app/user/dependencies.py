@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from fastapi import Depends, Request
 
 from app.database import SessionDep
+from app.storage.dependencies import StorageServiceDep
 
 from .models import User
 from .repository import UserRepository
@@ -26,9 +27,17 @@ def get_user_repository(session: SessionDep, timezone: TimeZoneDep) -> UserRepos
 UserRepDep = Annotated[UserRepository, Depends(get_user_repository)]
 
 
-def get_user_service(user_repository: UserRepDep, timezone: TimeZoneDep) -> UserService:
-    """Get an instance of UserService with timezone support."""
-    return UserService(user_repository=user_repository, timezone=timezone)
+def get_user_service(
+    user_repository: UserRepDep,
+    timezone: TimeZoneDep,
+    storage_service: StorageServiceDep,
+) -> UserService:
+    """Get an instance of UserService with timezone and storage support."""
+    return UserService(
+        user_repository=user_repository,
+        timezone=timezone,
+        storage_service=storage_service,
+    )
 
 
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
