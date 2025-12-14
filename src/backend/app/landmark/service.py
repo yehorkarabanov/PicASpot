@@ -285,3 +285,45 @@ class LandmarkService:
         )
 
         return response
+
+    async def get_landmarks_by_area(
+        self,
+        area_id: uuid.UUID,
+        user: User,
+        page: int = 1,
+        page_size: int = 50,
+        only_verified: bool = False,
+    ) -> NearbyLandmarksListResponse:
+        """
+        Get landmarks for a specific area.
+
+        Args:
+            area_id: Area ID
+            user: Current user
+            page: Page number
+            page_size: Page size
+            only_verified: Only return if area is verified
+
+        Returns:
+            NearbyLandmarksListResponse
+        """
+        offset = (page - 1) * page_size
+
+        (
+            landmarks_with_status,
+            total_count,
+        ) = await self.landmark_repository.get_landmarks_by_area(
+            area_id=area_id,
+            user_id=user.id,
+            only_verified=only_verified,
+            limit=page_size,
+            offset=offset,
+        )
+
+        return NearbyLandmarksListResponse.from_orm_list(
+            items=landmarks_with_status,
+            timezone=self.timezone,
+            total=total_count,
+            page=page,
+            page_size=page_size,
+        )

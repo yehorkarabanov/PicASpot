@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.schemas import BaseReturn
 from app.core.schemas_base import TimezoneAwareSchema
+from app.landmark.schemas import NearbyLandmarksListResponse
 
 
 class AreaBase(BaseModel):
@@ -156,3 +157,18 @@ class AreaListReturn(BaseReturn):
     """API response wrapper for list of areas"""
 
     data: AreaListResponse | None = None
+
+
+class AreaLandmarksResponse(BaseModel):
+    """Schema for area details with its landmarks"""
+
+    area: AreaResponse = Field(..., description="Area details")
+    landmarks: NearbyLandmarksListResponse = Field(
+        ..., description="List of landmarks in the area"
+    )
+
+
+class AreaLandmarksReturn(BaseReturn):
+    """API response wrapper for area landmarks"""
+
+    data: AreaLandmarksResponse | None = None

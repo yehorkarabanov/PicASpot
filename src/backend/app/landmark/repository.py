@@ -1,4 +1,5 @@
 import uuid
+from typing import cast
 
 from geoalchemy2.functions import ST_DWithin, ST_MakePoint, ST_SetSRID
 from sqlalchemy import func, select
@@ -159,4 +160,63 @@ class LandmarkRepository(BaseRepository[Landmark]):
         # Result contains tuples of (Landmark, is_unlocked)
         landmarks_with_status = list(result.all())
 
-        return landmarks_with_status, total_count
+        return cast(list[tuple[Landmark, bool]], landmarks_with_status), total_count
+
+    async def get_landmarks_by_area(
+        self,
+        area_id: uuid.UUID,
+        user_id: uuid.UUID,
+        only_verified: bool = False,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[tuple[Landmark, bool]], int]:
+        """
+        Get landmarks for a specific area with pagination.
+
+        Args:
+            area_id: The UUID of the area
+            user_id: Current user ID to check unlock status
+            only_verified: If True, only return landmarks if the area is verified
+            limit: Maximum number of results to return
+            offset: Number of results to skip
+
+        Returns:
+            Tuple of (list of (landmark, is_unlocked) tuples, total count)
+        """
+        # Base query
+        query = (
+            select(Landmark, Unlock.user_id.is_not(None).label("is_unlocked"))
+            .join(Area, Landmark.area_id == Area.id)
+            .outerjoin(
+                Unlock,
+                (Unlock.landmark_id == Landmark.id) & (Unlock.user_id == user_id),
+            )
+            .where(Landmark.area_id == area_id)
+            .options(
+                joinedload(Landmark.area),
+            )
+        )
+
+        if only_verified:
+            query = query.where(Area.is_verified == True)  # noqa: E712
+
+        # Count query
+        count_query = select(func.count(Landmark.id)).where(Landmark.area_id == area_id)
+
+        if only_verified:
+            count_query = count_query.join(Area, Landmark.area_id == Area.id).where(
+                Area.is_verified == True  # noqa: E712
+            )
+
+        # Execute count query
+        count_result = await self.session.execute(count_query)
+        total_count = count_result.scalar_one()
+
+        # Apply pagination
+        query = query.limit(limit).offset(offset)
+
+        # Execute main query
+        result = await self.session.execute(query)
+        landmarks_with_status = list(result.all())
+
+        return cast(list[tuple[Landmark, bool]], landmarks_with_status), total_count
