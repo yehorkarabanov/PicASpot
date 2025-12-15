@@ -7,7 +7,11 @@ from aiokafka import AIOKafkaProducer
 
 from app.settings import settings
 
-from .schemas import ResetPasswordEmailMessage, VerificationEmailMessage
+from .schemas import (
+    ResetPasswordEmailMessage,
+    UnlockVerifyMessage,
+    VerificationEmailMessage,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -214,6 +218,35 @@ class KafkaProducer:
         """
         return await self._send_message(
             topic=settings.KAFKA_VERIFICATION_EMAIL_TOPIC,
+            value=message.model_dump(),
+        )
+
+    async def send_unlock_verify_message(self, message: UnlockVerifyMessage) -> bool:
+        """Send an unlock verification request message.
+
+        Publishes an unlock verification message to the configured Kafka topic for
+        asynchronous processing by the email service.
+
+        Args:
+            message (UnlockVerifyMessage): The unlock verification message containing
+                recipient email, username, and verification link.
+
+        Returns:
+            bool: True if the message was successfully sent to Kafka, False otherwise.
+
+        Example:
+            >>> message = UnlockVerifyMessage(
+            ...     email="user@example.com",
+            ...     username="johndoe",
+            ...     link="https://example.com/verify-unlock?token=xyz789"
+            ... )
+            >>> success = await kafka_producer.send_unlock_verify_message(message)
+
+        Note:
+            The producer must be started before calling this method.
+        """
+        return await self._send_message(
+            topic=settings.KAFKA_VERIFY_IMAGE_TOPIC,
             value=message.model_dump(),
         )
 

@@ -4,6 +4,8 @@ from zoneinfo import ZoneInfo
 from fastapi import Depends, Request
 
 from app.database import SessionDep
+from app.landmark.dependencies import LandmarkRepDep
+from app.storage.dependencies import StorageServiceDep
 
 from .models import Unlock
 from .repository import UnlockRepository
@@ -28,9 +30,19 @@ def get_unlock_repository(
 UnlockRepDep = Annotated[UnlockRepository, Depends(get_unlock_repository)]
 
 
-def get_unlock_service(unlock_repository: UnlockRepDep) -> UnlockService:
+def get_unlock_service(
+    unlock_repository: UnlockRepDep,
+    landmark_repository: LandmarkRepDep,
+    storage: StorageServiceDep,
+    timezone: TimeZoneDep,
+) -> UnlockService:
     """Get an instance of UnlockService."""
-    return UnlockService(unlock_repository=unlock_repository)
+    return UnlockService(
+        unlock_repository=unlock_repository,
+        landmark_repository=landmark_repository,
+        storage=storage,
+        timezone=timezone,
+    )
 
 
 UnlockServiceDep = Annotated[UnlockService, Depends(get_unlock_service)]
