@@ -4,22 +4,17 @@ import logging
 
 from aiokafka import AIOKafkaConsumer
 
-from app.email.tasks import user_password_reset_mail, user_verify_mail
 from app.settings import settings
 
 logger = logging.getLogger(__name__)
 
 
 class KafkaConsumer:
-    """Asynchronous Kafka consumer for processing email-related messages.
+    """Asynchronous Kafka consumer for processing image-related messages.
 
     This class manages the lifecycle of a Kafka consumer, including connection
     management, message consumption, and processing delegation. It implements
     retry logic for resilient connections and handles graceful shutdown.
-
-    The consumer automatically subscribes to verification and password reset
-    email topics and processes messages by delegating to the appropriate
-    email service tasks.
 
     Attributes:
         consumer (AIOKafkaConsumer | None): The underlying aiokafka consumer instance.
@@ -46,9 +41,8 @@ class KafkaConsumer:
         """Start the Kafka consumer and subscribe to topics.
 
         Establishes connection to the Kafka cluster with retry logic and subscribes
-        to configured email topics (verification and password reset). The consumer
-        is configured to read from the earliest offset and manually commits offsets
-        after successful message processing.
+        to configured image topics. The consumer is configured to read from the
+        earliest offset and manually commits offsets after successful message processing.
 
         Args:
             max_retries (int, optional): Maximum number of connection attempts.
@@ -71,14 +65,12 @@ class KafkaConsumer:
                         "bootstrap_servers": settings.KAFKA_BOOTSTRAP_SERVERS,
                         "consumer_group": settings.KAFKA_CONSUMER_GROUP,
                         "topics": [
-                            settings.KAFKA_VERIFICATION_EMAIL_TOPIC,
-                            settings.KAFKA_RESET_PASSWORD_EMAIL_TOPIC,
+                            settings.KAFKA_VERIFY_IMAGE_TOPIC,
                         ],
                     },
                 )
                 self.consumer = AIOKafkaConsumer(
-                    settings.KAFKA_VERIFICATION_EMAIL_TOPIC,
-                    settings.KAFKA_RESET_PASSWORD_EMAIL_TOPIC,
+                    settings.KAFKA_VERIFY_IMAGE_TOPIC,
                     bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
                     group_id=settings.KAFKA_CONSUMER_GROUP,
                     auto_offset_reset="earliest",
@@ -148,18 +140,15 @@ class KafkaConsumer:
                 )
 
     async def process_message(self, msg):
-        """Process a single Kafka message and delegate to email service.
+        """Process a single Kafka message.
 
-        Parses the JSON message payload and routes it to the appropriate email
-        service task based on the topic. Handles verification emails and password
-        reset emails differently.
+        Parses the JSON message payload and processes it.
 
         Args:
             msg: The Kafka message object containing topic, value, and other metadata.
 
         Note:
-            - Messages are JSON-decoded and expected to contain 'email', 'link',
-              and 'username' fields.
+            - Messages are JSON-decoded.
             - On JSON decode errors, the message is logged and committed to prevent
               blocking the consumer.
             - On processing errors, the error is logged but the offset is NOT
@@ -174,18 +163,9 @@ class KafkaConsumer:
             message_data = json.loads(msg.value.decode("utf-8"))
             logger.info(f"Received message from topic: {msg.topic}")
 
-            if msg.topic == settings.KAFKA_VERIFICATION_EMAIL_TOPIC:
-                await user_verify_mail(
-                    recipient=message_data["email"],
-                    link=message_data["link"],
-                    username=message_data["username"],
-                )
-            elif msg.topic == settings.KAFKA_RESET_PASSWORD_EMAIL_TOPIC:
-                await user_password_reset_mail(
-                    recipient=message_data["email"],
-                    link=message_data["link"],
-                    username=message_data["username"],
-                )
+            if msg.topic == settings.KAFKA_VERIFY_IMAGE_TOPIC:
+                # TODO: Implement image processing logic here
+                logger.info(f"Processing image task: {message_data}")
 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to decode JSON message: {e}")

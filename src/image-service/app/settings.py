@@ -20,12 +20,9 @@ class Settings(BaseSettings):
         default=["kafka-0:9092", "kafka-1:9092", "kafka-2:9092"]
     )
 
-    KAFKA_VERIFICATION_EMAIL_TOPIC: str = Field(default="verification-email-requests")
-    KAFKA_RESET_PASSWORD_EMAIL_TOPIC: str = Field(
-        default="password-reset-email-requests"
-    )
+    KAFKA_VERIFY_IMAGE_TOPIC: str = Field(default="verify-image-requests")
     KAFKA_CONSUMER_GROUP: str = Field(
-        default="email-service-group", alias="KAFKA_IMAGE_CONSUMER_GROUP"
+        default="image-service-group", alias="KAFKA_IMAGE_CONSUMER_GROUP"
     )
 
     BASE_DIR: Path = Path(__file__).resolve().parent

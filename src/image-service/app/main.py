@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
         await kafka_consumer.stop()
     except Exception as e:
         logger.error(
-            "Error during email service shutdown",
+            f"Error during {settings.SERVICE_NAME} shutdown",
             exc_info=True,
             extra={"error": str(e)},
         )

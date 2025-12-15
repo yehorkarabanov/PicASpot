@@ -1,13 +1,13 @@
 """
-Centralized logging configuration for the Email Service.
+Centralized logging configuration for the Image Service.
 
 This module provides a production-ready logging setup with:
 - Structured JSON logging for production
 - Human-readable console logging for development
 - Log rotation to prevent disk space issues
-- Integration with FastAPI, Kafka, and FastAPI-Mail
+- Integration with FastAPI and Kafka
 - Different log levels per environment
-- Email-specific context support
+- Service-specific context support
 """
 
 import logging
@@ -53,13 +53,9 @@ class JSONFormatter(logging.Formatter):
         if correlation_id:
             log_data["correlation_id"] = correlation_id
 
-        # Add extra context fields - email service specific
-        if hasattr(record, "email_to"):
-            log_data["email_to"] = record.email_to
-        if hasattr(record, "email_subject"):
-            log_data["email_subject"] = record.email_subject
-        if hasattr(record, "email_template"):
-            log_data["email_template"] = record.email_template
+        # Add extra context fields - image service specific
+        if hasattr(record, "image_id"):
+            log_data["image_id"] = record.image_id
         if hasattr(record, "kafka_topic"):
             log_data["kafka_topic"] = record.kafka_topic
         if hasattr(record, "kafka_partition"):
@@ -97,8 +93,6 @@ class SensitiveDataFilter(logging.Filter):
         "authorization",
         "credit_card",
         "ssn",
-        "smtp_password",
-        "mail_password",
     }
 
     def filter(self, record: logging.LogRecord) -> bool:
@@ -179,7 +173,7 @@ def setup_logging(use_file_logging: bool = True) -> None:
         log_dir.mkdir(exist_ok=True)
 
         # Service-specific file names to prevent Docker container conflicts
-        # email-service container → logs/email-service.log
+        # image-service container → logs/image-service.log
         service_log_file = log_dir / f"{service_name}.log"
         service_error_file = log_dir / f"{service_name}-error.log"
 
@@ -237,10 +231,6 @@ def setup_logging(use_file_logging: bool = True) -> None:
     logging.getLogger("aiokafka.cluster").setLevel("WARNING")
     logging.getLogger("aiokafka.consumer").setLevel("WARNING")
     logging.getLogger("aiokafka.producer").setLevel("WARNING")
-
-    # Email
-    logging.getLogger("fastapi_mail").setLevel("INFO")
-    logging.getLogger("aiosmtplib").setLevel("WARNING")
 
     # HTTP clients
     logging.getLogger("httpx").setLevel("WARNING")

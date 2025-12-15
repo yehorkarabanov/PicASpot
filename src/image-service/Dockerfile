@@ -1,4 +1,4 @@
-# Email Service Dockerfile
+# Image Service Dockerfile
 FROM python:3.13-slim
 
 # Copy uv binary
@@ -34,5 +34,5 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
-# Run the email service
-CMD ["sh", "-c", "uv run fastapi dev --port ${EMAIL_SERVICE_PORT_INTERNAL} --reload"]
+# Run the image service
+CMD ["sh", "-c", "uv run fastapi dev --port ${IMAGE_SERVICE_PORT_INTERNAL} --reload"]
