@@ -69,7 +69,7 @@ class KafkaConsumer:
                     "Starting Kafka consumer",
                     extra={
                         "bootstrap_servers": settings.KAFKA_BOOTSTRAP_SERVERS,
-                        "consumer_group": settings.KAFKA_EMAIL_CONSUMER_GROUP,
+                        "consumer_group": settings.KAFKA_CONSUMER_GROUP,
                         "topics": [
                             settings.KAFKA_VERIFICATION_EMAIL_TOPIC,
                             settings.KAFKA_RESET_PASSWORD_EMAIL_TOPIC,
@@ -80,7 +80,7 @@ class KafkaConsumer:
                     settings.KAFKA_VERIFICATION_EMAIL_TOPIC,
                     settings.KAFKA_RESET_PASSWORD_EMAIL_TOPIC,
                     bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
-                    group_id=settings.KAFKA_EMAIL_CONSUMER_GROUP,
+                    group_id=settings.KAFKA_CONSUMER_GROUP,
                     auto_offset_reset="earliest",
                     enable_auto_commit=False,
                 )
@@ -89,7 +89,7 @@ class KafkaConsumer:
                 logger.info(
                     "Kafka consumer started successfully",
                     extra={
-                        "consumer_group": settings.KAFKA_EMAIL_CONSUMER_GROUP,
+                        "consumer_group": settings.KAFKA_CONSUMER_GROUP,
                     },
                 )
                 break  # Success, exit retry loop

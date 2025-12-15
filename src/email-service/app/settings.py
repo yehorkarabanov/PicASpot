@@ -31,7 +31,9 @@ class Settings(BaseSettings):
     KAFKA_RESET_PASSWORD_EMAIL_TOPIC: str = Field(
         default="password-reset-email-requests"
     )
-    KAFKA_EMAIL_CONSUMER_GROUP: str = Field(default="email-service-group")
+    KAFKA_CONSUMER_GROUP: str = Field(
+        default="email-service-group", alias="KAFKA_EMAIL_CONSUMER_GROUP"
+    )
 
     BASE_DIR: Path = Path(__file__).resolve().parent
     ROOT_DIR: Path = Path(__file__).resolve().parent.parent
