@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libc-dev \
     zlib1g-dev \
     curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables for uv
