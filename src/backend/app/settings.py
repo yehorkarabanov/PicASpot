@@ -125,7 +125,7 @@ class Settings(BaseSettings):
     @property
     def DEFAULT_PROFILE_PICTURE_URL(self) -> str:  # noqa: N802
         """Default profile picture URL (full URL with base and API prefix)."""
-        return f"{self.BASE_URL}/api/static/img/users/default_pfp.svg"
+        return f"{self.BASE_URL}/static/img/users/default_pfp.svg"
 
     def get_storage_public_url(self, object_path: str | None) -> str | None:
         """

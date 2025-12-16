@@ -2,10 +2,6 @@
 
 #TODO: Add check for duplicate landmark/area names/coordinates/photos
 
-#TODO: Landmarks should have hint images to help users identify them better [or null]
-#TODO: Landmarks should have location where photos should be taken from and radius [list, or null]
-#TODO: Landmarks [from_location, to_location] basically
-#TODO: Filter landmarks by area_id
 
 #TODO: Get badges system for the user
 

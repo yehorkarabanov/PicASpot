@@ -27,6 +27,19 @@ class LandmarkBase(BaseModel):
     photo_radius_meters: int = Field(
         50, ge=1, le=5000, description="Radius in meters for taking photos"
     )
+    photo_location_radius: int | None = Field(
+        None,
+        ge=1,
+        le=5000,
+        description="Radius in meters for taking photos from the specific photo location",
+    )
+    hint_image_url: str | None = Field(None, description="URL to landmark hint image")
+    photo_latitude: float | None = Field(
+        None, ge=-90, le=90, description="Latitude coordinate for photo location"
+    )
+    photo_longitude: float | None = Field(
+        None, ge=-180, le=180, description="Longitude coordinate for photo location"
+    )
 
 
 class LandmarkCreate(BaseModel):
@@ -44,12 +57,27 @@ class LandmarkCreate(BaseModel):
     photo_radius_meters: int = Form(
         50, ge=1, le=5000, description="Radius in meters for taking photos"
     )
+    photo_location_radius: int | None = Form(
+        None,
+        ge=1,
+        le=5000,
+        description="Radius in meters for taking photos from the specific photo location",
+    )
+    photo_latitude: float | None = Form(
+        None, ge=-90, le=90, description="Latitude coordinate for photo location"
+    )
+    photo_longitude: float | None = Form(
+        None, ge=-180, le=180, description="Longitude coordinate for photo location"
+    )
     area_id: UUID = Form(..., description="Area ID where landmark is located")
     image_file: UploadFile | None = File(None, description="Landmark image file")
+    hint_image_file: UploadFile | None = File(
+        None, description="Landmark hint image file"
+    )
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    @field_validator("image_file", mode="before")
+    @field_validator("image_file", "hint_image_file", mode="before")
     @classmethod
     def validate_file_fields(cls, v):
         """Convert empty string to None for file upload fields"""
@@ -110,12 +138,27 @@ class LandmarkUpdate(BaseModel):
     photo_radius_meters: int | None = Form(
         None, ge=1, le=5000, description="Radius in meters for taking photos"
     )
+    photo_location_radius: int | None = Form(
+        None,
+        ge=1,
+        le=5000,
+        description="Radius in meters for taking photos from the specific photo location",
+    )
+    photo_latitude: float | None = Form(
+        None, ge=-90, le=90, description="Latitude coordinate for photo location"
+    )
+    photo_longitude: float | None = Form(
+        None, ge=-180, le=180, description="Longitude coordinate for photo location"
+    )
     area_id: UUID | None = Form(None, description="Area ID where landmark is located")
     image_file: UploadFile | None = File(None, description="Landmark image file")
+    hint_image_file: UploadFile | None = File(
+        None, description="Landmark hint image file"
+    )
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    @field_validator("image_file", mode="before")
+    @field_validator("image_file", "hint_image_file", mode="before")
     @classmethod
     def validate_file_fields(cls, v):
         """Convert empty string to None for file upload fields"""
@@ -154,7 +197,9 @@ class LandmarkUpdate(BaseModel):
             return None
         return v
 
-    @field_validator("latitude", "longitude", mode="before")
+    @field_validator(
+        "latitude", "longitude", "photo_latitude", "photo_longitude", mode="before"
+    )
     @classmethod
     def validate_coordinates(cls, v):
         """Convert empty string to None and validate float values for coordinate fields"""
@@ -167,7 +212,12 @@ class LandmarkUpdate(BaseModel):
                 raise ValueError(f"Invalid float value for coordinate: {v}") from e
         return v
 
-    @field_validator("unlock_radius_meters", "photo_radius_meters", mode="before")
+    @field_validator(
+        "unlock_radius_meters",
+        "photo_radius_meters",
+        "photo_location_radius",
+        mode="before",
+    )
     @classmethod
     def validate_radius_fields(cls, v):
         """Convert empty string to None and validate int values for radius fields"""
@@ -188,6 +238,7 @@ class LandmarkResponse(LandmarkBase, TimezoneAwareSchema):
     area_id: UUID = Field(..., description="Area ID where landmark is located")
     creator_id: UUID = Field(..., description="User ID who created the landmark")
     image_url: str | None = Field(None, description="URL to landmark image")
+    hint_image_url: str | None = Field(None, description="URL to landmark hint image")
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -252,9 +303,20 @@ class NearbyLandmarkResponse(TimezoneAwareSchema):
     title: str = Field(..., description="Title/name of the landmark")
     description: str | None = Field(None, description="Description of the landmark")
     image: str | None = Field(None, description="URL to landmark image")
+    hint_image: str | None = Field(None, description="URL to landmark hint image")
     radius: int = Field(..., description="Photo radius in meters for this landmark")
     unlock_radius: int = Field(
         ..., description="Unlock radius in meters for this landmark"
+    )
+    photo_location_radius: int | None = Field(
+        None,
+        description="Radius in meters for taking photos from the specific photo location",
+    )
+    photo_latitude: float | None = Field(
+        None, description="Latitude coordinate for photo location"
+    )
+    photo_longitude: float | None = Field(
+        None, description="Longitude coordinate for photo location"
     )
     badge_url: str | None = Field(
         None, description="URL to area badge associated with this landmark"
@@ -289,8 +351,12 @@ class NearbyLandmarkResponse(TimezoneAwareSchema):
             "title": landmark.name,
             "description": landmark.description,
             "image": landmark.image_url,
+            "hint_image": landmark.hint_image_url,
             "radius": landmark.photo_radius_meters,
             "unlock_radius": landmark.unlock_radius_meters,
+            "photo_location_radius": landmark.photo_location_radius,
+            "photo_latitude": landmark.photo_latitude,
+            "photo_longitude": landmark.photo_longitude,
             "badge_url": landmark.area.badge_url,
             "area_id": landmark.area_id,
             "area_name": landmark.area.name,
