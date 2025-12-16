@@ -6,7 +6,7 @@ import { useColorScheme } from 'nativewind';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { MapPin, Camera, Users, Settings, Grid, Map as MapIcon, Heart, MessageCircle, FlagIcon, Award } from 'lucide-react-native';
+import { Users, Settings, Grid, Map as MapIcon, FlagIcon, Award } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 32) / 3;
