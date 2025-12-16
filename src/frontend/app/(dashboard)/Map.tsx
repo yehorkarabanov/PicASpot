@@ -80,22 +80,13 @@ export default function MapScreen() {
   const { markers, fetchNearbyLandmarks, isLoading } = useLandmarks();
 
   React.useEffect(() => {
-    console.log('Markers from context:', markers);
-  }, [markers]);
-
-
-  React.useEffect(() => {
     setForceRedraw(true);
-    const timer = setTimeout(() => {
+    const timer1 = setTimeout(() => {
       setTracksViewChanges(false);
       setForceRedraw(false);
     }, 100);
-    return () => clearTimeout(timer);
-  }, [colorScheme, colors]);
-
-  React.useEffect(() => {
-    setForceRedraw(true);
-  }, [markers]);
+    return () => clearTimeout(timer1);
+  }, [colorScheme, colors, markers]);
 
 
     React.useEffect(() => {
@@ -456,7 +447,7 @@ return (
                             coordinate={marker.coordinate}
                             pinColor={marker.unlocked === 1 ? 'green' : 'red'}
                             onPress={() => handleMarkerPress(marker, index)}
-                            anchor={{ x: 0.18, y: 1 }}
+                            anchor={{ x: 0.16, y: 0.98 }}
                             tracksViewChanges={tracksViewChanges || forceRedraw}
                         >
 
