@@ -6,13 +6,17 @@ from geoalchemy2.elements import WKTElement
 
 from app.area.repository import AreaRepository
 from app.core.exceptions import ForbiddenError, NotFoundError
+from app.settings import settings
+from app.storage import StorageDir, StorageService
 from app.user.models import User
 
 from .repository import LandmarkRepository
 from .schemas import (
     LandmarkCreate,
+    LandmarkNearbyRequest,
     LandmarkResponse,
     LandmarkUpdate,
+    NearbyLandmarksListResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,6 +36,7 @@ class LandmarkService:
         self,
         landmark_repository: LandmarkRepository,
         area_repository: AreaRepository,
+        storage: StorageService,
         timezone: ZoneInfo | None = None,
     ):
         """
@@ -40,21 +45,23 @@ class LandmarkService:
         Args:
             landmark_repository: Repository instance for landmark data access.
             area_repository: Repository instance for area data access.
+            storage: Storage service for file uploads.
             timezone: Client's timezone for datetime conversion in responses.
         """
         self.landmark_repository = landmark_repository
         self.area_repository = area_repository
+        self.storage = storage
         self.timezone = timezone or ZoneInfo("UTC")
 
     async def create_landmark(
-        self, landmark_data: LandmarkCreate, creator_id: uuid.UUID
+        self, landmark_data: LandmarkCreate, user: User
     ) -> LandmarkResponse:
         """
         Create a new landmark.
 
         Args:
             landmark_data: Data for the new landmark.
-            creator_id: ID of the user creating the landmark.
+            user: The user creating the landmark.
 
         Returns:
             The created landmark response.
@@ -65,8 +72,23 @@ class LandmarkService:
         await self._validate_area_exists(landmark_data.area_id)
 
         # Convert landmark data to dict
-        landmark_dict = landmark_data.model_dump(exclude={"latitude", "longitude"})
-        landmark_dict["creator_id"] = creator_id
+        landmark_dict = landmark_data.model_dump(
+            exclude={"latitude", "longitude", "image_file"}
+        )
+        landmark_dict["creator_id"] = user.id
+
+        # TODO: Refactor file upload logic to a separate utility/helper if reused elsewhere
+        if landmark_data.image_file:
+            result = await self.storage.upload_file(
+                file_data=await landmark_data.image_file.read(),
+                original_filename=landmark_data.image_file.filename,
+                path_prefix=StorageDir.LANDMARKS,
+                content_type=landmark_data.image_file.content_type
+                or "application/octet-stream",
+            )
+            landmark_dict["image_url"] = result["public_url"]
+        else:
+            landmark_dict["image_url"] = settings.DEFAULT_LANDMARK_IMAGE_URL
 
         # Create a WKT POINT from latitude and longitude for PostGIS
         # POINT(longitude latitude) - note the order!
@@ -76,7 +98,7 @@ class LandmarkService:
         landmark = await self.landmark_repository.create(landmark_dict)
 
         logger.info(
-            "Landmark created successfully: %s by user %s", landmark.name, creator_id
+            "Landmark created successfully: %s by user %s", landmark.name, user.id
         )
         return LandmarkResponse.model_validate_with_timezone(landmark, self.timezone)
 
@@ -171,8 +193,22 @@ class LandmarkService:
 
         # Handle location update if latitude or longitude are provided
         landmark_dict = landmark_data.model_dump(
-            exclude_unset=True, exclude={"latitude", "longitude"}
+            exclude_unset=True, exclude={"latitude", "longitude", "image_file"}
         )
+
+        # Filter out None values to prevent setting required fields to null
+        # For PATCH updates, we only want to update fields that were actually provided
+        landmark_dict = {k: v for k, v in landmark_dict.items() if v is not None}
+
+        if landmark_data.image_file:
+            result = await self.storage.upload_file(
+                file_data=await landmark_data.image_file.read(),
+                original_filename=landmark_data.image_file.filename,
+                path_prefix=StorageDir.LANDMARKS,
+                content_type=landmark_data.image_file.content_type
+                or "application/octet-stream",
+            )
+            landmark_dict["image_url"] = result["public_url"]
 
         # If either latitude or longitude is provided, update location
         if landmark_data.latitude is not None or landmark_data.longitude is not None:
@@ -193,3 +229,101 @@ class LandmarkService:
         landmark = await self.landmark_repository.update(landmark_id, landmark_dict)
         logger.info("Landmark updated: %s by user %s", landmark.name, user.username)
         return LandmarkResponse.model_validate_with_timezone(landmark, self.timezone)
+
+    async def get_nearby_landmarks(
+        self,
+        data: LandmarkNearbyRequest,
+        user: User,
+    ) -> NearbyLandmarksListResponse:
+        """
+        Get nearby landmarks with unlock status and area information.
+
+        Args:
+            data: Request data containing coordinates and filters
+            user: Current user
+
+        Returns:
+            NearbyLandmarksListResponse with validated Pydantic models and pagination metadata
+        """
+        # Calculate offset from page number
+        offset = (data.page - 1) * data.page_size
+
+        (
+            landmarks_with_status,
+            total_count,
+        ) = await self.landmark_repository.get_nearby_landmarks(
+            latitude=data.latitude,
+            longitude=data.longitude,
+            radius_meters=data.radius_meters,
+            user_id=user.id,
+            area_id=data.area_id,
+            only_verified=data.only_verified,
+            load_from_same_area=data.load_from_same_area,
+            limit=data.page_size,
+            offset=offset,
+        )
+
+        # Use optimized batch validation via schema factory method
+        response = NearbyLandmarksListResponse.from_orm_list(
+            items=landmarks_with_status,
+            timezone=self.timezone,
+            total=total_count,
+            page=data.page,
+            page_size=data.page_size,
+        )
+
+        logger.info(
+            "Retrieved %d/%d nearby landmarks for user %s at (%.6f, %.6f) within %dm (page %d, size %d)",
+            len(landmarks_with_status),
+            total_count,
+            user.username,
+            data.latitude,
+            data.longitude,
+            data.radius_meters,
+            data.page,
+            data.page_size,
+        )
+
+        return response
+
+    async def get_landmarks_by_area(
+        self,
+        area_id: uuid.UUID,
+        user: User,
+        page: int = 1,
+        page_size: int = 50,
+        only_verified: bool = False,
+    ) -> NearbyLandmarksListResponse:
+        """
+        Get landmarks for a specific area.
+
+        Args:
+            area_id: Area ID
+            user: Current user
+            page: Page number
+            page_size: Page size
+            only_verified: Only return if area is verified
+
+        Returns:
+            NearbyLandmarksListResponse
+        """
+        offset = (page - 1) * page_size
+
+        (
+            landmarks_with_status,
+            total_count,
+        ) = await self.landmark_repository.get_landmarks_by_area(
+            area_id=area_id,
+            user_id=user.id,
+            only_verified=only_verified,
+            limit=page_size,
+            offset=offset,
+        )
+
+        return NearbyLandmarksListResponse.from_orm_list(
+            items=landmarks_with_status,
+            timezone=self.timezone,
+            total=total_count,
+            page=page,
+            page_size=page_size,
+        )

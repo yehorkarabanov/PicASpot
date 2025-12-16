@@ -92,14 +92,22 @@ class SensitiveDataFilter(logging.Filter):
     }
 
     def filter(self, record: logging.LogRecord) -> bool:
-        # Check message for sensitive data patterns
-        message = record.getMessage().lower()
+        # Get the formatted message
+        message = record.getMessage()
+
+        # Redact sensitive information
+        redacted_message = message
         for key in self.SENSITIVE_KEYS:
-            if key in message:
-                record.msg = record.msg.replace(
-                    record.msg[record.msg.lower().find(key) :],
-                    f"{key.upper()}_REDACTED",
+            if key in redacted_message.lower():
+                redacted_message = redacted_message.replace(
+                    key, f"{key.upper()}_REDACTED"
                 )
+
+        # If redaction occurred, update the record to use the redacted message directly
+        if redacted_message != message:
+            record.msg = redacted_message
+            record.args = ()
+
         return True
 
 
@@ -219,11 +227,6 @@ def setup_logging(use_file_logging: bool = True) -> None:
     logging.getLogger("sqlalchemy.engine").setLevel("WARNING")
     logging.getLogger("sqlalchemy.pool").setLevel("WARNING")
 
-    # Celery - Async task processing
-    logging.getLogger("celery").setLevel("INFO")
-    logging.getLogger("celery.worker").setLevel("INFO")
-    logging.getLogger("celery.task").setLevel("INFO")
-
     # Redis
     logging.getLogger("redis").setLevel("WARNING")  # Redis can be noisy
 
@@ -233,6 +236,11 @@ def setup_logging(use_file_logging: bool = True) -> None:
     # HTTP clients
     logging.getLogger("httpx").setLevel("WARNING")
     logging.getLogger("httpcore").setLevel("WARNING")
+
+    # Kafka
+    logging.getLogger("aiokafka").setLevel("WARNING")
+    logging.getLogger("aiokafka.conn").setLevel("WARNING")
+    logging.getLogger("aiokafka.cluster").setLevel("WARNING")
 
     # Email
     logging.getLogger("fastapi_mail").setLevel("INFO")

@@ -1,0 +1,54 @@
+[project]
+name = "email-service"
+version = "0.1.0"
+description = "email-service"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "aiokafka>=0.12.0; sys_platform == 'linux'",
+    "fastapi-mail>=1.6.0",
+    "pydantic>=2.10.3",
+    "pydantic-settings>=2.7.0",
+    "jinja2>=3.1.5",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "fastapi[standard]>=0.124.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-asyncio>=0.24.0",
+]
+
+[tool.isort]
+profile = "black"
+skip_gitignore = true
+known_first_party = ["app", "tests"]
+
+[tool.ruff]
+target-version = "py314"
+indent-width = 4
+
+[tool.ruff.lint]
+select = [
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "I", # isort
+    "C", # flake8-comprehensions
+    "B", # flake8-bugbear
+]
+ignore = [
+    "E501", # line too long, handled by black
+    "B008", # do not perform function calls in argument defaults
+    "C901", # complexity
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --tb=short --asyncio-mode=auto"
+pythonpath = ["."]

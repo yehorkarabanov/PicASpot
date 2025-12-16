@@ -3,6 +3,8 @@ import uuid
 from zoneinfo import ZoneInfo
 
 from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
+from app.settings import settings
+from app.storage import StorageDir, StorageService
 from app.user.models import User
 
 from .repository import AreaRepository
@@ -20,7 +22,10 @@ class AreaService:
     """
 
     def __init__(
-        self, area_repository: AreaRepository, timezone: ZoneInfo | None = None
+        self,
+        area_repository: AreaRepository,
+        storage: StorageService,
+        timezone: ZoneInfo | None = None,
     ):
         """
         Initialize the AreaService.
@@ -30,6 +35,7 @@ class AreaService:
             timezone: Client's timezone for datetime conversion in responses.
         """
         self.area_repository = area_repository
+        self.storage = storage
         self.timezone = timezone or ZoneInfo("UTC")
 
     async def _validate_parent_area_exists(self, parent_area_id: uuid.UUID) -> None:
@@ -76,15 +82,15 @@ class AreaService:
         if hit_depth_limit:
             raise BadRequestError("Cannot set parent: hierarchy depth limit reached. ")
 
-    async def create_area(
-        self, area_data: AreaCreate, creator_id: uuid.UUID
-    ) -> AreaResponse:
+    async def create_area(self, area_data: AreaCreate, user: User) -> AreaResponse:
         """
-        Create a new area with the given data and creator ID.
+        Create a new area with the given data.
+
+        If user is a superuser, the area will be automatically verified.
 
         Args:
             area_data: The area creation data containing name, description, etc.
-            creator_id: The UUID of the user creating the area.
+            user: The user creating the area.
 
         Returns:
             AreaResponse: The created area data.
@@ -95,10 +101,42 @@ class AreaService:
         if area_data.parent_area_id:
             await self._validate_parent_area_exists(area_data.parent_area_id)
 
-        area_dict = area_data.model_dump()
-        area_dict["creator_id"] = creator_id
+        area_dict = area_data.model_dump(exclude={"image_file", "badge_file"})
+
+        # TODO: Refactor file upload logic to a separate utility/helper if reused elsewhere
+        if area_data.image_file:
+            result = await self.storage.upload_file(
+                file_data=await area_data.image_file.read(),
+                original_filename=area_data.image_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=area_data.image_file.content_type
+                or "application/octet-stream",
+            )
+            area_dict["image_url"] = result["public_url"]
+        else:
+            area_dict["image_url"] = settings.DEFAULT_AREA_IMAGE_URL
+
+        if area_data.badge_file:
+            result = await self.storage.upload_file(
+                file_data=await area_data.badge_file.read(),
+                original_filename=area_data.badge_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=area_data.badge_file.content_type
+                or "application/octet-stream",
+            )
+            area_dict["badge_url"] = result["public_url"]
+        else:
+            area_dict["badge_url"] = settings.DEFAULT_AREA_IMAGE_URL
+
+        area_dict["creator_id"] = user.id
+
+        # Automatically verify areas created by superusers
+        if user.is_superuser:
+            area_dict["is_verified"] = True
+            logger.info("Area will be auto-verified (created by superuser %s)", user.id)
+
         area = await self.area_repository.create(area_dict)
-        logger.info("Area created successfully: %s by user %s", area.name, creator_id)
+        logger.info("Area created successfully: %s by user %s", area.name, user.id)
 
         return AreaResponse.model_validate_with_timezone(area, self.timezone)
 
@@ -182,6 +220,35 @@ class AreaService:
             await self._validate_parent_area_exists(area_data.parent_area_id)
 
         area_dict = area_data.model_dump(exclude_unset=True)
+
+        # Remove file objects from dict as they shouldn't be stored directly
+        area_dict.pop("image_file", None)
+        area_dict.pop("badge_file", None)
+
+        # Filter out None values to prevent setting required fields to null
+        # Only keep None for parent_area_id (which can be explicitly set to null)
+        area_dict = {
+            k: v for k, v in area_dict.items() if v is not None or k == "parent_area_id"
+        }
+
+        if area_data.image_file:
+            result = await self.storage.upload_file(
+                file_data=await area_data.image_file.read(),
+                original_filename=area_data.image_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=area_data.image_file.content_type
+                or "application/octet-stream",
+            )
+            area_dict["image_url"] = result["public_url"]
+        if area_data.badge_file:
+            result = await self.storage.upload_file(
+                file_data=await area_data.badge_file.read(),
+                original_filename=area_data.badge_file.filename,
+                path_prefix=StorageDir.AREAS,
+                content_type=area_data.badge_file.content_type
+                or "application/octet-stream",
+            )
+            area_dict["badge_url"] = result["public_url"]
         area = await self.area_repository.update(area_id, area_dict)
         logger.info("Area updated: %s by user %s", area.name, user.username)
 

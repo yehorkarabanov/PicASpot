@@ -3,11 +3,11 @@ from zoneinfo import ZoneInfo
 
 from pydantic import EmailStr
 
-from app.celery.tasks.email_tasks.tasks import (
-    user_password_reset_mail,
-    user_verify_mail_event,
-)
 from app.core.exceptions import AuthenticationError, BadRequestError, NotFoundError
+from app.kafka import (
+    VerificationEmailMessage,
+    kafka_producer,
+)
 from app.settings import settings
 from app.user.repository import UserRepository
 
@@ -34,7 +34,9 @@ class AuthService:
     """
 
     def __init__(
-        self, user_repository: UserRepository, timezone: ZoneInfo | None = None
+        self,
+        user_repository: UserRepository,
+        timezone: ZoneInfo | None = None,
     ):
         """
         Initialize the AuthService.
@@ -76,15 +78,20 @@ class AuthService:
             "hashed_password": hashed_password,
             "is_verified": True,  # TODO: Set to False when OTP will be done
         }
-        user = await self.user_repository.create(user_dict)  # noqa: F841
+        user = await self.user_repository.create(user_dict)
 
         logger.info("User registered successfully: %s", user.email)
 
+        # TODO: Uncomment when OTP flow is ready
         # verification_token = await create_verification_token(
         #     user_id=str(user.id), token_type=TokenType.VERIFICATION, use_redis=False
         # )
         # link = f"{settings.VERIFY_EMAIL_URL}{verification_token}"
-        # user_verify_mail_event.delay(user_data.email, link, user.username)
+        # await self.email_publisher.publish_verification_email(
+        #     email=user.email,
+        #     username=user.username,
+        #     verification_link=link,
+        # )
 
     # TODO: redo to send otp
     async def resend_verification_token(self, email: EmailStr) -> None:
@@ -108,7 +115,14 @@ class AuthService:
             user_id=str(user.id), token_type=TokenType.VERIFICATION, use_redis=True
         )
         link = f"{settings.VERIFY_EMAIL_URL}{verification_token}"
-        user_verify_mail_event.delay(email, link, user.username)
+
+        await kafka_producer.send_password_reset_message(
+            VerificationEmailMessage(
+                email=email,
+                username=user.username,
+                link=link,
+            )
+        )
 
     async def login(self, user_data: UserLogin) -> UserLoginResponse:
         """
@@ -212,10 +226,13 @@ class AuthService:
             user_id=str(user.id), token_type=TokenType.PASSWORD_RESET
         )
         link = f"{settings.EMAIL_RESET_PASSWORD_URL}/{reset_token}"
-        user_password_reset_mail.delay(
-            user.email,
-            link,
-            user.username,
+
+        await kafka_producer.send_password_reset_message(
+            VerificationEmailMessage(
+                email=email,
+                username=user.username,
+                link=link,
+            )
         )
         logger.info("Password reset email sent to %s", email)
 

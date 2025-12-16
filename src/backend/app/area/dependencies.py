@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from fastapi import Depends, Request
 
 from app.database import SessionDep
+from app.storage import StorageServiceDep
 
 from .models import Area
 from .repository import AreaRepository
@@ -26,9 +27,15 @@ def get_area_repository(session: SessionDep, timezone: TimeZoneDep) -> AreaRepos
 AreaRepDep = Annotated[AreaRepository, Depends(get_area_repository)]
 
 
-def get_area_service(area_repository: AreaRepDep, timezone: TimeZoneDep) -> AreaService:
+def get_area_service(
+    area_repository: AreaRepDep,
+    storage: StorageServiceDep,
+    timezone: TimeZoneDep,
+) -> AreaService:
     """Get an instance of AreaService with timezone support."""
-    return AreaService(area_repository=area_repository, timezone=timezone)
+    return AreaService(
+        area_repository=area_repository, storage=storage, timezone=timezone
+    )
 
 
 AreaServiceDep = Annotated[AreaService, Depends(get_area_service)]

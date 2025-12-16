@@ -3,7 +3,9 @@ from typing import Annotated
 from fastapi import Depends
 from miniopy_async import Minio
 
-from .manager import bucket_name, get_minio_client
+from app.settings import settings
+
+from .manager import get_minio_client
 from .service import StorageService
 
 
@@ -23,7 +25,11 @@ async def get_storage_service(
         async def my_endpoint(storage: StorageServiceDep) -> dict:
             result = await storage.upload_file(...)
     """
-    return StorageService(client=client, bucket_name=bucket_name)
+    return StorageService(
+        client=client,
+        bucket_name=settings.MINIO_BUCKET_NAME,
+        public_url_base=settings.MINIO_PUBLIC_URL,
+    )
 
 
 # Type alias for injecting StorageService into FastAPI route handlers
