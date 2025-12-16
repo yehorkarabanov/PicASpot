@@ -73,7 +73,14 @@ class LandmarkService:
 
         # Convert landmark data to dict
         landmark_dict = landmark_data.model_dump(
-            exclude={"latitude", "longitude", "image_file"}
+            exclude={
+                "latitude",
+                "longitude",
+                "image_file",
+                "hint_image_file",
+                "photo_latitude",
+                "photo_longitude",
+            }
         )
         landmark_dict["creator_id"] = user.id
 
@@ -90,17 +97,36 @@ class LandmarkService:
         else:
             landmark_dict["image_url"] = settings.DEFAULT_LANDMARK_IMAGE_URL
 
+        if landmark_data.hint_image_file:
+            result = await self.storage.upload_file(
+                file_data=await landmark_data.hint_image_file.read(),
+                original_filename=landmark_data.hint_image_file.filename,
+                path_prefix=StorageDir.LANDMARKS,
+                content_type=landmark_data.hint_image_file.content_type
+                or "application/octet-stream",
+            )
+            landmark_dict["hint_image_url"] = result["public_url"]
+
         # Create a WKT POINT from latitude and longitude for PostGIS
         # POINT(longitude latitude) - note the order!
         point_wkt = f"POINT({landmark_data.longitude} {landmark_data.latitude})"
         landmark_dict["location"] = WKTElement(point_wkt, srid=4326)
+
+        if (
+            landmark_data.photo_longitude is not None
+            and landmark_data.photo_latitude is not None
+        ):
+            photo_point_wkt = (
+                f"POINT({landmark_data.photo_longitude} {landmark_data.photo_latitude})"
+            )
+            landmark_dict["photo_location"] = WKTElement(photo_point_wkt, srid=4326)
 
         landmark = await self.landmark_repository.create(landmark_dict)
 
         logger.info(
             "Landmark created successfully: %s by user %s", landmark.name, user.id
         )
-        return LandmarkResponse.model_validate_with_timezone(landmark, self.timezone)
+        return LandmarkResponse.model_validate(landmark)
 
     async def _validate_area_exists(self, area_id: uuid.UUID) -> None:
         """
@@ -161,45 +187,47 @@ class LandmarkService:
         logger.info("Landmark deleted: %s by user %s", landmark.name, user.username)
 
     async def update_landmark(
-        self, landmark_id: uuid.UUID, landmark_data: LandmarkUpdate, user: User
+        self,
+        landmark_id: uuid.UUID,
+        landmark_data: LandmarkUpdate,
+        user: User,
     ) -> LandmarkResponse:
         """
-        Update a landmark by its ID with the given data.
-
-        Superusers can update any landmark. Regular users can only update landmarks they created.
+        Update an existing landmark.
 
         Args:
-            landmark_id: The UUID of the landmark to update.
-            landmark_data: The updated landmark data.
-            user: The user attempting to update the landmark.
+            landmark_id: ID of the landmark to update.
+            landmark_data: Data to update.
+            user: The user requesting the update.
 
         Returns:
-            LandmarkResponse: The updated landmark data.
+            The updated landmark response.
 
         Raises:
-            NotFoundError: If the landmark or area does not exist.
-            ForbiddenError: If the user does not have permission to update the landmark.
+            NotFoundError: If the landmark does not exist.
+            ForbiddenError: If the user is not the creator of the landmark.
         """
-        landmark = await self.landmark_repository.get_by_id(landmark_id)
+        landmark = await self.landmark_repository.get(landmark_id)
         if not landmark:
             raise NotFoundError(f"Landmark with ID {landmark_id} not found")
 
-        if landmark.creator_id != user.id and not user.is_superuser:
-            raise ForbiddenError("You do not have permission to update this landmark")
+        if landmark.creator_id != user.id:
+            raise ForbiddenError("You can only update landmarks you created")
 
-        # Validate area exists if area_id is being updated
-        if landmark_data.area_id is not None:
-            await self._validate_area_exists(landmark_data.area_id)
-
-        # Handle location update if latitude or longitude are provided
-        landmark_dict = landmark_data.model_dump(
-            exclude_unset=True, exclude={"latitude", "longitude", "image_file"}
+        # Convert update data to dict, excluding None values
+        update_dict = landmark_data.model_dump(
+            exclude_unset=True,
+            exclude={
+                "latitude",
+                "longitude",
+                "image_file",
+                "hint_image_file",
+                "photo_latitude",
+                "photo_longitude",
+            },
         )
 
-        # Filter out None values to prevent setting required fields to null
-        # For PATCH updates, we only want to update fields that were actually provided
-        landmark_dict = {k: v for k, v in landmark_dict.items() if v is not None}
-
+        # Handle file upload if provided
         if landmark_data.image_file:
             result = await self.storage.upload_file(
                 file_data=await landmark_data.image_file.read(),
@@ -208,27 +236,36 @@ class LandmarkService:
                 content_type=landmark_data.image_file.content_type
                 or "application/octet-stream",
             )
-            landmark_dict["image_url"] = result["public_url"]
+            update_dict["image_url"] = result["public_url"]
 
-        # If either latitude or longitude is provided, update location
-        if landmark_data.latitude is not None or landmark_data.longitude is not None:
-            # Use new values if provided, otherwise keep existing
-            lat = (
-                landmark_data.latitude
-                if landmark_data.latitude is not None
-                else landmark.latitude
+        if landmark_data.hint_image_file:
+            result = await self.storage.upload_file(
+                file_data=await landmark_data.hint_image_file.read(),
+                original_filename=landmark_data.hint_image_file.filename,
+                path_prefix=StorageDir.LANDMARKS,
+                content_type=landmark_data.hint_image_file.content_type
+                or "application/octet-stream",
             )
-            lon = (
-                landmark_data.longitude
-                if landmark_data.longitude is not None
-                else landmark.longitude
-            )
-            point_wkt = f"POINT({lon} {lat})"
-            landmark_dict["location"] = WKTElement(point_wkt, srid=4326)
+            update_dict["hint_image_url"] = result["public_url"]
 
-        landmark = await self.landmark_repository.update(landmark_id, landmark_dict)
-        logger.info("Landmark updated: %s by user %s", landmark.name, user.username)
-        return LandmarkResponse.model_validate_with_timezone(landmark, self.timezone)
+        # Handle location update if provided
+        if landmark_data.latitude is not None and landmark_data.longitude is not None:
+            point_wkt = f"POINT({landmark_data.longitude} {landmark_data.latitude})"
+            update_dict["location"] = WKTElement(point_wkt, srid=4326)
+
+        if (
+            landmark_data.photo_latitude is not None
+            and landmark_data.photo_longitude is not None
+        ):
+            photo_point_wkt = (
+                f"POINT({landmark_data.photo_longitude} {landmark_data.photo_latitude})"
+            )
+            update_dict["photo_location"] = WKTElement(photo_point_wkt, srid=4326)
+
+        landmark = await self.landmark_repository.update(landmark_id, update_dict)
+
+        logger.info("Landmark updated successfully: %s", landmark_id)
+        return LandmarkResponse.model_validate(landmark)
 
     async def get_nearby_landmarks(
         self,
