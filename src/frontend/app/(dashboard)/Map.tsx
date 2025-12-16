@@ -6,7 +6,6 @@ import { MainMap } from '@/components/map-components/main_map';
 import { LIGHT_MAP, DARK_MAP } from '@/components/map-components/main_map/styles';
 import { useColorScheme } from 'nativewind';
 import MapView, { Marker, Callout, Circle } from 'react-native-maps';
-import { markers } from '@/components/map-components/markers'
 import { Text } from '@/components/ui/text';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +15,7 @@ import { Modal } from 'react-native';
 import { X, CircleQuestionMark, Camera, Redo , RotateCw} from 'lucide-react-native';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { StyleSheet } from 'react-native';
+import { useLandmarks } from '@/contexts/LandmarkContext';
 
 
 
@@ -77,6 +77,12 @@ export default function MapScreen() {
   const [facing, setFacing] = React.useState<CameraType>('back');
   const cameraRef = React.useRef<CameraView>(null);
   const [capturedPhotoUri, setCapturedPhotoUri] = React.useState<string | null>(null);
+  const { markers, fetchNearbyLandmarks, isLoading } = useLandmarks();
+
+  React.useEffect(() => {
+    console.log('Markers from context:', markers);
+  }, [markers]);
+
 
   React.useEffect(() => {
     setForceRedraw(true);
@@ -86,6 +92,11 @@ export default function MapScreen() {
     }, 100);
     return () => clearTimeout(timer);
   }, [colorScheme, colors]);
+
+  React.useEffect(() => {
+    setForceRedraw(true);
+  }, [markers]);
+
 
     React.useEffect(() => {
         (async () => {
@@ -97,6 +108,7 @@ export default function MapScreen() {
 
             setLocationPermissionGranted(true);
             let location = await Location.getCurrentPositionAsync({});
+            await fetchNearbyLandmarks(location.coords.latitude, location.coords.longitude);
              /*                                                            Commented out for easier tests on emulator
             mapRef.current?.animateCamera(
                 {
@@ -172,8 +184,8 @@ export default function MapScreen() {
 
         if (marker.unlocked === 0) {
             const newCircles: CircleData[] = [];
-            const hasCustomLocs = marker.customPhotoLoc && marker.customPhotoLoc.length > 0;
-
+            //const hasCustomLocs = marker.customPhotoLoc && marker.customPhotoLoc.length > 0;
+            /*
             if (hasCustomLocs) {
                 marker.customPhotoLoc.forEach((loc, i) => {
                     const specificRadius = marker.radius && marker.radius[i]
@@ -185,12 +197,13 @@ export default function MapScreen() {
                         radius: specificRadius
                     });
                 });
-            } else {
+                */
+           // } else {
                 newCircles.push({
                     center: marker.coordinate,
                     radius: marker.radius?.[0] || DEFAULT_SEARCH_RADIUS_METERS,
                 });
-            }
+            //}
 
             setActiveCircles(newCircles);
 
@@ -439,11 +452,11 @@ return (
 
                     {markers.map((marker, index) => (
                         <Marker
-                            key={index}
+                            key={marker.id}
                             coordinate={marker.coordinate}
                             pinColor={marker.unlocked === 1 ? 'green' : 'red'}
                             onPress={() => handleMarkerPress(marker, index)}
-                            anchor={{ x: 0.12, y: 0.73 }}
+                            anchor={{ x: 0.18, y: 1 }}
                             tracksViewChanges={tracksViewChanges || forceRedraw}
                         >
 

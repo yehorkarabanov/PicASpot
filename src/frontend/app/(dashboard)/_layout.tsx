@@ -2,12 +2,14 @@ import { useTheme } from '@/theme';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { LandmarkProvider } from '@/contexts/LandmarkContext';
 
 const DashboardLayout = () => {
   const colors = useTheme();
   const iconSize = 30;
 
   return (
+    <LandmarkProvider>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -89,6 +91,7 @@ const DashboardLayout = () => {
         }}
       />
     </Tabs>
+    </LandmarkProvider>
   );
 };
 
