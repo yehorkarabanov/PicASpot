@@ -34,8 +34,14 @@ class Settings(BaseSettings):
     MINIO_BUCKET_NAME: str = Field(default="picaspot-storage")
 
     # GeoMatchAI settings
-    GEOMATCH_SIMILARITY_THRESHOLD: float = Field(default=0.6)
-    GEOMATCH_MODEL_NAME: str = Field(default="resnet50")
+    GEOMATCH_SIMILARITY_THRESHOLD: float = Field(default=0.65)
+    GEOMATCH_DEVICE: str = Field(default="auto")  # auto, cuda, or cpu
+    GEOMATCH_MODEL_TYPE: str = Field(default="timm")  # timm or torchvision
+    GEOMATCH_MODEL_VARIANT: str = Field(
+        default="tf_efficientnet_b4.ns_jft_in1k"
+    )  # TIMM model variant
+    GEOMATCH_LOG_LEVEL: str = Field(default="INFO")
+    MAPILLARY_API_KEY: str | None = Field(default=None)
 
     BASE_DIR: Path = Path(__file__).resolve().parent
     ROOT_DIR: Path = Path(__file__).resolve().parent.parent
