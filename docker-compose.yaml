@@ -282,6 +282,7 @@ services:
       - kafka-0
       - kafka-1
       - kafka-2
+      - minio1
     networks:
       - app-network
     expose:

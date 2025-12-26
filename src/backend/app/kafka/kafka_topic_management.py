@@ -100,6 +100,11 @@ async def create_kafka_topics():
             num_partitions=3,
             replication_factor=1,
         ),
+        NewTopic(
+            name=settings.KAFKA_VERIFY_IMAGE_RESULT_TOPIC,
+            num_partitions=3,
+            replication_factor=1,
+        ),
     ]
 
     try:

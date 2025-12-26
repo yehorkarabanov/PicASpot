@@ -26,3 +26,14 @@ class UnlockVerifyMessage(BaseModel):
     longitude: float
     unlock_radius_meters: int
     photo_radius_meters: int
+
+
+class UnlockVerifyResult(BaseModel):
+    """Schema for Kafka message with verification result"""
+
+    user_id: str
+    landmark_id: str
+    photo_url: str
+    success: bool
+    similarity_score: float | None = None
+    error: str | None = None

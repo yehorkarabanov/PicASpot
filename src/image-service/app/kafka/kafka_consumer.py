@@ -3,8 +3,13 @@ import json
 import logging
 
 from aiokafka import AIOKafkaConsumer
+from pydantic import ValidationError
 
 from app.settings import settings
+from app.verification import verification_service
+
+from .kafka_producer import kafka_producer
+from .schemas import UnlockVerifyMessage
 
 logger = logging.getLogger(__name__)
 
@@ -142,13 +147,13 @@ class KafkaConsumer:
     async def process_message(self, msg):
         """Process a single Kafka message.
 
-        Parses the JSON message payload and processes it.
+        Parses the JSON message payload and processes it through the verification service.
 
         Args:
             msg: The Kafka message object containing topic, value, and other metadata.
 
         Note:
-            - Messages are JSON-decoded.
+            - Messages are JSON-decoded and validated against UnlockVerifyMessage schema.
             - On JSON decode errors, the message is logged and committed to prevent
               blocking the consumer.
             - On processing errors, the error is logged but the offset is NOT
@@ -161,17 +166,52 @@ class KafkaConsumer:
         """
         try:
             message_data = json.loads(msg.value.decode("utf-8"))
-            logger.info(f"Received message from topic: {msg.topic}")
+            logger.info(
+                f"Received message from topic: {msg.topic}",
+                extra={"data": message_data},
+            )
 
             if msg.topic == settings.KAFKA_VERIFY_IMAGE_TOPIC:
-                # TODO: Implement image processing logic here
-                logger.info(f"Processing image task: {message_data}")
+                # Parse and validate message
+                try:
+                    verify_message = UnlockVerifyMessage(**message_data)
+                except ValidationError as e:
+                    logger.error(
+                        f"Invalid message format: {e}",
+                        extra={"data": message_data},
+                    )
+                    await self.consumer.commit()
+                    return
+
+                logger.info(
+                    "Processing unlock verification",
+                    extra={
+                        "user_id": verify_message.user_id,
+                        "landmark_id": verify_message.landmark_id,
+                    },
+                )
+
+                # Perform verification
+                result = await verification_service.verify_unlock(verify_message)
+
+                # Send result to Kafka
+                await kafka_producer.send_verification_result(result)
+
+                logger.info(
+                    "Verification completed",
+                    extra={
+                        "user_id": result.user_id,
+                        "landmark_id": result.landmark_id,
+                        "success": result.success,
+                        "similarity_score": result.similarity_score,
+                    },
+                )
 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to decode JSON message: {e}")
             await self.consumer.commit()
         except Exception as e:
-            logger.error(f"Error processing message: {e}")
+            logger.error(f"Error processing message: {e}", exc_info=True)
 
     async def consume_messages(self):
         """Start consuming messages from Kafka topics.

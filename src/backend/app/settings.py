@@ -70,6 +70,8 @@ class Settings(BaseSettings):
     )
 
     KAFKA_VERIFY_IMAGE_TOPIC: str = Field(default="image-verify-requests")
+    KAFKA_VERIFY_IMAGE_RESULT_TOPIC: str = Field(default="image-verify-results")
+    KAFKA_BACKEND_CONSUMER_GROUP: str = Field(default="backend-group")
 
     # MinIO
     MINIO_ENDPOINT: str = Field(default="minio1:9000")
