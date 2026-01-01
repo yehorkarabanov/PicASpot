@@ -37,11 +37,16 @@ class Landmark(Base):
     name: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str | None] = mapped_column(nullable=True)
     image_url: Mapped[str] = mapped_column(nullable=False)
+    hint_image_url: Mapped[str | None] = mapped_column(nullable=True)
     location = mapped_column(
         Geography(geometry_type="POINT", srid=4326), nullable=False
     )
+    photo_location = mapped_column(
+        Geography(geometry_type="POINT", srid=4326), nullable=True
+    )
     unlock_radius_meters: Mapped[int] = mapped_column(default=100, nullable=False)
     photo_radius_meters: Mapped[int] = mapped_column(default=50, nullable=False)
+    photo_location_radius: Mapped[int | None] = mapped_column(nullable=True)
 
     created_at: Mapped[datetime.datetime] = mapped_column(
         server_default=func.now(), nullable=False
@@ -80,6 +85,26 @@ class Landmark(Base):
         from geoalchemy2.shape import to_shape
 
         point = to_shape(self.location)
+        return point.x
+
+    @property
+    def photo_latitude(self) -> float | None:
+        """Extract latitude from the photo_location Geography field."""
+        if self.photo_location is None:
+            return None
+        from geoalchemy2.shape import to_shape
+
+        point = to_shape(self.photo_location)
+        return point.y
+
+    @property
+    def photo_longitude(self) -> float | None:
+        """Extract longitude from the photo_location Geography field."""
+        if self.photo_location is None:
+            return None
+        from geoalchemy2.shape import to_shape
+
+        point = to_shape(self.photo_location)
         return point.x
 
 
