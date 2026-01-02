@@ -1,21 +1,46 @@
-import { View } from "react-native"
-import { Text } from "@/components/ui/text";
-import { Stack } from 'expo-router';
+import React from "react";
+import { FlatList } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Stack } from "expo-router";
+import { useTheme } from '@/theme';
+import { PostCard } from "@/components/feed_components/PostCard";
+import { posts } from "@/components/feed_components/posts";
+import { user } from "@/components/feed_components/user";
 
-const Profile = () => {
+export default function Feed() {
+  const colors = useTheme();
 
   return (
     <>
-      <Stack.Screen options={{
-        title: 'Feed',
-      }}/>
-      <View className="flex-1 items-center justify-center gap-8 p-4 bg-background">
-        <View className="items-center gap-2">
-          <Text className="text-2xl font-bold">Feed placeholder</Text>
-        </View>
-      </View>
+      <Stack.Screen
+        options={{
+          title: "Feed",
+        }}
+      />
+
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]} >
+        <FlatList
+          data={posts}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <PostCard
+              postId={item.id}
+              username={user.username}
+              avatar={user.avatar}
+              text={item.text}
+              image={item.image}
+              location={item.location}
+              likes={item.likes}
+              comments_nr={item.comments_nr}
+              comments={item.comments}
+            />
+          )}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: 80, // <-- enough space for tab navigator
+          }}
+        />
+      </SafeAreaView>
     </>
   );
 }
-
-export default Profile;

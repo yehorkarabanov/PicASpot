@@ -24,7 +24,7 @@ export default function Screen() {
     return (
       <>
         <Stack.Screen options={SCREEN_OPTIONS} />
-        <View className="flex-1 items-center justify-center">
+        <View className="flex-1 items-center justify-center bg-background">
           <ActivityIndicator size="large" />
         </View>
       </>
