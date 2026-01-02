@@ -4,7 +4,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { Container, LogOut, MoonStarIcon, SunIcon } from 'lucide-react-native';
+import { LogOut, MoonStarIcon, SunIcon } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Profile = () => {

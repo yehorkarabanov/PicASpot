@@ -37,7 +37,7 @@ export default function Feed() {
           )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
-            paddingBottom: 80, // <-- enough space for tab navigator
+            paddingBottom: 80,
           }}
         />
       </SafeAreaView>

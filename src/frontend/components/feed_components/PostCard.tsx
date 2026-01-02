@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Image, Pressable } from "react-native";
-import { Feather } from "@expo/vector-icons"; // <-- use Feather here
+import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/theme";
 import { styles } from "./postCardStyle";
@@ -21,8 +21,8 @@ type PostCardProps = {
   image: string;
   location: string;
   likes: number;
-  comments_nr: number;        // number of comments
-  comments?: Comment[];       // optional full comments array
+  comments_nr: number;
+  comments?: Comment[];
 };
 
 export const PostCard: React.FC<PostCardProps> = ({

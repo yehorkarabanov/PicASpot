@@ -7,7 +7,7 @@ import { Icon } from '@/components/ui/icon';
 import { Users, Settings, Grid, Map as MapIcon, FlagIcon, Award } from 'lucide-react-native';
 import { posts } from "@/components/feed_components/posts";
 import { user } from "@/components/feed_components/user";
-import { useRouter } from "expo-router"; // <-- add at the top
+import { useRouter } from "expo-router";
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 32) / 3;
@@ -104,7 +104,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Tabs */}
         <View className="mx-4 mb-4 flex-row gap-2 p-2 rounded-xl bg-card border border-border shadow-md">
           <Button
             className={`flex-1 flex-row items-center justify-center gap-2 rounded-lg ${
@@ -164,7 +163,7 @@ export default function ProfileScreen() {
                   key={post.id}
                   className="bg-card rounded-xl overflow-hidden border border-border shadow-md mb-1"
                   style={{ width: CARD_WIDTH - 4, height: CARD_WIDTH - 4 }}
-                  activeOpacity={1} // <-- prevents opacity change on press
+                  activeOpacity={1}
                   onPress={() => router.push({ pathname: "/post/[id]", params: { id: post.id } })}
                 >
                   <Image

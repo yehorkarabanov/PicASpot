@@ -6,13 +6,13 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderWidth: 1,
     borderRadius: 12,
-    marginVertical: 8, // spacing so feed bg shows
+    marginVertical: 8,
     marginHorizontal: 12,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
-    elevation: 2, // for Android shadow
+    elevation: 2,
   },
   header: {
     flexDirection: "row",

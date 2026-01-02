@@ -8,7 +8,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/theme";
 import { Feather } from '@expo/vector-icons';
 import { styles as postCardStyles } from "@/components/feed_components/postCardStyle";
-import { Ionicons } from "@expo/vector-icons";
 
 export default function PostDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -56,13 +55,12 @@ export default function PostDetail() {
           </View>
 
           {/* Render Comments */}
-          {/* Render Comments */}
           {post.comments && post.comments.length > 0 && (
             <FlatList
               data={post.comments}
               keyExtractor={(item) => item.id.toString()}
               style={{ marginTop: 16 }}
-              scrollEnabled={false} // ScrollView handles scrolling
+              scrollEnabled={false}
               renderItem={({ item }) => (
                 <View style={{ flexDirection: "row", marginBottom: 20, alignItems: "center" }}>
                   {/* Commenter Avatar */}
@@ -79,9 +77,8 @@ export default function PostDetail() {
                     <Text style={{ color: colors.foreground }}>{item.comment}</Text>
                   </View>
 
-                  {/* Like Button (number left of heart) */}
+                  {/* Like Button */}
                   <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                    {/* Swap order: number first */}
                     <Text style={{ color: colors.foreground, fontSize: 13 }}>{item.likes}</Text>
                     <Feather name="heart" size={20} color={colors.foreground} />
                   </TouchableOpacity>
@@ -89,9 +86,6 @@ export default function PostDetail() {
               )}
             />
           )}
-
-
-
         </ScrollView>
       </SafeAreaView>
     </>

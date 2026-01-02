@@ -1,4 +1,3 @@
-// First, define the Comment type
 export type Comment = {
   id: number;
   username: string;
@@ -7,15 +6,14 @@ export type Comment = {
   likes: number;
 };
 
-// Then update your Post type
 export type Post = {
   id: number;
   image: string;
   text: string;
   likes: number;
-  comments_nr: number; // total number of comments
+  comments_nr: number;
   location: string;
-  comments: Comment[]; // array of Comment objects
+  comments: Comment[];
 };
 
 
@@ -26,7 +24,7 @@ export const posts = [
   image: "https://picsum.photos/id/1018/600/400",
   location: "Yosemite National Park",
   likes: 120,
-  comments_nr: 30, // updated total number of comments
+  comments_nr: 30,
   comments: [
     {
       id: 1,
@@ -63,7 +61,6 @@ export const posts = [
       comment: "This post just made my day 💛",
       likes: 15,
     },
-    // Add 25 more comments by slightly modifying usernames or text
     {
       id: 6,
       username: "@hiker_john",
