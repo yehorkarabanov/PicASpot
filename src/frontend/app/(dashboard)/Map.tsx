@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useTheme } from '@/theme';
-import { Dimensions, View, Animated, ScrollView, Image } from 'react-native';
+import { Dimensions, View, Animated, ScrollView, Image, ActivityIndicator, Linking, AppState } from 'react-native';
 import { Stack } from 'expo-router';
 import { MainMap } from '@/components/map-components/main_map';
 import { LIGHT_MAP, DARK_MAP } from '@/components/map-components/main_map/styles';
@@ -16,8 +16,6 @@ import { X, CircleQuestionMark, Camera, Redo , RotateCw} from 'lucide-react-nati
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { useLandmarks } from '@/contexts/LandmarkContext';
 import { cameraStyles } from '@/components/camera/cameraStyle';
-
-
 
 type Coordinate = {
   latitude: number;
@@ -65,10 +63,12 @@ export default function MapScreen() {
   const CARD_WIDTH = width - 20;
   const NAV_BAR_HEIGHT = 85
 
+  const [isLoadingLocation, setIsLoadingLocation] = React.useState(true);
   const cardAnim = React.useRef(new Animated.Value(height)).current;
   const [selectedMarker, setSelectedMarker] = React.useState<typeof markers[0] | null>(null);
   const [activeCircles, setActiveCircles] = React.useState<CircleData[]>([]);
   const [locationPermissionGranted, setLocationPermissionGranted] = React.useState(false);
+  const [userLocation, setUserLocation] = React.useState<Coordinate | null>(null);
   const [tracksViewChanges, setTracksViewChanges] = React.useState(true);
   const [forceRedraw, setForceRedraw] = React.useState(false);
   const [showHint, setShowHint] = React.useState(false);
@@ -76,8 +76,35 @@ export default function MapScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = React.useState<CameraType>('back');
   const cameraRef = React.useRef<CameraView>(null);
+  const appState = React.useRef(AppState.currentState);
   const [capturedPhotoUri, setCapturedPhotoUri] = React.useState<string | null>(null);
-  const { markers, fetchNearbyLandmarks, isLoading } = useLandmarks();
+  const { markers, fetchNearbyLandmarks } = useLandmarks();
+  const [showMenu, setShowMenu] = React.useState(false);
+  const menuAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.timing(menuAnim, {
+      toValue: showMenu ? 1 : 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [showMenu]);
+
+  const getImageBaseUrl = () => {
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
+      try {
+        const url = new URL(apiUrl);
+        url.pathname = url.pathname.replace(/\/api\/?$/, '');
+        return url.toString().replace(/\/$/, '');
+      } catch {
+        return apiUrl.replace(/\/api\/?$/, '');
+      }
+    };
+
+  const IMAGE_BASE_URL = React.useMemo(
+    () => getImageBaseUrl(),
+    []
+  );
 
   React.useEffect(() => {
     setForceRedraw(true);
@@ -89,50 +116,154 @@ export default function MapScreen() {
   }, [colorScheme, colors, markers]);
 
 
-    React.useEffect(() => {
-        (async () => {
-            let { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                console.log('Permission to access location was denied');
-                return;
-            }
+  React.useEffect(() => {
+    let locationSubscription: Location.LocationSubscription | null = null;
 
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Permission to access location was denied');
+        setIsLoadingLocation(false);
+        return;
+      }
+
+      setLocationPermissionGranted(true);
+
+      let location = await Location.getCurrentPositionAsync({});
+      setUserLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      await fetchNearbyLandmarks(location.coords.latitude, location.coords.longitude);
+
+      /*
+        Commented out for easier tests on emulator
+        This would center the map camera on the user's current location
+        mapRef.current?.animateCamera(
+          {
+            center: {
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+            },
+          },
+          { duration: 500 }
+        );
+      */
+
+      // Subscribe to location updates
+      locationSubscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 5000,
+          distanceInterval: 5,
+        },
+        (loc) => {
+          setUserLocation({
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+          });
+        }
+      );
+
+      setIsLoadingLocation(false);
+    })();
+
+    return () => {
+      if (locationSubscription) {
+        locationSubscription.remove();
+      }
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        try {
+          const { status } = await Location.getForegroundPermissionsAsync();
+          if (status === 'granted') {
             setLocationPermissionGranted(true);
-            let location = await Location.getCurrentPositionAsync({});
+
+            const location = await Location.getCurrentPositionAsync({});
+            setUserLocation({
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+            });
+
             await fetchNearbyLandmarks(location.coords.latitude, location.coords.longitude);
-             /*                                                            Commented out for easier tests on emulator
-            mapRef.current?.animateCamera(
-                {
-                    center: {
-                        latitude: location.coords.latitude,
-                        longitude: location.coords.longitude,
-                    },
-                },
-                { duration: 500 }
-            );
-            */
-        })();
-    }, []);
+          }
+        } catch (error) {
+          console.error('Error checking location permission on app foreground:', error);
+        }
+      }
+      appState.current = nextAppState;
+    });
 
-    const showCard = (markerData: typeof markers[0]) => {
-        setSelectedMarker(markerData);
-        Animated.timing(cardAnim, {
-            toValue: height - CARD_HEIGHT - NAV_BAR_HEIGHT,
-            duration: 200,
-            useNativeDriver: true,
-        }).start();
+    return () => {
+      subscription.remove();
     };
+  }, []);
 
-    const hideCard = () => {
-        setActiveCircles([]);
-        Animated.timing(cardAnim, {
-            toValue: height,
-            duration: 200,
-            useNativeDriver: true,
-        }).start(() => {
-            setSelectedMarker(null);
+  const requestPermissionAgain = async () => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+
+      if (status === 'granted') {
+        setLocationPermissionGranted(true);
+
+        const location = await Location.getCurrentPositionAsync({});
+        setUserLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
         });
-    };
+        await fetchNearbyLandmarks(location.coords.latitude, location.coords.longitude);
+
+      } else if (status === 'denied') {
+        Linking.openSettings();
+      }
+    } catch (error) {
+      console.error('Error requesting location permission:', error);
+      alert('An error occurred while requesting location permission.');
+    }
+  };
+
+
+  const focusCameraOnUser = () => {
+    if (!userLocation || !mapRef.current) return;
+
+    mapRef.current.animateCamera(
+      {
+        center: {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+        },
+      },
+      { duration: 500 }
+    );
+  };
+
+  const showCard = (markerData: typeof markers[0]) => {
+      setSelectedMarker(markerData);
+      Animated.timing(cardAnim, {
+          toValue: height - CARD_HEIGHT - NAV_BAR_HEIGHT,
+          duration: 200,
+          useNativeDriver: true,
+      }).start();
+  };
+
+  const hideCard = () => {
+      setActiveCircles([]);
+      Animated.timing(cardAnim, {
+          toValue: height,
+          duration: 200,
+          useNativeDriver: true,
+      }).start(() => {
+          setSelectedMarker(null);
+      });
+  };
 
   const takePhoto = async () => {
       if (cameraRef.current) {
@@ -204,68 +335,78 @@ export default function MapScreen() {
     };
 
     const renderAnimatedCard = () => {
-        if (!selectedMarker) {
-            return null;
-        }
-        const isUnlocked = selectedMarker.unlocked === 1;
+      if (!selectedMarker) {
+          return null;
+      }
+      const isUnlocked = selectedMarker.unlocked === 1;
 
-        if (isUnlocked) {
-            return (
-                <AnimatedCardBase cardAnim={cardAnim} CARD_WIDTH={CARD_WIDTH} CARD_HEIGHT={CARD_HEIGHT}>
-                    <View className="mb-2">
-                        <Text className="text-2xl font-bold">{selectedMarker.title}</Text>
-                    </View>
-                    <ScrollView
-                        className="flex-1"
-                        contentContainerStyle={{ paddingBottom: 20 }}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        <Text className="text-base text-muted-foreground">
-                            {selectedMarker.description}
-                        </Text>
-                    </ScrollView>
-                </AnimatedCardBase>
-            );
-        } else {
-            return (
-                <AnimatedCardBase cardAnim={cardAnim} CARD_WIDTH={CARD_WIDTH} CARD_HEIGHT={CARD_HEIGHT}>
-                    <View className="flex-row justify-between items-center mb-4">
-                      <Text className="text-2xl text-destructive font-bold flex-1 mr-2">
-                          {selectedMarker.title}
+      if (isUnlocked) {
+          return (
+              <AnimatedCardBase cardAnim={cardAnim} CARD_WIDTH={CARD_WIDTH} CARD_HEIGHT={CARD_HEIGHT}>
+                  <View className="mb-2">
+                      <Text className="text-2xl font-bold">{selectedMarker.title}</Text>
+                  </View>
+                  <ScrollView
+                      className="flex-1"
+                      contentContainerStyle={{ paddingBottom: 20 }}
+                      showsVerticalScrollIndicator={false}
+                  >
+                      <Text className="text-base text-muted-foreground">
+                          {selectedMarker.description}
                       </Text>
-                      <Button
-                        className="h-12 w-12 rounded-full items-center justify-center"
-                        variant="ghost"
-                        size="icon"
-                        onPress={() => setShowHint(true)}
-                    >
-                        <Icon as={CircleQuestionMark} className="size-8 text-foreground" />
-                      </Button>
+                  </ScrollView>
+              </AnimatedCardBase>
+          );
+      } else {
+        return (
+          <AnimatedCardBase cardAnim={cardAnim} CARD_WIDTH={CARD_WIDTH} CARD_HEIGHT={CARD_HEIGHT}>
+              <View className="flex-row justify-between items-center mb-4">
+                <Text className="text-2xl text-destructive font-bold flex-1 mr-2">
+                    {selectedMarker.title}
+                </Text>
+                <Button
+                  className="h-12 w-12 rounded-full items-center justify-center"
+                  variant="ghost"
+                  size="icon"
+                  onPress={() => setShowHint(true)}
+              >
+                  <Icon as={CircleQuestionMark} className="size-8 text-foreground" />
+                </Button>
 
-                    </View>
-                    <View className="p-4 items-center justify-center flex-1">
-                        <Text className="text-lg text-muted-foreground mt-2 text-center">
-                            This landmark is locked.
-                        </Text>
-                        <Text className="text-sm text-red-500 mt-2 font-bold">
-                            Take a photo of the landmark while inside an area highlighted on map!
-                        </Text>
-                    </View>
-                    <Button
-                      className="absolute bottom-4 right-4 h-12 w-12 rounded-full items-center justify-center"
-                      variant="ghost"
-                      size="icon"
-                      onPress={() => setShowCamera(true)}>
-                      <Icon as={Camera} className="size-8 text-foreground" />
-                    </Button>
+              </View>
+              <View className="p-4 items-center justify-center flex-1">
+                  <Text className="text-lg text-muted-foreground mt-2 text-center">
+                      This landmark is locked.
+                  </Text>
+                  <Text className="text-sm text-red-500 mt-2 font-bold">
+                      Take a photo of the landmark while inside an area highlighted on map!
+                  </Text>
+              </View>
+              <Button
+                className="absolute bottom-4 right-4 h-12 w-12 rounded-full items-center justify-center"
+                variant="ghost"
+                size="icon"
+                onPress={() => setShowCamera(true)}>
+                <Icon as={Camera} className="size-8 text-foreground" />
+              </Button>
 
-                </AnimatedCardBase>
-            );
-        }
+          </AnimatedCardBase>
+        );
+      }
     }
 
+    const normalizeImageUrl = (imageUrl: string) => {
+      if (!imageUrl) return '';
+
+      if (imageUrl.startsWith('http')) {
+        return imageUrl.replace('localhost', new URL(IMAGE_BASE_URL).host);
+      }
+      return `${IMAGE_BASE_URL}${imageUrl}`;
+    };
+
+
     const renderSimplePopup = () => {
-      const hasImage = selectedMarker?.image && selectedMarker.image !== "";
+      const hasImage = Boolean(selectedMarker?.image);
       return (
         <Modal
             visible={showHint}
@@ -276,10 +417,13 @@ export default function MapScreen() {
 
                 {hasImage ? (
                     <Image
-                        source={{ uri: selectedMarker?.image || "" }}
-                        style={{ width: 300, height: 300, borderRadius: 10, backgroundColor: 'white', marginBottom: 20 }}
-                        resizeMode="cover"
+                      source={{
+                        uri: normalizeImageUrl(selectedMarker?.image ?? "")
+                      }}
+                      style={{ width: 300, height: 300, borderRadius: 10, backgroundColor: 'white', marginBottom: 20 }}
+                      resizeMode="cover"
                     />
+
                 ) : (
                     <View
                         style={{ width: 300, height: 300, marginBottom: 20 }}
@@ -300,26 +444,26 @@ export default function MapScreen() {
     );
 };
 
-    const renderCameraModal = () => {
-        if (!permission || !permission.granted) {
-            return (
-                <Modal visible={showCamera} transparent={true} animationType="fade">
-                    <View style={cameraStyles.permissionContainer} className="bg-background">
-                        <Text className="text-lg text-foreground text-center mb-4">
-                            {permission === null ? 'Loading camera permissions...' : 'We need your permission to access the camera to take a photo.'}
-                        </Text>
-                        {permission !== null && !permission.granted && (
-                            <Button onPress={requestPermission} className="mb-4">
-                                <Text>Grant Camera Permission</Text>
-                            </Button>
-                        )}
-                        <Button variant="ghost" onPress={() => setShowCamera(false)}>
-                            <Text>Close</Text>
-                        </Button>
-                    </View>
-                </Modal>
-            );
-        }
+  const renderCameraModal = () => {
+      if (!permission || !permission.granted) {
+          return (
+              <Modal visible={showCamera} transparent={true} animationType="fade">
+                  <View style={cameraStyles.permissionContainer} className="bg-background">
+                      <Text className="text-lg text-foreground text-center mb-4">
+                          {permission === null ? 'Loading camera permissions...' : 'We need your permission to access the camera to take a photo.'}
+                      </Text>
+                      {permission !== null && !permission.granted && (
+                          <Button onPress={requestPermission} className="mb-4">
+                              <Text>Grant Camera Permission</Text>
+                          </Button>
+                      )}
+                      <Button variant="ghost" onPress={() => setShowCamera(false)}>
+                          <Text>Close</Text>
+                      </Button>
+                  </View>
+              </Modal>
+          );
+      }
 
 return (
     <Modal
@@ -409,8 +553,30 @@ return (
             <Stack.Screen options={{
                 title: 'Map',
                 headerShown: false,
+                animation: "fade"
             }} />
             <View className="flex-1">
+              {!locationPermissionGranted && !isLoadingLocation && (
+                <View
+                  className="absolute top-1/2 left-1/2 bg-background rounded-xl items-center shadow-lg border border-border"
+                  style={{
+                    width: 280,
+                    paddingVertical: 24,
+                    paddingHorizontal: 16,
+                    transform: [{ translateX: -140 }, { translateY: -100 }],
+                    zIndex: 10,
+                  }}
+                >
+                  <Text className="text-lg font-bold text-center mb-4">
+                    The map requires you to grant the location permissions to function properly.
+                  </Text>
+                  <Button variant="default" onPress={requestPermissionAgain}>
+                    <Text>Open settings</Text>
+                  </Button>
+                </View>
+              )}
+
+
                 <MainMap
                     ref={mapRef}
                     className="h-full w-full"
@@ -460,6 +626,73 @@ return (
                         </Marker>
                     ))}
                 </MainMap>
+
+                {/* buttons */}
+                {locationPermissionGranted && (
+                  <>
+                    <View className="absolute top-12 right-4 items-end">
+                      <Button
+                        className="h-16 w-16 rounded-full bg-background border border-border items-center justify-center shadow-md"
+                        onPress={() => setShowMenu(prev => !prev)}
+                      >
+                        <Ionicons name="ellipsis-vertical" size={24} color={colors.foreground} />
+                      </Button>
+
+                      {showMenu && (
+                        <View className="mt-2">
+                          <Button
+                            className="h-16 w-16 rounded-full bg-background border border-border items-center justify-center shadow-md"
+                            onPress={() => console.log('Filter button pressed')}
+                            style={{ marginTop: 10 }}
+                          >
+                            <Ionicons name="filter-outline" size={24} color={colors.foreground} />
+                          </Button>
+
+                          <Button
+                            className="h-16 w-16 rounded-full bg-background border border-border items-center justify-center shadow-md"
+                            onPress={() => console.log('Reload button pressed')}
+                            style={{ marginTop: 10 }}
+                          >
+                            <Ionicons name="reload-outline" size={24} color={colors.foreground} />
+                          </Button>
+
+                          <Button
+                            className="h-16 w-16 rounded-full bg-background border border-border items-center justify-center shadow-md"
+                            onPress={() => console.log('+ button pressed')}
+                            style={{ marginTop: 10 }}
+                          >
+                            <Ionicons name="add" size={24} color={colors.foreground} />
+                          </Button>
+                        </View>
+                      )}
+                    </View>
+
+                    <View className="absolute left-4" style={{ bottom: 180 }}>
+                      <Button
+                        className="h-16 w-16 rounded-full bg-background border border-border items-center justify-center shadow-md"
+                        onPress={() => mapRef.current?.animateCamera({ heading: 0, pitch: 0, }, { duration: 300 })}
+                      >
+                        <Ionicons name="compass-outline" size={24} color={colors.foreground} />
+                      </Button>
+                    </View>
+
+                    <View className="absolute left-4" style={{ bottom: 110 }}>
+                      <Button
+                        className="h-16 w-16 rounded-full bg-background border border-border items-center justify-center shadow-md"
+                        onPress={focusCameraOnUser}
+                      >
+                        <Ionicons name="locate-outline" size={24} color={colors.foreground} />
+                      </Button>
+                    </View>
+                  </>
+                )}
+
+                {isLoadingLocation && (
+                  <View className="absolute inset-0 bg-black/40 justify-center items-center">
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text className="mt-2 text-white font-semibold">Fetching your location...</Text>
+                  </View>
+                )}
 
                 {renderAnimatedCard()}
                 {renderSimplePopup()}

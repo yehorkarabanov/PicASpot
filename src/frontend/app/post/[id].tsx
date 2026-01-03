@@ -23,11 +23,12 @@ export default function PostDetail() {
           title: "",
           headerShown: true,
           headerTransparent: true,
+          animation: 'fade',
         }}
       />
 
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-        <ScrollView contentContainerStyle={{ paddingTop: 60, paddingHorizontal: 16 }}>
+        <ScrollView contentContainerStyle={{ paddingTop: 55, paddingHorizontal: 16 }}>
           {/* Header */}
           <View style={postCardStyles.header}>
             <Image source={{ uri: user.avatar }} style={postCardStyles.avatar} />

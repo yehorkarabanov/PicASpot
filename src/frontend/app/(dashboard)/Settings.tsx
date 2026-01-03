@@ -21,6 +21,7 @@ const Profile = () => {
     <>
       <Stack.Screen options={{
         title: 'Settings',
+        animation: 'fade',
       }}/>
       <View className="flex-1 pt-12 gap-8 p-4 bg-background">
         <ThemeToggle />

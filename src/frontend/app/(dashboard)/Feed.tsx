@@ -15,6 +15,7 @@ export default function Feed() {
       <Stack.Screen
         options={{
           title: "Feed",
+          animation: 'fade',
         }}
       />
 

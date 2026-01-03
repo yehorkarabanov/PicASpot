@@ -41,6 +41,7 @@ export default function ProfileScreen() {
       <Stack.Screen options={{
         title: 'Profile',
         headerShown: false,
+        animation: 'fade',
       }} />
 
       <ScrollView
