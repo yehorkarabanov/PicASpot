@@ -21,7 +21,6 @@ class UnlockVerifyMessage(BaseModel):
     user_id: str
     landmark_id: str
     photo_url: str
-    landmark_image: str
     latitude: float
     longitude: float
     unlock_radius_meters: int

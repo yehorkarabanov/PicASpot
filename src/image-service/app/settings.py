@@ -26,12 +26,50 @@ class Settings(BaseSettings):
         default="image-service-group", alias="KAFKA_IMAGE_CONSUMER_GROUP"
     )
 
-    # MinIO settings
+    # MinIO
     MINIO_ENDPOINT: str = Field(default="minio1:9000")
+    MINIO_EXTERNAL_ENDPOINT: str = Field(default="localhost/dev/minio")
     MINIO_ROOT_USER: str
     MINIO_ROOT_PASSWORD: str
     MINIO_SECURE: bool = Field(default=False)
     MINIO_BUCKET_NAME: str = Field(default="picaspot-storage")
+    MINIO_REGION: str = Field(default="us-east-1")
+    MINIO_PUBLIC_URL: str = Field(default="http://localhost/minio")
+
+    # Upload limits
+    MAX_UPLOAD_SIZE_MB: int = Field(default=10)
+    MAX_PROFILE_PICTURE_SIZE_MB: int = Field(default=5)
+    MAX_LANDMARK_IMAGE_SIZE_MB: int = Field(default=10)
+    MAX_UNLOCK_PHOTO_SIZE_MB: int = Field(default=15)
+
+    # Allowed file types
+    ALLOWED_IMAGE_EXTENSIONS: list[str] = Field(default=["jpg", "jpeg", "png", "webp"])
+    ALLOWED_MIME_TYPES: list[str] = Field(
+        default=["image/jpeg", "image/png", "image/webp"]
+    )
+
+    # Storage URL expiry settings
+    STORAGE_URL_DEFAULT_EXPIRY_SECONDS: int = Field(default=3600)  # 1 hour
+    STORAGE_URL_MAX_EXPIRY_SECONDS: int = Field(default=604800)  # 7 days
+
+    # Image processing
+    IMAGE_THUMBNAIL_SIZE: tuple[int, int] = Field(default=(300, 300))
+    IMAGE_MAX_DIMENSION: int = Field(default=2048)
+    IMAGE_QUALITY: int = Field(default=85)
+
+    @property
+    def PUBLIC_READ_POLICY(self) -> dict:
+        return {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {"AWS": "*"},
+                    "Action": ["s3:GetObject"],
+                    "Resource": [f"arn:aws:s3:::{self.MINIO_BUCKET_NAME}/*"],
+                }
+            ],
+        }
 
     # GeoMatchAI settings
     GEOMATCH_SIMILARITY_THRESHOLD: float = Field(default=0.65)

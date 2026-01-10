@@ -80,14 +80,14 @@ class UnlockService:
             content_type=unlock_data.image_file.content_type
             or "application/octet-stream",
         )
-        photo_url = result["public_url"]
+        print(result)
+        photo_url = result["object_path"]
 
         # Send Kafka message for verification
         message = UnlockVerifyMessage(
             user_id=str(user.id),
             photo_url=photo_url,
             landmark_id=str(landmark.id),
-            landmark_image=landmark.image_url,
             latitude=landmark.latitude,
             longitude=landmark.longitude,
             unlock_radius_meters=landmark.unlock_radius_meters,
