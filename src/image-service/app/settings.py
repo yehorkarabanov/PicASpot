@@ -73,7 +73,7 @@ class Settings(BaseSettings):
 
     # GeoMatchAI settings
     GEOMATCH_SIMILARITY_THRESHOLD: float = Field(default=0.65)
-    GEOMATCH_DEVICE: str = Field(default="auto")  # auto, cuda, or cpu
+    GEOMATCH_DEVICE: str = Field(default="cuda")  # auto, cuda, or cpu
     GEOMATCH_MODEL_TYPE: str = Field(default="timm")  # timm or torchvision
     GEOMATCH_MODEL_VARIANT: str = Field(
         default="tf_efficientnet_b4.ns_jft_in1k"
