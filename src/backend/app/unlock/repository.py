@@ -2,7 +2,7 @@ import uuid
 from typing import Any
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.repository import BaseRepository
 from app.landmark.models import Landmark
@@ -59,21 +59,22 @@ class UnlockRepository(BaseRepository[Unlock]):
         )
 
         load_options: list[Any] = []
+        # Use joinedload for single-entity relations (attempt is 1:1)
         if load_attempt:
-            load_options.append(selectinload(Unlock.attempt))
+            load_options.append(joinedload(Unlock.attempt))
         if load_landmark:
             if load_area:
                 load_options.append(
-                    selectinload(Unlock.landmark).selectinload(Landmark.area)
+                    joinedload(Unlock.landmark).selectinload(Landmark.area)
                 )
             else:
-                load_options.append(selectinload(Unlock.landmark))
+                load_options.append(joinedload(Unlock.landmark))
 
         if load_options:
             stmt = stmt.options(*load_options)
 
         result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
+        return result.unique().scalar_one_or_none()
 
     async def get_user_unlocks_paginated(
         self,
@@ -106,6 +107,10 @@ class UnlockRepository(BaseRepository[Unlock]):
         count_result = await self.session.execute(count_stmt)
         total = count_result.scalar() or 0
 
+        # Early return if no results
+        if total == 0:
+            return [], 0
+
         # Main query with eager loading
         stmt = (
             select(Unlock)
@@ -116,6 +121,7 @@ class UnlockRepository(BaseRepository[Unlock]):
         )
 
         load_options: list[Any] = []
+        # Use selectinload for collections/chained relations (better for pagination)
         if load_attempt:
             load_options.append(selectinload(Unlock.attempt))
         if load_landmark:

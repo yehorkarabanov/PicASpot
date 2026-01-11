@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
@@ -37,7 +38,7 @@ async def create_unlock(
     "/{landmark_id}", response_model=UnlockReturn, response_model_exclude_none=True
 )
 async def get_unlocks(
-    landmark_id: str,
+    landmark_id: UUID,
     params: Annotated[UnlockRequestParams, Query()],
     unlock_service: UnlockServiceDep,
     current_user: CurrentUserDep,
