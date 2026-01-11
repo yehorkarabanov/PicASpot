@@ -34,10 +34,10 @@ async def create_unlock(
 
 
 @router.get(
-    "/{unlock_id}", response_model=UnlockReturn, response_model_exclude_none=True
+    "/{landmark_id}", response_model=UnlockReturn, response_model_exclude_none=True
 )
 async def get_unlocks(
-    unlock_id: str,
+    landmark_id: str,
     params: Annotated[UnlockRequestParams, Query()],
     unlock_service: UnlockServiceDep,
     current_user: CurrentUserDep,
@@ -48,7 +48,7 @@ async def get_unlocks(
     This endpoint retrieves the details of a specific unlock for the current user.
     """
     unlock_details = await unlock_service.get_unlock_by_id(
-        unlock_id=unlock_id, user=current_user, params=params
+        landmark_id=landmark_id, user=current_user, params=params
     )
     return UnlockReturn(
         data=unlock_details, message="Unlock details retrieved successfully."
