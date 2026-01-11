@@ -1,5 +1,6 @@
 import logging
 import uuid
+from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 from app.core.exceptions import BadRequestError, NotFoundError
@@ -13,10 +14,14 @@ from .models import AttemptStatus
 from .repository import AttemptRepository, UnlockRepository
 from .schemas import (
     UnlockCreate,
+    UnlockListRequestParams,
     UnlockListResponse,
     UnlockRequestParams,
     UnlockResponse,
 )
+
+if TYPE_CHECKING:
+    from .models import Unlock
 
 logger = logging.getLogger(__name__)
 
@@ -181,7 +186,122 @@ class UnlockService:
     async def get_unlock_by_id(
         self, unlock_id: str, user: User, params: UnlockRequestParams
     ) -> UnlockResponse:
-        pass
+        """
+        Retrieve an unlock by landmark ID for the current user.
 
-    async def list_unlocks(self, user: User, params) -> UnlockListResponse:
-        pass
+        Args:
+            unlock_id: The landmark UUID (composite key uses user_id + landmark_id).
+            user: The current user.
+            params: Request parameters for conditional loading.
+
+        Returns:
+            The unlock response with optional related data.
+
+        Raises:
+            NotFoundError: If the unlock does not exist.
+        """
+        try:
+            landmark_id = uuid.UUID(unlock_id)
+        except ValueError as e:
+            raise BadRequestError(f"Invalid unlock ID format: {unlock_id}") from e
+
+        unlock = await self.unlock_repository.get_unlock_with_relations(
+            user_id=user.id,
+            landmark_id=landmark_id,
+            load_attempt=params.load_attempt_data,
+            load_landmark=params.load_landmark_data,
+            load_area=params.load_area_data and params.load_landmark_data,
+        )
+
+        if not unlock:
+            raise NotFoundError(f"Unlock for landmark {unlock_id} not found")
+
+        return self._build_unlock_response(unlock, params)
+
+    async def list_unlocks(
+        self, user: User, params: UnlockListRequestParams
+    ) -> UnlockListResponse:
+        """
+        List all unlocks for a user with pagination.
+
+        Args:
+            user: The current user.
+            params: Request parameters for pagination and conditional loading.
+
+        Returns:
+            Paginated list of unlock responses.
+        """
+        offset = (params.page - 1) * params.page_size
+
+        unlocks, total = await self.unlock_repository.get_user_unlocks_paginated(
+            user_id=user.id,
+            limit=params.page_size,
+            offset=offset,
+            load_attempt=params.load_attempt_data,
+            load_landmark=params.load_landmark_data,
+            load_area=params.load_area_data and params.load_landmark_data,
+        )
+
+        unlock_responses = [
+            self._build_unlock_response(unlock, params) for unlock in unlocks
+        ]
+
+        total_pages = max(1, (total + params.page_size - 1) // params.page_size)
+
+        return UnlockListResponse(
+            unlocks=unlock_responses,
+            total=total,
+            page=params.page,
+            page_size=params.page_size,
+            total_pages=total_pages,
+            count=len(unlock_responses),
+        )
+
+    def _build_unlock_response(
+        self, unlock: "Unlock", params: UnlockRequestParams
+    ) -> UnlockResponse:
+        """
+        Build an UnlockResponse from an Unlock entity with optional nested data.
+
+        Args:
+            unlock: The unlock entity with potentially loaded relations.
+            params: Request parameters for conditional field inclusion.
+
+        Returns:
+            The formatted unlock response.
+        """
+        from app.area.schemas import AreaResponse
+        from app.landmark.schemas import LandmarkResponse
+
+        from .schemas import AttemptResponse
+
+        area_response = None
+        landmark_response = None
+        attempt_response = None
+
+        if params.load_landmark_data and unlock.landmark:
+            landmark_response = LandmarkResponse.model_validate_with_timezone(
+                unlock.landmark, self.timezone
+            )
+            if params.load_area_data and unlock.landmark.area:
+                area_response = AreaResponse.model_validate_with_timezone(
+                    unlock.landmark.area, self.timezone
+                )
+
+        if params.load_attempt_data and unlock.attempt:
+            attempt_response = AttemptResponse.model_validate_with_timezone(
+                unlock.attempt, self.timezone
+            )
+
+        return UnlockResponse(
+            user_id=unlock.user_id,
+            landmark_id=unlock.landmark_id,
+            attempt_id=unlock.attempt_id,
+            area=area_response,
+            landmark=landmark_response,
+            attempt=attempt_response,
+            photo_url=unlock.photo_url,
+            is_posted_to_feed=unlock.is_posted_to_feed,
+            unlocked_at=unlock.unlocked_at.astimezone(self.timezone),
+            updated_at=unlock.updated_at.astimezone(self.timezone),
+        )

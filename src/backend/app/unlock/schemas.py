@@ -47,7 +47,7 @@ class UnlockListRequestParams(UnlockRequestParams):
     model_config = ConfigDict(extra="forbid")
 
 
-class AttemptResponse(BaseModel, TimezoneAwareSchema):
+class AttemptResponse(TimezoneAwareSchema):
     """Schema for attempt response"""
 
     id: UUID
@@ -57,10 +57,10 @@ class AttemptResponse(BaseModel, TimezoneAwareSchema):
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
 
-class UnlockResponse(BaseModel, TimezoneAwareSchema):
+class UnlockResponse(TimezoneAwareSchema):
     """Schema for unlock response"""
 
     user_id: UUID
@@ -74,7 +74,7 @@ class UnlockResponse(BaseModel, TimezoneAwareSchema):
     unlocked_at: datetime.datetime
     updated_at: datetime.datetime
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
 
 class UnlockReturn(BaseReturn):
