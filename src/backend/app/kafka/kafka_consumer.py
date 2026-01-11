@@ -6,16 +6,9 @@ import uuid
 from aiokafka import AIOKafkaConsumer
 from fastapi_injectable import async_get_injected_obj
 from pydantic import ValidationError
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.manager import async_session_maker
-from app.landmark.models import Landmark
-from app.landmark.repository import LandmarkRepository
 from app.settings import settings
 from app.unlock.dependencies import get_unlock_service
-from app.unlock.models import Unlock
-from app.unlock.repository import UnlockRepository
-
 from .schemas import UnlockVerifyResult
 
 logger = logging.getLogger(__name__)
@@ -109,12 +102,11 @@ class KafkaConsumer:
                     extra={"error": str(e)},
                 )
 
-    async def process_message(self, msg, session: AsyncSession):
+    async def process_message(self, msg):
         """Process a single Kafka message.
 
         Args:
             msg: The Kafka message object.
-            session: Database session for creating unlock records.
         """
         try:
             message_data = json.loads(msg.value.decode("utf-8"))
@@ -133,16 +125,14 @@ class KafkaConsumer:
                     )
                     return
 
-                await self._handle_verification_result(result, session)
+                await self._handle_verification_result(result)
 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to decode JSON message: {e}")
         except Exception as e:
             logger.error(f"Error processing message: {e}", exc_info=True)
 
-    async def _handle_verification_result(
-        self, result: UnlockVerifyResult, session: AsyncSession
-    ):
+    async def _handle_verification_result(self, result: UnlockVerifyResult):
         """Handle verification result by creating/rejecting unlock.
 
         Args:
@@ -172,10 +162,8 @@ class KafkaConsumer:
                 if not self.running:
                     break
                 try:
-                    # Get a fresh database session for each message
-                    async with async_session_maker() as session:
-                        await self.process_message(msg, session)
-                        await self.consumer.commit()
+                    await self.process_message(msg)
+                    await self.consumer.commit()
                 except Exception as e:
                     logger.error(f"Failed to process message, skipping commit: {e}")
         except Exception as e:
