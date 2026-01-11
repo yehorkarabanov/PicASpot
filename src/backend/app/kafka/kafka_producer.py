@@ -234,6 +234,15 @@ class KafkaProducer:
         Returns:
             bool: True if the message was successfully sent to Kafka, False otherwise.
 
+        Example:
+            >>> message = VerificationEmailMessage(
+            ...     email="newuser@example.com",
+            ...     username="janedoe",
+            ...     link="https://example.com/verify?token=abc123"
+            ... )
+            >>> success = await kafka_producer.send_unlock_verify_message(message)
+
+
         Note:
             The producer must be started before calling this method.
         """
