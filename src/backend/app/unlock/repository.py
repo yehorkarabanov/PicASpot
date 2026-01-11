@@ -143,3 +143,100 @@ class UnlockRepository(BaseRepository[Unlock]):
 
 class AttemptRepository(BaseRepository[Attempt]):
     """Repository for Attempt model operations"""
+
+    async def get_attempt_with_relations(
+        self,
+        attempt_id: uuid.UUID,
+        user_id: uuid.UUID,
+        load_landmark: bool = True,
+        load_area: bool = True,
+    ) -> Attempt | None:
+        """
+        Get an attempt with optional eager loading of related entities.
+
+        Args:
+            attempt_id: The attempt ID.
+            user_id: The user ID (for ownership verification).
+            load_landmark: Whether to load the landmark relation.
+            load_area: Whether to load the area relation (requires load_landmark=True).
+
+        Returns:
+            The attempt with loaded relations, or None if not found.
+        """
+        stmt = select(Attempt).where(
+            Attempt.id == attempt_id,
+            Attempt.user_id == user_id,
+        )
+
+        load_options: list[Any] = []
+        if load_landmark:
+            if load_area:
+                load_options.append(
+                    joinedload(Attempt.landmark).selectinload(Landmark.area)
+                )
+            else:
+                load_options.append(joinedload(Attempt.landmark))
+
+        if load_options:
+            stmt = stmt.options(*load_options)
+
+        result = await self.session.execute(stmt)
+        return result.unique().scalar_one_or_none()
+
+    async def get_user_attempts_paginated(
+        self,
+        user_id: uuid.UUID,
+        limit: int,
+        offset: int,
+        load_landmark: bool = True,
+        load_area: bool = True,
+    ) -> tuple[list[Attempt], int]:
+        """
+        Get paginated attempts for a user with optional eager loading.
+
+        Args:
+            user_id: The user ID.
+            limit: Maximum number of results.
+            offset: Number of results to skip.
+            load_landmark: Whether to load the landmark relation.
+            load_area: Whether to load the area relation (requires load_landmark=True).
+
+        Returns:
+            Tuple of (list of attempts, total count).
+        """
+        base_filter = Attempt.user_id == user_id
+
+        # Count query (efficient - no joins needed)
+        count_stmt = select(func.count()).select_from(Attempt).where(base_filter)
+        count_result = await self.session.execute(count_stmt)
+        total = count_result.scalar() or 0
+
+        # Early return if no results
+        if total == 0:
+            return [], 0
+
+        # Main query with eager loading
+        stmt = (
+            select(Attempt)
+            .where(base_filter)
+            .order_by(Attempt.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+
+        load_options: list[Any] = []
+        if load_landmark:
+            if load_area:
+                load_options.append(
+                    selectinload(Attempt.landmark).selectinload(Landmark.area)
+                )
+            else:
+                load_options.append(selectinload(Attempt.landmark))
+
+        if load_options:
+            stmt = stmt.options(*load_options)
+
+        result = await self.session.execute(stmt)
+        attempts = list(result.scalars().all())
+
+        return attempts, total

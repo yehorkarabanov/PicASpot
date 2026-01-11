@@ -15,6 +15,9 @@ from app.user.models import User
 from .models import AttemptStatus
 from .repository import AttemptRepository, UnlockRepository
 from .schemas import (
+    AttemptListRequestParams,
+    AttemptListResponse,
+    AttemptRequestParams,
     AttemptResponse,
     UnlockCreate,
     UnlockListRequestParams,
@@ -24,7 +27,7 @@ from .schemas import (
 )
 
 if TYPE_CHECKING:
-    from .models import Unlock
+    from .models import Attempt, Unlock
 
 logger = logging.getLogger(__name__)
 
@@ -302,4 +305,113 @@ class UnlockService:
             is_posted_to_feed=unlock.is_posted_to_feed,
             unlocked_at=unlock.unlocked_at.astimezone(timezone),
             updated_at=unlock.updated_at.astimezone(timezone),
+        )
+
+    async def get_attempt_by_id(
+        self, attempt_id: uuid.UUID, user: User, params: AttemptRequestParams
+    ) -> AttemptResponse:
+        """
+        Retrieve an attempt by ID for the current user.
+
+        Args:
+            attempt_id: The attempt UUID.
+            user: The current user.
+            params: Request parameters for conditional loading.
+
+        Returns:
+            The attempt response with optional related data.
+
+        Raises:
+            NotFoundError: If the attempt does not exist.
+        """
+        attempt = await self.attempt_repository.get_attempt_with_relations(
+            attempt_id=attempt_id,
+            user_id=user.id,
+            load_landmark=params.load_landmark_data,
+            load_area=params.load_area_data and params.load_landmark_data,
+        )
+
+        if not attempt:
+            raise NotFoundError(f"Attempt {attempt_id} not found")
+
+        return self._build_attempt_response(attempt, params)
+
+    async def list_attempts(
+        self, user: User, params: AttemptListRequestParams
+    ) -> AttemptListResponse:
+        """
+        List all attempts for a user with pagination.
+
+        Args:
+            user: The current user.
+            params: Request parameters for pagination and conditional loading.
+
+        Returns:
+            Paginated list of attempt responses.
+        """
+        page_size = params.page_size
+        offset = (params.page - 1) * page_size
+        load_area = params.load_area_data and params.load_landmark_data
+
+        attempts, total = await self.attempt_repository.get_user_attempts_paginated(
+            user_id=user.id,
+            limit=page_size,
+            offset=offset,
+            load_landmark=params.load_landmark_data,
+            load_area=load_area,
+        )
+
+        # Use ceiling division: -(-a // b) is equivalent to math.ceil(a / b)
+        total_pages = max(1, -(-total // page_size))
+
+        return AttemptListResponse(
+            attempts=[
+                self._build_attempt_response(attempt, params) for attempt in attempts
+            ],
+            total=total,
+            page=params.page,
+            page_size=page_size,
+            total_pages=total_pages,
+            count=len(attempts),
+        )
+
+    def _build_attempt_response(
+        self, attempt: "Attempt", params: AttemptRequestParams
+    ) -> AttemptResponse:
+        """
+        Build an AttemptResponse from an Attempt entity with optional nested data.
+
+        Args:
+            attempt: The attempt entity with potentially loaded relations.
+            params: Request parameters for conditional field inclusion.
+
+        Returns:
+            The formatted attempt response.
+        """
+        area_response: AreaResponse | None = None
+        landmark_response: LandmarkResponse | None = None
+        timezone = self.timezone
+
+        # Build landmark and area responses if requested and data exists
+        landmark = attempt.landmark if params.load_landmark_data else None
+        if landmark:
+            landmark_response = LandmarkResponse.model_validate_with_timezone(
+                landmark, timezone
+            )
+            if params.load_area_data and landmark.area:
+                area_response = AreaResponse.model_validate_with_timezone(
+                    landmark.area, timezone
+                )
+
+        return AttemptResponse(
+            id=attempt.id,
+            landmark_id=attempt.landmark_id,
+            status=attempt.status.value,
+            photo_url=attempt.photo_url,
+            similarity_score=attempt.similarity_score,
+            error_message=attempt.error_message,
+            landmark=landmark_response,
+            area=area_response,
+            created_at=attempt.created_at.astimezone(timezone),
+            updated_at=attempt.updated_at.astimezone(timezone),
         )
