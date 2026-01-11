@@ -63,6 +63,7 @@ class AttemptResponse(TimezoneAwareSchema):
 class UnlockResponse(TimezoneAwareSchema):
     """Schema for unlock response"""
 
+    id: UUID
     user_id: UUID
     landmark_id: UUID
     attempt_id: UUID

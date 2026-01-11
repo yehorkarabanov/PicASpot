@@ -87,17 +87,20 @@ Index("idx_attempt_status_created_at", Attempt.status, Attempt.created_at)
 class Unlock(Base):
     __tablename__ = "unlocks"
 
+    id: Mapped[uuid.UUID] = mapped_column(
+        types.Uuid, primary_key=True, default=uuid.uuid4
+    )
     user_id: Mapped[uuid.UUID] = mapped_column(
         types.Uuid,
         ForeignKey("users.id", ondelete="CASCADE"),
-        primary_key=True,
         nullable=False,
+        index=True,
     )
     landmark_id: Mapped[uuid.UUID] = mapped_column(
         types.Uuid,
         ForeignKey("landmarks.id", ondelete="CASCADE"),
-        primary_key=True,
         nullable=False,
+        index=True,
     )
 
     attempt_id: Mapped[uuid.UUID] = mapped_column(

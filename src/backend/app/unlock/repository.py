@@ -34,8 +34,8 @@ class UnlockRepository(BaseRepository[Unlock]):
 
     async def get_unlock_with_relations(
         self,
+        unlock_id: uuid.UUID,
         user_id: uuid.UUID,
-        landmark_id: uuid.UUID,
         load_attempt: bool = True,
         load_landmark: bool = True,
         load_area: bool = True,
@@ -44,8 +44,8 @@ class UnlockRepository(BaseRepository[Unlock]):
         Get an unlock with optional eager loading of related entities.
 
         Args:
-            user_id: The user ID.
-            landmark_id: The landmark ID.
+            unlock_id: The unlock ID.
+            user_id: The user ID (for ownership verification).
             load_attempt: Whether to load the attempt relation.
             load_landmark: Whether to load the landmark relation.
             load_area: Whether to load the area relation (requires load_landmark=True).
@@ -54,8 +54,8 @@ class UnlockRepository(BaseRepository[Unlock]):
             The unlock with loaded relations, or None if not found.
         """
         stmt = select(Unlock).where(
+            Unlock.id == unlock_id,
             Unlock.user_id == user_id,
-            Unlock.landmark_id == landmark_id,
         )
 
         load_options: list[Any] = []

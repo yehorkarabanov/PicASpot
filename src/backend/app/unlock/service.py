@@ -187,13 +187,13 @@ class UnlockService:
         await self.attempt_repository.update(attempt.id, attempt.__dict__)
 
     async def get_unlock_by_id(
-        self, landmark_id: uuid.UUID, user: User, params: UnlockRequestParams
+        self, unlock_id: uuid.UUID, user: User, params: UnlockRequestParams
     ) -> UnlockResponse:
         """
-        Retrieve an unlock by landmark ID for the current user.
+        Retrieve an unlock by ID for the current user.
 
         Args:
-            landmark_id: The landmark UUID (composite key uses user_id + landmark_id).
+            unlock_id: The unlock UUID.
             user: The current user.
             params: Request parameters for conditional loading.
 
@@ -204,15 +204,15 @@ class UnlockService:
             NotFoundError: If the unlock does not exist.
         """
         unlock = await self.unlock_repository.get_unlock_with_relations(
+            unlock_id=unlock_id,
             user_id=user.id,
-            landmark_id=landmark_id,
             load_attempt=params.load_attempt_data,
             load_landmark=params.load_landmark_data,
             load_area=params.load_area_data and params.load_landmark_data,
         )
 
         if not unlock:
-            raise NotFoundError(f"Unlock for landmark {landmark_id} not found")
+            raise NotFoundError(f"Unlock {unlock_id} not found")
 
         return self._build_unlock_response(unlock, params)
 
@@ -291,6 +291,7 @@ class UnlockService:
             )
 
         return UnlockResponse(
+            id=unlock.id,
             user_id=unlock.user_id,
             landmark_id=unlock.landmark_id,
             attempt_id=unlock.attempt_id,
