@@ -129,7 +129,7 @@ class UnlockService:
             similarity_score: Similarity score from the verification process.
             error: Error message if the verification failed.
         """
-        pass
+        print(1111111111111111111111111111111111111111111111111)
         # user_id = uuid.UUID(result.user_id)
         # landmark_id = uuid.UUID(result.landmark_id)
         #

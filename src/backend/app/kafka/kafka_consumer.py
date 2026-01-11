@@ -4,6 +4,7 @@ import logging
 import uuid
 
 from aiokafka import AIOKafkaConsumer
+from fastapi_injectable import async_get_injected_obj
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +12,7 @@ from app.database.manager import async_session_maker
 from app.landmark.models import Landmark
 from app.landmark.repository import LandmarkRepository
 from app.settings import settings
+from app.unlock.dependencies import get_unlock_service
 from app.unlock.models import Unlock
 from app.unlock.repository import UnlockRepository
 
@@ -147,6 +149,15 @@ class KafkaConsumer:
             result: The verification result from image-service.
             session: Database session.
         """
+        unlock_service = await async_get_injected_obj(get_unlock_service)
+        await unlock_service.handle_verification_result(
+            user_id=uuid.UUID(result.user_id),
+            landmark_id=uuid.UUID(result.landmark_id),
+            success=result.success,
+            photo_url=result.photo_url,
+            similarity_score=result.similarity_score,
+            error=result.error,
+        )
 
     async def consume_messages(self):
         """Start consuming messages from Kafka topics."""

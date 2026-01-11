@@ -19,6 +19,7 @@ dependencies = [
     "miniopy-async>=1.21.1",
     "aiokafka >= 0.12.0; sys_platform == 'linux'",
     "pillow>=12.0.0",
+    "fastapi-injectable>=1.4.6",
 ]
 
 
