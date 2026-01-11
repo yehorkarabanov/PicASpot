@@ -177,4 +177,4 @@ class UnlockService:
                 error,
             )
 
-        await attempt.save()
+        await self.attempt_repository.update(attempt.id, attempt.__dict__)
