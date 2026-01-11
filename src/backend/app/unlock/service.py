@@ -11,7 +11,12 @@ from app.user.models import User
 
 from .models import AttemptStatus
 from .repository import AttemptRepository, UnlockRepository
-from .schemas import UnlockCreate
+from .schemas import (
+    UnlockCreate,
+    UnlockListResponse,
+    UnlockRequestParams,
+    UnlockResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -172,3 +177,11 @@ class UnlockService:
             )
 
         await self.attempt_repository.update(attempt.id, attempt.__dict__)
+
+    async def get_unlock_by_id(
+        self, unlock_id: str, user: User, params: UnlockRequestParams
+    ) -> UnlockResponse:
+        pass
+
+    async def list_unlocks(self, user: User, params) -> UnlockListResponse:
+        pass
