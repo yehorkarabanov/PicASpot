@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from app.settings import settings
 from app.unlock.dependencies import get_unlock_service
+
 from .schemas import UnlockVerifyResult
 
 logger = logging.getLogger(__name__)
