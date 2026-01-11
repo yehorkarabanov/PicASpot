@@ -18,8 +18,7 @@ class ResetPasswordEmailMessage(BaseKafkaEmailMessage):
 class UnlockVerifyMessage(BaseModel):
     """Schema for Kafka message to verify unlock"""
 
-    user_id: str
-    landmark_id: str
+    attempt_id: str
     photo_url: str
     latitude: float
     longitude: float
@@ -30,8 +29,7 @@ class UnlockVerifyMessage(BaseModel):
 class UnlockVerifyResult(BaseModel):
     """Schema for Kafka message with verification result"""
 
-    user_id: str
-    landmark_id: str
+    attempt_id: str
     photo_url: str
     success: bool
     similarity_score: float | None = None

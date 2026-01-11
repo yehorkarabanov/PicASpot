@@ -84,19 +84,7 @@ class UnlockService:
             or "application/octet-stream",
         )
 
-        # Send Kafka message for verification
-        message = UnlockVerifyMessage(
-            user_id=str(user.id),
-            photo_url=photo_upload_data["object_path"],
-            landmark_id=str(landmark.id),
-            latitude=landmark.latitude,
-            longitude=landmark.longitude,
-            unlock_radius_meters=landmark.unlock_radius_meters,
-            photo_radius_meters=landmark.photo_radius_meters,
-        )
-        await kafka_producer.send_unlock_verify_message(message)
-
-        await self.attempt_repository.create(
+        attempt = await self.attempt_repository.create(
             {
                 "user_id": user.id,
                 "landmark_id": landmark.id,
@@ -105,14 +93,24 @@ class UnlockService:
             }
         )
 
+        # Send Kafka message for verification
+        message = UnlockVerifyMessage(
+            attempt_id=str(attempt.id),
+            photo_url=photo_upload_data["object_path"],
+            latitude=landmark.latitude,
+            longitude=landmark.longitude,
+            unlock_radius_meters=landmark.unlock_radius_meters,
+            photo_radius_meters=landmark.photo_radius_meters,
+        )
+        await kafka_producer.send_unlock_verify_message(message)
+
         logger.info(
             "Unlock created successfully: %s by user %s", landmark.name, user.id
         )
 
     async def handle_verification_result(
         self,
-        user_id: uuid.UUID,
-        landmark_id: uuid.UUID,
+        attempt_id: uuid.UUID,
         success: bool,
         photo_url: str,
         similarity_score: float | None,
@@ -122,29 +120,25 @@ class UnlockService:
         Handle the result of a verification attempt.
 
         Args:
-            user_id: ID of the user who attempted the unlock.
-            landmark_id: ID of the landmark being unlocked.
+            attempt_id: ID of the verification attempt.
             success: Whether the verification was successful.
             photo_url: URL of the photo used for verification.
             similarity_score: Similarity score from the verification process.
             error: Error message if the verification failed.
         """
-        attempt = await self.attempt_repository.get_by_user_and_landmark(
-            user_id=user_id, landmark_id=landmark_id
-        )
+        attempt = await self.attempt_repository.get_by_id(attempt_id)
 
         if not attempt:
-            logger.error(
-                "No pending attempt found for user %s and landmark %s",
-                user_id,
-                landmark_id,
-            )
+            logger.error("No pending attempt found for attempt ID %s", attempt_id)
             return
+
+        user_id = attempt.user_id
+        landmark_id = attempt.landmark_id
 
         if error:
             attempt.error_message = error
             attempt.status = AttemptStatus.FAILED
-            await attempt.save()
+            await self.attempt_repository.update(attempt.id, attempt.__dict__)
             logger.info(
                 "Unlock failed for user %s at landmark %s: %s",
                 user_id,

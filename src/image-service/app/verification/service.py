@@ -80,8 +80,7 @@ class VerificationService:
         """
         if not self._started:
             return UnlockVerifyResult(
-                user_id=message.user_id,
-                landmark_id=message.landmark_id,
+                attempt_id=message.attempt_id,
                 photo_url=message.photo_url,
                 success=False,
                 error="VerificationService not initialized",
@@ -116,8 +115,7 @@ class VerificationService:
             logger.info(
                 "Image verification completed",
                 extra={
-                    "user_id": message.user_id,
-                    "landmark_id": message.landmark_id,
+                    "attempt_id": message.attempt_id,
                     "similarity_score": similarity_score,
                     "threshold": settings.GEOMATCH_SIMILARITY_THRESHOLD,
                     "is_verified": is_verified,
@@ -125,8 +123,7 @@ class VerificationService:
             )
 
             return UnlockVerifyResult(
-                user_id=message.user_id,
-                landmark_id=message.landmark_id,
+                attempt_id=message.attempt_id,
                 photo_url=message.photo_url,
                 success=is_verified,
                 similarity_score=similarity_score,
@@ -137,13 +134,11 @@ class VerificationService:
                 f"Verification failed: {e}",
                 exc_info=True,
                 extra={
-                    "user_id": message.user_id,
-                    "landmark_id": message.landmark_id,
+                    "attempt_id": message.attempt_id,
                 },
             )
             return UnlockVerifyResult(
-                user_id=message.user_id,
-                landmark_id=message.landmark_id,
+                attempt_id=message.attempt_id,
                 photo_url=message.photo_url,
                 success=False,
                 error=str(e),

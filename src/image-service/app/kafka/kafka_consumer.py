@@ -186,8 +186,7 @@ class KafkaConsumer:
                 logger.info(
                     "Processing unlock verification",
                     extra={
-                        "user_id": verify_message.user_id,
-                        "landmark_id": verify_message.landmark_id,
+                        "attempt_id": verify_message.attempt_id,
                     },
                 )
 
@@ -200,8 +199,7 @@ class KafkaConsumer:
                 logger.info(
                     "Verification completed",
                     extra={
-                        "user_id": result.user_id,
-                        "landmark_id": result.landmark_id,
+                        "attempt_id": result.attempt_id,
                         "success": result.success,
                         "similarity_score": result.similarity_score,
                     },

@@ -143,8 +143,7 @@ class KafkaConsumer:
 
         unlock_service = await async_get_injected_obj(get_unlock_service)
         await unlock_service.handle_verification_result(
-            user_id=uuid.UUID(result.user_id),
-            landmark_id=uuid.UUID(result.landmark_id),
+            attempt_id=uuid.UUID(result.attempt_id),
             success=result.success,
             photo_url=result.photo_url,
             similarity_score=result.similarity_score,
