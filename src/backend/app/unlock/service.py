@@ -129,66 +129,52 @@ class UnlockService:
             similarity_score: Similarity score from the verification process.
             error: Error message if the verification failed.
         """
-        print(1111111111111111111111111111111111111111111111111)
-        # user_id = uuid.UUID(result.user_id)
-        # landmark_id = uuid.UUID(result.landmark_id)
-        #
-        # # Get landmark and unlock repositories
-        # landmark_repo = LandmarkRepository(session, Landmark)
-        # unlock_repo = UnlockRepository(session, Unlock)
-        #
-        # # Check if unlock already exists
-        # existing_unlock = await unlock_repo.get_by_user_and_landmark(
-        #     user_id=user_id, landmark_id=landmark_id
-        # )
-        #
-        # if existing_unlock:
-        #     logger.warning(
-        #         "Unlock already exists, skipping",
-        #         extra={
-        #             "user_id": str(user_id),
-        #             "landmark_id": str(landmark_id),
-        #         },
-        #     )
-        #     return
-        #
-        # if result.success:
-        #     # Get landmark to get area_id
-        #     landmark = await landmark_repo.get_by_id(landmark_id)
-        #     if not landmark:
-        #         logger.error(
-        #             "Landmark not found for successful verification",
-        #             extra={"landmark_id": str(landmark_id)},
-        #         )
-        #         return
-        #
-        #     # Create unlock record
-        #     unlock = Unlock(
-        #         user_id=user_id,
-        #         landmark_id=landmark_id,
-        #         area_id=landmark.area_id,
-        #         photo_url=result.photo_url,
-        #     )
-        #     session.add(unlock)
-        #     await session.commit()
-        #
-        #     logger.info(
-        #         "Unlock created successfully",
-        #         extra={
-        #             "user_id": str(user_id),
-        #             "landmark_id": str(landmark_id),
-        #             "similarity_score": result.similarity_score,
-        #         },
-        #     )
-        # else:
-        #     # Handle failed verification
-        #     logger.info(
-        #         "Verification failed, unlock not created",
-        #         extra={
-        #             "user_id": str(user_id),
-        #             "landmark_id": str(landmark_id),
-        #             "similarity_score": result.similarity_score,
-        #             "error": result.error,
-        #         },
-        #     )
-        #     # TODO: Optionally delete the uploaded photo or notify user
+        attempt = await self.attempt_repository.get_by_user_and_landmark(
+            user_id=user_id, landmark_id=landmark_id
+        )
+
+        if not attempt:
+            logger.error(
+                "No pending attempt found for user %s and landmark %s",
+                user_id,
+                landmark_id,
+            )
+            return
+
+        if error:
+            attempt.error_message = error
+            attempt.status = AttemptStatus.FAILED
+            await attempt.save()
+            logger.info(
+                "Unlock failed for user %s at landmark %s: %s",
+                user_id,
+                landmark_id,
+                error,
+            )
+            return
+
+        attempt.similarity_score = similarity_score
+
+        if success:
+            await self.unlock_repository.create(
+                {
+                    "user_id": user_id,
+                    "landmark_id": landmark_id,
+                    "photo_url": photo_url,
+                    "attempt_id": attempt.id,
+                }
+            )
+            attempt.status = AttemptStatus.SUCCESS
+            logger.info(
+                "Unlock successful for user %s at landmark %s", user_id, landmark_id
+            )
+        else:
+            attempt.status = AttemptStatus.FAILED
+            logger.info(
+                "Unlock failed for user %s at landmark %s: %s",
+                user_id,
+                landmark_id,
+                error,
+            )
+
+        await attempt.save()

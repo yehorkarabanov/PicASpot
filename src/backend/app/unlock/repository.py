@@ -32,3 +32,23 @@ class UnlockRepository(BaseRepository[Unlock]):
 
 class AttemptRepository(BaseRepository[Attempt]):
     """Repository for Attempt model operations"""
+
+    async def get_by_user_and_landmark(
+        self, user_id: uuid.UUID, landmark_id: uuid.UUID
+    ) -> Attempt | None:
+        """
+        Get an attempt by user and landmark.
+
+        Args:
+            user_id: The user ID.
+            landmark_id: The landmark ID.
+
+        Returns:
+            The attempt if found, None otherwise.
+        """
+        stmt = select(Attempt).where(
+            Attempt.user_id == user_id,
+            Attempt.landmark_id == landmark_id,
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()

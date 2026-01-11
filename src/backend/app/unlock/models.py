@@ -10,7 +10,6 @@ from sqlalchemy.sql import func
 from app.database import Base
 
 if TYPE_CHECKING:
-    from app.area.models import Area
     from app.landmark.models import Landmark
     from app.user.models import User
 
@@ -19,8 +18,8 @@ class AttemptStatus(str, enum.Enum):
     """Status of a landmark unlock attempt"""
 
     PENDING = "PENDING"
-    APPROVED = "APPROVED"
-    REJECTED = "REJECTED"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
 
 
 class Attempt(Base):
@@ -45,6 +44,9 @@ class Attempt(Base):
         default=AttemptStatus.PENDING,
         nullable=False,
     )
+    similarity_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    error_message: Mapped[Optional[str]] = mapped_column(nullable=True)
+
     created_at: Mapped[datetime.datetime] = mapped_column(
         server_default=func.now(), nullable=False
     )
@@ -91,12 +93,6 @@ class Unlock(Base):
         primary_key=True,
         nullable=False,
     )
-    area_id: Mapped[uuid.UUID] = mapped_column(
-        types.Uuid,
-        ForeignKey("areas.id", ondelete="CASCADE"),
-        primary_key=True,
-        nullable=False,
-    )
     landmark_id: Mapped[uuid.UUID] = mapped_column(
         types.Uuid,
         ForeignKey("landmarks.id", ondelete="CASCADE"),
@@ -118,15 +114,15 @@ class Unlock(Base):
     unlocked_at: Mapped[datetime.datetime] = mapped_column(
         server_default=func.now(), nullable=False
     )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     # Relationships
     # lazy="raise" prevents accidental lazy loading in async context
     # Use selectinload() or joinedload() in queries to explicitly load relationships
     user: Mapped["User"] = relationship(
         "User", back_populates="unlocks", foreign_keys=[user_id], lazy="raise"
-    )
-    area: Mapped["Area"] = relationship(
-        "Area", back_populates="unlocks", foreign_keys=[area_id], lazy="raise"
     )
     landmark: Mapped["Landmark"] = relationship(
         "Landmark", back_populates="unlocks", foreign_keys=[landmark_id], lazy="raise"
@@ -137,14 +133,12 @@ class Unlock(Base):
 
     def __repr__(self) -> str:
         return (
-            f"<Unlock(user_id={self.user_id}, area_id={self.area_id}, "
-            f"landmark_id={self.landmark_id}, unlocked_at={self.unlocked_at})>"
+            f"<Unlock(user_id={self.user_id}, landmark_id={self.landmark_id}, "
+            f"unlocked_at={self.unlocked_at})>"
         )
 
 
 # Pair combinations not covered by PK left-prefix rule:
-# Get all unlocks in an area for a specific landmark (area completion tracking)
-Index("idx_unlock_area_landmark", Unlock.area_id, Unlock.landmark_id)
 # Get all unlocks by a user for a specific landmark (check if user unlocked landmark)
 Index("idx_unlock_user_landmark", Unlock.user_id, Unlock.landmark_id)
 
@@ -153,7 +147,5 @@ Index("idx_unlock_user_landmark", Unlock.user_id, Unlock.landmark_id)
 Index("idx_unlock_user_unlocked_at", Unlock.user_id, Unlock.unlocked_at)
 # Get feed posts ordered by time (for social feed feature)
 Index("idx_unlock_feed_unlocked_at", Unlock.is_posted_to_feed, Unlock.unlocked_at)
-# Get unlocks for a specific area ordered by time (for area statistics/leaderboards)
-Index("idx_unlock_area_unlocked_at", Unlock.area_id, Unlock.unlocked_at)
 # Get unlocks for a specific landmark ordered by time (for landmark popularity/statistics)
 Index("idx_unlock_landmark_unlocked_at", Unlock.landmark_id, Unlock.unlocked_at)
