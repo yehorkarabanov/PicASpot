@@ -9,7 +9,8 @@ from app.landmark.repository import LandmarkRepository
 from app.storage import StorageDir, StorageService
 from app.user.models import User
 
-from .repository import UnlockRepository
+from .models import AttemptStatus
+from .repository import AttemptRepository, UnlockRepository
 from .schemas import UnlockCreate
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ class UnlockService:
     def __init__(
         self,
         unlock_repository: UnlockRepository,
+        attempt_repository: AttemptRepository,
         landmark_repository: LandmarkRepository,
         storage: StorageService,
         timezone: ZoneInfo | None = None,
@@ -41,6 +43,7 @@ class UnlockService:
             timezone: Client's timezone for datetime conversion in responses.
         """
         self.unlock_repository = unlock_repository
+        self.attempt_repository = attempt_repository
         self.landmark_repository = landmark_repository
         self.storage = storage
         self.timezone = timezone or ZoneInfo("UTC")
@@ -73,20 +76,18 @@ class UnlockService:
             raise BadRequestError("Landmark already unlocked by this user")
 
         # Upload photo
-        result = await self.storage.upload_file(
+        photo_upload_data = await self.storage.upload_file(
             file_data=await unlock_data.image_file.read(),
             original_filename=f"{user.id}_{uuid.uuid4()}_{unlock_data.image_file.filename}",
             path_prefix=StorageDir.UNLOCKS,
             content_type=unlock_data.image_file.content_type
             or "application/octet-stream",
         )
-        print(result)
-        photo_url = result["object_path"]
 
         # Send Kafka message for verification
         message = UnlockVerifyMessage(
             user_id=str(user.id),
-            photo_url=photo_url,
+            photo_url=photo_upload_data["object_path"],
             landmark_id=str(landmark.id),
             latitude=landmark.latitude,
             longitude=landmark.longitude,
@@ -94,6 +95,15 @@ class UnlockService:
             photo_radius_meters=landmark.photo_radius_meters,
         )
         await kafka_producer.send_unlock_verify_message(message)
+
+        await self.attempt_repository.create(
+            {
+                "user_id": user.id,
+                "landmark_id": landmark.id,
+                "status": AttemptStatus.PENDING,
+                "photo_url": photo_upload_data["public_url"],
+            }
+        )
 
         logger.info(
             "Unlock created successfully: %s by user %s", landmark.name, user.id
