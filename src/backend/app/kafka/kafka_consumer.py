@@ -147,68 +147,6 @@ class KafkaConsumer:
             result: The verification result from image-service.
             session: Database session.
         """
-        user_id = uuid.UUID(result.user_id)
-        landmark_id = uuid.UUID(result.landmark_id)
-
-        # Get landmark and unlock repositories
-        landmark_repo = LandmarkRepository(session, Landmark)
-        unlock_repo = UnlockRepository(session, Unlock)
-
-        # Check if unlock already exists
-        existing_unlock = await unlock_repo.get_by_user_and_landmark(
-            user_id=user_id, landmark_id=landmark_id
-        )
-
-        if existing_unlock:
-            logger.warning(
-                "Unlock already exists, skipping",
-                extra={
-                    "user_id": str(user_id),
-                    "landmark_id": str(landmark_id),
-                },
-            )
-            return
-
-        if result.success:
-            # Get landmark to get area_id
-            landmark = await landmark_repo.get_by_id(landmark_id)
-            if not landmark:
-                logger.error(
-                    "Landmark not found for successful verification",
-                    extra={"landmark_id": str(landmark_id)},
-                )
-                return
-
-            # Create unlock record
-            unlock = Unlock(
-                user_id=user_id,
-                landmark_id=landmark_id,
-                area_id=landmark.area_id,
-                photo_url=result.photo_url,
-            )
-            session.add(unlock)
-            await session.commit()
-
-            logger.info(
-                "Unlock created successfully",
-                extra={
-                    "user_id": str(user_id),
-                    "landmark_id": str(landmark_id),
-                    "similarity_score": result.similarity_score,
-                },
-            )
-        else:
-            # Handle failed verification
-            logger.info(
-                "Verification failed, unlock not created",
-                extra={
-                    "user_id": str(user_id),
-                    "landmark_id": str(landmark_id),
-                    "similarity_score": result.similarity_score,
-                    "error": result.error,
-                },
-            )
-            # TODO: Optionally delete the uploaded photo or notify user
 
     async def consume_messages(self):
         """Start consuming messages from Kafka topics."""
