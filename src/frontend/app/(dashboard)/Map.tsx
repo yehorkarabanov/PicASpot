@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useTheme } from '@/theme';
 import { Dimensions, View, Animated, ScrollView, Image, ActivityIndicator, Linking, AppState } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { MainMap } from '@/components/map-components/main_map';
 import { LIGHT_MAP, DARK_MAP } from '@/components/map-components/main_map/styles';
 import { useColorScheme } from 'nativewind';
@@ -16,6 +16,8 @@ import { X, CircleQuestionMark, Camera, Redo , RotateCw} from 'lucide-react-nati
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { useLandmarks } from '@/contexts/LandmarkContext';
 import { cameraStyles } from '@/components/camera/cameraStyle';
+
+
 
 type Coordinate = {
   latitude: number;
@@ -627,7 +629,6 @@ return (
                     ))}
                 </MainMap>
 
-                {/* buttons */}
                 {locationPermissionGranted && (
                   <>
                     <View className="absolute top-12 right-4 items-end">
@@ -658,7 +659,11 @@ return (
 
                           <Button
                             className="h-16 w-16 rounded-full bg-background border border-border items-center justify-center shadow-md"
-                            onPress={() => console.log('+ button pressed')}
+                            onPress={() => {
+                              setShowMenu(false);
+                              router.push('../add-marker');
+                            }}
+
                             style={{ marginTop: 10 }}
                           >
                             <Ionicons name="add" size={24} color={colors.foreground} />
