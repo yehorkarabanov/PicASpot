@@ -3,7 +3,8 @@ import uuid
 from zoneinfo import ZoneInfo
 
 from app.core.exceptions import BadRequestError, NotFoundError
-from app.kafka import UnlockVerifyMessage, kafka_producer
+from app.kafka import kafka_producer
+from app.kafka.schemas import UnlockVerifyMessage
 from app.landmark.repository import LandmarkRepository
 from app.storage import StorageDir, StorageService
 from app.user.models import User

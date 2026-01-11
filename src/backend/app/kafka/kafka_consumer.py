@@ -8,7 +8,6 @@ from fastapi_injectable import async_get_injected_obj
 from pydantic import ValidationError
 
 from app.settings import settings
-from app.unlock.dependencies import get_unlock_service
 
 from .schemas import UnlockVerifyResult
 
@@ -140,6 +139,8 @@ class KafkaConsumer:
             result: The verification result from image-service.
             session: Database session.
         """
+        from app.unlock.dependencies import get_unlock_service
+
         unlock_service = await async_get_injected_obj(get_unlock_service)
         await unlock_service.handle_verification_result(
             user_id=uuid.UUID(result.user_id),

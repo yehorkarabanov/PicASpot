@@ -5,9 +5,9 @@ from pydantic import EmailStr
 
 from app.core.exceptions import AuthenticationError, BadRequestError, NotFoundError
 from app.kafka import (
-    VerificationEmailMessage,
     kafka_producer,
 )
+from app.kafka.schemas import VerificationEmailMessage
 from app.settings import settings
 from app.user.repository import UserRepository
 

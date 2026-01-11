@@ -29,13 +29,16 @@ def get_unlock_repository(
 
 UnlockRepDep = Annotated[UnlockRepository, Depends(get_unlock_repository)]
 
+
 def get_attempt_repository(
     session: SessionDep, timezone: TimeZoneDep
 ) -> AttemptRepository:
     """Get an instance of AttemptRepository with timezone support."""
     return AttemptRepository(session=session, model=Attempt, timezone=timezone)
 
+
 AttemptRepDep = Annotated[AttemptRepository, Depends(get_attempt_repository)]
+
 
 def get_unlock_service(
     unlock_repository: UnlockRepDep,
