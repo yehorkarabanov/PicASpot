@@ -8,7 +8,13 @@ from app.storage import StorageDir, StorageService
 from app.user.models import User
 
 from .repository import AreaRepository
-from .schemas import AreaCreate, AreaResponse, AreaUpdate
+from .schemas import (
+    AreaCreate,
+    AreaNearbyRequest,
+    AreaResponse,
+    AreaUpdate,
+    NearbyAreasListResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -284,3 +290,55 @@ class AreaService:
         )
 
         return AreaResponse.model_validate_with_timezone(updated_area, self.timezone)
+
+    async def get_nearby_areas(
+        self, data: AreaNearbyRequest
+    ) -> NearbyAreasListResponse:
+        """
+        Get nearby areas with landmark count within radius.
+
+        Args:
+            data: Request data containing coordinates, radius, and filters
+
+        Returns:
+            NearbyAreasListResponse with validated Pydantic models and pagination metadata
+        """
+        # Calculate offset from page number
+        offset = (data.page - 1) * data.page_size
+
+        (
+            areas_with_counts,
+            total_count,
+        ) = await self.area_repository.get_nearby_areas(
+            latitude=data.latitude,
+            longitude=data.longitude,
+            radius_meters=data.radius_meters,
+            require_all_landmarks_in_radius=data.require_all_landmarks_in_radius,
+            only_verified=data.only_verified,
+            limit=data.page_size,
+            offset=offset,
+        )
+
+        # Use optimized batch validation via schema factory method
+        response = NearbyAreasListResponse.from_orm_list(
+            items=areas_with_counts,
+            timezone=self.timezone,
+            total=total_count,
+            page=data.page,
+            page_size=data.page_size,
+        )
+
+        logger.info(
+            "Retrieved %d/%d nearby areas at (%.6f, %.6f) within %dm (page %d, size %d, require_all=%s, verified=%s)",
+            len(areas_with_counts),
+            total_count,
+            data.latitude,
+            data.longitude,
+            data.radius_meters,
+            data.page,
+            data.page_size,
+            data.require_all_landmarks_in_radius,
+            data.only_verified,
+        )
+
+        return response

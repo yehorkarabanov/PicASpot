@@ -11,8 +11,10 @@ from .schemas import (
     AreaCreate,
     AreaLandmarksResponse,
     AreaLandmarksReturn,
+    AreaNearbyRequest,
     AreaReturn,
     AreaUpdate,
+    NearbyAreasReturn,
 )
 
 router = APIRouter(tags=["area"], prefix="/area")
@@ -29,6 +31,22 @@ async def create_area(
         area_data=area_data, user=current_user
     )
     return AreaReturn(message="Area created successfully", data=area_response)
+
+
+@router.get(
+    "/nearby", response_model=NearbyAreasReturn, response_model_exclude_none=True
+)
+async def get_nearby_areas(
+    area_service: AreaServiceDep,
+    current_user: CurrentUserDep,
+    params: Annotated[AreaNearbyRequest, Depends()],
+) -> NearbyAreasReturn:
+    """Get nearby areas based on landmark proximity with optional filters and pagination."""
+    areas_data = await area_service.get_nearby_areas(data=params)
+
+    return NearbyAreasReturn(
+        message="Nearby areas retrieved successfully", data=areas_data
+    )
 
 
 @router.get("/{area_id}", response_model=AreaReturn, response_model_exclude_none=True)
