@@ -1,0 +1,313 @@
+x-minio-common: &minio-common
+  image: quay.io/minio/minio
+  command: server --console-address :${MINIO_CONSOLE_PORT} http://minio{1...4}/data{1...2}
+  expose:
+    - ${MINIO_PORT_INTERNAL}
+    - ${MINIO_CONSOLE_PORT_INTERNAL}
+  environment:
+    MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+    MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL}
+    MINIO_DOMAIN: ${MINIO_DOMAIN}
+  networks:
+    - app-network
+  healthcheck:
+    test: [ "CMD", "mc", "ready", "local" ]
+    interval: 5s
+    timeout: 5s
+    retries: 5
+
+
+x-kafka-env: &kafka-env
+  # Cluster ID for KRaft mode
+  CLUSTER_ID: abcdefghijklmnopqrstuv
+  # KRaft settings
+  KAFKA_PROCESS_ROLES: 'broker,controller'
+  KAFKA_CONTROLLER_QUORUM_VOTERS: '0@kafka-0:9093,1@kafka-1:9093,2@kafka-2:9093'
+  # Listeners
+  KAFKA_LISTENERS: 'PLAINTEXT://:9092,CONTROLLER://:9093'
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT'
+  KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+  KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+  # Clustering
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+  # Log directories
+  KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+
+x-kafka-common: &kafka-common
+  image: apache/kafka:4.1.1
+  expose:
+    - ${KAFKA_PORT_INTERNAL}
+  # Removed 'environment' from here as it cannot be easily merged when overridden
+  networks:
+    - app-network
+
+services:
+  redis:
+    image: redis:8.2.2-alpine
+    expose:
+      - ${REDIS_PORT_INTERNAL}
+    volumes:
+      - redis-data:/data
+    command: redis-server --requirepass "${REDIS_PASSWORD}"
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  backend:
+    volumes:
+      - ./src/backend/:/code
+      - /code/.venv
+    env_file:
+      - ./.env
+    networks:
+      - app-network
+    container_name: backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka-0:
+        condition: service_started
+      kafka-1:
+        condition: service_started
+      kafka-2:
+        condition: service_started
+    expose:
+      - ${BACKEND_PORT_INTERNAL}
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:${BACKEND_PORT_INTERNAL}/api/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgis/postgis:18-3.6-alpine
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT_INTERNAL}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:1.29.2-alpine-slim
+    depends_on:
+      - backend
+      - minio1
+      - kafka-ui
+    volumes:
+      - ./src/nginx/conf/nginx.conf:/etc/nginx/nginx.conf.template
+      - ./src/nginx/entrypoint.sh:/etc/nginx/entrypoint.sh
+      - ./src/nginx/certs/:/etc/nginx/certs/
+      - ./src/static:/static:ro
+    environment:
+      BACKEND_PORT_INTERNAL: ${BACKEND_PORT_INTERNAL}
+      DOMAIN: ${DOMAIN}
+      MAILHOG_UI_PORT_INTERNAL: ${MAILHOG_UI_PORT_INTERNAL}
+      MINIO_PORT_INTERNAL: ${MINIO_PORT_INTERNAL}
+      MINIO_CONSOLE_PORT_INTERNAL: ${MINIO_CONSOLE_PORT_INTERNAL}
+      KAFKA_UI_PORT_INTERNAL: ${KAFKA_UI_PORT_INTERNAL}
+    entrypoint: [ "/bin/sh", "/etc/nginx/entrypoint.sh" ]
+    ports:
+      - "${HTTP_PORT}:80"
+      - "${HTTPS_PORT}:443"
+    networks:
+      - app-network
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    expose:
+      - ${MAILHOG_UI_PORT_INTERNAL}
+    ports:
+      - ${MAILHOG_PORT}:${MAILHOG_PORT_INTERNAL}
+    networks:
+      - app-network
+
+  backup:
+    image: postgis/postgis:18-3.6
+    container_name: backup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT_INTERNAL: ${POSTGRES_PORT_INTERNAL}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      BACKUP_DIR: /backup
+    volumes:
+      - ./src/backup:/backup
+    entrypoint: [ "sh", "-c", "chmod +x /backup/backup.sh 2>/dev/null || true; tail -f /dev/null" ]
+    networks:
+      - app-network
+
+  minio1:
+    <<: *minio-common
+    hostname: minio1
+    ports:
+      - "${MINIO_PORT}:${MINIO_PORT_INTERNAL}"
+      - "${MINIO_CONSOLE_PORT}:${MINIO_CONSOLE_PORT_INTERNAL}"
+    volumes:
+      - minio_1_1:/data1
+      - minio_1_2:/data2
+
+  minio2:
+    <<: *minio-common
+    hostname: minio2
+    volumes:
+      - minio_2_1:/data1
+      - minio_2_2:/data2
+
+  minio3:
+    <<: *minio-common
+    hostname: minio3
+    volumes:
+      - minio_3_1:/data1
+      - minio_3_2:/data2
+
+  minio4:
+    <<: *minio-common
+    hostname: minio4
+    volumes:
+      - minio_4_1:/data1
+      - minio_4_2:/data2
+
+  kafka-0:
+    <<: *kafka-common
+    hostname: kafka-0
+    container_name: kafka-0
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 0
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-0:9092'
+    volumes:
+      - kafka_0_data:/var/lib/kafka/data
+
+  kafka-1:
+    <<: *kafka-common
+    hostname: kafka-1
+    container_name: kafka-1
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-1:9092'
+    volumes:
+      - kafka_1_data:/var/lib/kafka/data
+
+  kafka-2:
+    <<: *kafka-common
+    hostname: kafka-2
+    container_name: kafka-2
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-2:9092'
+    volumes:
+      - kafka_2_data:/var/lib/kafka/data
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka-0
+      - kafka-1
+      - kafka-2
+    expose:
+      - ${KAFKA_UI_PORT_INTERNAL}
+    environment:
+      KAFKA_CLUSTERS_0_NAME: picaspot-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-0:${KAFKA_PORT_INTERNAL},kafka-1:${KAFKA_PORT_INTERNAL},kafka-2:${KAFKA_PORT_INTERNAL}
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: PLAINTEXT
+      SERVER_SERVLET_CONTEXT_PATH: /dev/kafka
+      SERVER_PORT: ${KAFKA_UI_PORT_INTERNAL}
+    networks:
+      - app-network
+
+  email-service:
+    container_name: email-service
+    build:
+      context: ./src/email-service
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/email-service/:/code
+      - /code/.venv
+    env_file:
+      - ./.env
+    depends_on:
+      - kafka-0
+      - kafka-1
+      - kafka-2
+    networks:
+      - app-network
+    expose:
+      - ${EMAIL_SERVICE_PORT_INTERNAL}
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:${EMAIL_SERVICE_PORT_INTERNAL}/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  image-service-dev:
+    container_name: image-service-dev
+    build:
+      context: ./src/image-service-dev
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/image-service-dev/:/code
+      - /code/.venv
+    env_file:
+      - ./.env
+    depends_on:
+      - kafka-0
+      - kafka-1
+      - kafka-2
+      - minio1
+    networks:
+      - app-network
+    expose:
+      - ${IMAGE_SERVICE_PORT_INTERNAL}
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:${IMAGE_SERVICE_PORT_INTERNAL}/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis-data:
+  minio_1_1:
+  minio_1_2:
+  minio_2_1:
+  minio_2_2:
+  minio_3_1:
+  minio_3_2:
+  minio_4_1:
+  minio_4_2:
+  kafka_0_data:
+  kafka_1_data:
+  kafka_2_data:
+
+networks:
+  app-network:
+    driver: bridge
