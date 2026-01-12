@@ -268,13 +268,13 @@ services:
       timeout: 5s
       retries: 5
 
-  image-service:
-    container_name: image-service
+  image-service-dev:
+    container_name: image-service-dev
     build:
-      context: ./src/image-service
+      context: ./src/image-service-dev
       dockerfile: Dockerfile
     volumes:
-      - ./src/image-service/:/code
+      - ./src/image-service-dev/:/code
       - /code/.venv
     env_file:
       - ./.env
@@ -292,13 +292,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
 
 volumes:
   postgres_data:
