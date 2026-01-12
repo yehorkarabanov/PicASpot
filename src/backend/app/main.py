@@ -17,7 +17,7 @@ from app.core.utils import generate_users
 from app.database import dispose_engine
 from app.database.manager import check_database_health
 from app.database.redis import check_redis_health, close_redis, init_redis
-from app.kafka import ensure_topics_exist, kafka_producer
+from app.kafka import ensure_topics_exist, kafka_consumer, kafka_producer
 from app.middleware import (
     RateLimiterMiddleware,
     RequestLoggingMiddleware,
@@ -41,6 +41,9 @@ async def lifespan(_app: FastAPI):
     logger.info("Kafka topics initialized")
     await kafka_producer.start()
     logger.info("Kafka producer initialized")
+    await kafka_consumer.start()
+    await kafka_consumer.consume_messages()
+    logger.info("Kafka consumer initialized")
     await ensure_bucket_exists()
     logger.info("Default photos loaded into MinIO")
     await generate_users()
@@ -49,6 +52,8 @@ async def lifespan(_app: FastAPI):
     yield
     # Shutdown: Dispose engine, close Redis and Kafka
     logger.info("Application shutdown initiated")
+    await kafka_consumer.stop()
+    logger.info("Kafka consumer stopped")
     await kafka_producer.stop()
     logger.info("Kafka producer stopped")
     await dispose_engine()

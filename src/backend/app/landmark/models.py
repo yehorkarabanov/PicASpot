@@ -11,7 +11,7 @@ from app.database import Base
 
 if TYPE_CHECKING:
     from app.area.models import Area
-    from app.unlock.models import Unlock
+    from app.unlock.models import Attempt, Unlock
     from app.user.models import User
 
 
@@ -66,6 +66,9 @@ class Landmark(Base):
         back_populates="created_landmarks",
         foreign_keys=[creator_id],
         lazy="raise",
+    )
+    attempts: Mapped[list["Attempt"]] = relationship(
+        "Attempt", back_populates="landmark", lazy="raise"
     )
     unlocks: Mapped[list["Unlock"]] = relationship(
         "Unlock", back_populates="landmark", lazy="raise"
