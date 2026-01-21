@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as Location from 'expo-location';
+import { AppState } from 'react-native';
 
 export type Coordinate = { latitude: number; longitude: number };
 
@@ -16,35 +17,46 @@ const LocationContext = React.createContext<LocationContextType>({
 export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [userLocation, setUserLocation] = React.useState<Coordinate | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const appState = React.useRef(AppState.currentState);
+
+  const fetchLocation = async () => {
+    try {
+      setLoading(true);
+
+      const { status } = await Location.getForegroundPermissionsAsync();
+
+      if (status !== 'granted') {
+        setUserLocation(null);
+        return;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({});
+      setUserLocation({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+    } catch (err) {
+      console.error('Error fetching location:', err);
+      setUserLocation(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   React.useEffect(() => {
-    let subscription: Location.LocationSubscription | null = null;
+    fetchLocation();
 
-    (async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          const loc = await Location.getCurrentPositionAsync({});
-          setUserLocation({
-            latitude: loc.coords.latitude,
-            longitude: loc.coords.longitude,
-          });
-
-          subscription = await Location.watchPositionAsync(
-            { accuracy: Location.Accuracy.High, distanceInterval: 5 },
-            (loc) => setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
-          );
-        } else {
-          console.warn('Location permission denied. Using default coordinates.');
-        }
-      } catch (err) {
-        console.error('Error fetching location:', err);
-      } finally {
-        setLoading(false);
+    const sub = AppState.addEventListener('change', nextState => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextState === 'active'
+      ) {
+        fetchLocation();
       }
-    })();
+      appState.current = nextState;
+    });
 
-    return () => subscription?.remove();
+    return () => sub.remove();
   }, []);
 
   return (

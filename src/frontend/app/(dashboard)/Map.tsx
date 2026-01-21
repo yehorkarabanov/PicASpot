@@ -84,6 +84,29 @@ export default function MapScreen() {
   const [showMenu, setShowMenu] = React.useState(false);
   const menuAnim = React.useRef(new Animated.Value(0)).current;
 
+  const refetchLocationAndLandmarks = async () => {
+    try {
+      setIsLoadingLocation(true);
+
+      setLocationPermissionGranted(true);
+
+      const location = await Location.getCurrentPositionAsync({});
+      const coords = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      };
+
+      setUserLocation(coords);
+
+      await fetchNearbyLandmarks(coords.latitude, coords.longitude);
+    } catch (error) {
+      console.error('Failed to refetch location:', error);
+    } finally {
+      setIsLoadingLocation(false);
+    }
+  };
+
+
   React.useEffect(() => {
     Animated.timing(menuAnim, {
       toValue: showMenu ? 1 : 0,
@@ -651,7 +674,10 @@ return (
 
                           <Button
                             className="h-16 w-16 rounded-full bg-background border border-border items-center justify-center shadow-md"
-                            onPress={() => console.log('Reload button pressed')}
+                            onPress={() => {
+                              refetchLocationAndLandmarks();
+                            }}
+
                             style={{ marginTop: 10 }}
                           >
                             <Ionicons name="reload-outline" size={24} color={colors.foreground} />
@@ -695,7 +721,6 @@ return (
                 {isLoadingLocation && (
                   <View className="absolute inset-0 bg-black/40 justify-center items-center">
                     <ActivityIndicator size="large" color={colors.primary} />
-                    <Text className="mt-2 text-white font-semibold">Fetching your location...</Text>
                   </View>
                 )}
 
