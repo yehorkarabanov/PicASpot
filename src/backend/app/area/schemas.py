@@ -1,5 +1,7 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from fastapi import File, Form, UploadFile
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -7,6 +9,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.core.schemas import BaseReturn
 from app.core.schemas_base import TimezoneAwareSchema
 from app.landmark.schemas import NearbyLandmarksListResponse
+
+if TYPE_CHECKING:
+    from .models import Area
 
 
 class AreaBase(BaseModel):
@@ -172,3 +177,95 @@ class AreaLandmarksReturn(BaseReturn):
     """API response wrapper for area landmarks"""
 
     data: AreaLandmarksResponse | None = None
+
+
+class AreaNearbyRequest(BaseModel):
+    """Schema for finding nearby areas based on landmark proximity"""
+
+    latitude: float = Field(..., ge=-90, le=90, description="Current latitude")
+    longitude: float = Field(..., ge=-180, le=180, description="Current longitude")
+    radius_meters: int = Field(
+        1000, ge=1, le=50000, description="Search radius in meters"
+    )
+    only_verified: bool = Field(default=False, description="Only return verified areas")
+    require_all_landmarks_in_radius: bool = Field(
+        False,
+        description="Only return areas where all landmarks are within the search radius",
+    )
+    page: int = Field(1, ge=1, description="Page number (1-based)")
+    page_size: int = Field(50, ge=1, le=100, description="Number of items per page")
+
+
+class NearbyAreaResponse(AreaResponse):
+    """Schema for nearby area responses with landmark count within radius"""
+
+    landmark_count_in_radius: int = Field(
+        ...,
+        ge=0,
+        description="Number of landmarks in this area within the search radius",
+    )
+
+
+class NearbyAreasListResponse(BaseModel):
+    """Schema for list of nearby areas with pagination."""
+
+    areas: list[NearbyAreaResponse] = Field(
+        default_factory=list, description="List of nearby areas"
+    )
+    total: int = Field(..., ge=0, description="Total number of areas found")
+    page: int = Field(..., ge=1, description="Current page number")
+    page_size: int = Field(..., ge=1, description="Number of items per page")
+    total_pages: int = Field(..., ge=0, description="Total number of pages")
+    count: int = Field(..., ge=0, description="Number of items on the current page")
+
+    model_config = ConfigDict(from_attributes=True)
+
+    @classmethod
+    def from_orm_list(
+        cls,
+        items: list[tuple["Area", int]],
+        timezone: ZoneInfo,
+        total: int,
+        page: int,
+        page_size: int,
+    ) -> "NearbyAreasListResponse":
+        """
+        Create a NearbyAreasListResponse from a list of (Area, landmark_count) tuples.
+
+        Args:
+            items: List of tuples containing (Area model, landmark_count int)
+            timezone: Target timezone for datetime conversion
+            total: Total count of all areas (before pagination)
+            page: Current page number
+            page_size: Number of items per page
+
+        Returns:
+            Validated NearbyAreasListResponse with all areas converted and pagination metadata
+        """
+        validated_areas = [
+            NearbyAreaResponse(
+                **AreaResponse.model_validate_with_timezone(
+                    area, timezone
+                ).model_dump(),
+                landmark_count_in_radius=count,
+            )
+            for area, count in items
+        ]
+
+        # Calculate total pages
+        total_pages = (total + page_size - 1) // page_size if page_size > 0 else 0
+
+        return cls(
+            areas=validated_areas,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages,
+            count=len(validated_areas),
+        )
+
+
+class NearbyAreasReturn(BaseReturn):
+    """API response wrapper for nearby areas"""
+
+    data: NearbyAreasListResponse | None = None

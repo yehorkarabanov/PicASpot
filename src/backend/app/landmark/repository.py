@@ -220,3 +220,30 @@ class LandmarkRepository(BaseRepository[Landmark]):
         landmarks_with_status = list(result.all())
 
         return cast(list[tuple[Landmark, bool]], landmarks_with_status), total_count
+
+    async def get_landmark_with_unlock_status(
+        self, landmark_id: uuid.UUID, user_id: uuid.UUID
+    ) -> tuple[Landmark | None, bool]:
+        """
+        Get a landmark by ID and check if the user has unlocked it.
+
+        Args:
+            landmark_id: The landmark ID.
+            user_id: The user ID.
+
+        Returns:
+            Tuple of (landmark, is_unlocked). Landmark is None if not found.
+        """
+        query = (
+            select(Landmark, Unlock.user_id.is_not(None).label("is_unlocked"))
+            .outerjoin(
+                Unlock,
+                (Unlock.landmark_id == Landmark.id) & (Unlock.user_id == user_id),
+            )
+            .where(Landmark.id == landmark_id)
+        )
+        result = await self.session.execute(query)
+        row = result.first()
+        if not row:
+            return None, False
+        return row[0], row[1]

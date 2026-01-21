@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
     # Setup logging configuration
     setup_logging(use_file_logging=True)
     logger.info(
-        "Email service starting up",
+        f"{settings.SERVICE_NAME} starting up",
         extra={
             "service": settings.SERVICE_NAME,
             "debug_mode": settings.DEBUG,
@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
         await kafka_consumer.consume_messages()
     except Exception as e:
         logger.error(
-            "Failed to start email service",
+            f"Failed to start {settings.SERVICE_NAME}",
             exc_info=True,
             extra={"error": str(e)},
         )
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    logger.info("Email service shutting down")
+    logger.info(f"{settings.SERVICE_NAME} shutting down")
     try:
         await kafka_consumer.stop()
     except Exception as e:
@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
     finally:
         # Gracefully shutdown logging
         shutdown_logging()
-        logger.info("Email service stopped")
+        logger.info(f"{settings.SERVICE_NAME} stopped")
 
 
 app = FastAPI(title=settings.SERVICE_NAME, lifespan=lifespan)

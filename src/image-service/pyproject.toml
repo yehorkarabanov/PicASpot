@@ -1,0 +1,18 @@
+[project]
+name = "image-service"
+version = "0.1.0"
+description = "Image verification service using GeoMatchAI"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard]>=0.124.4",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.12.0",
+    "aiokafka>=0.12.0",
+    "miniopy-async>=1.21",
+    "pillow>=11.0.0",
+    "geomatchai",
+]
+
+[tool.uv.sources]
+geomatchai = { git = "https://github.com/LilConsul/GeoMatchAI" }

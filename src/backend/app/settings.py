@@ -63,10 +63,15 @@ class Settings(BaseSettings):
     KAFKA_BOOTSTRAP_SERVERS: list[str] = Field(
         default=["kafka-0:9092", "kafka-1:9092", "kafka-2:9092"]
     )
+
     KAFKA_VERIFICATION_EMAIL_TOPIC: str = Field(default="verification-email-requests")
     KAFKA_RESET_PASSWORD_EMAIL_TOPIC: str = Field(
         default="password-reset-email-requests"
     )
+
+    KAFKA_VERIFY_IMAGE_TOPIC: str = Field(default="image-verify-requests")
+    KAFKA_VERIFY_IMAGE_RESULT_TOPIC: str = Field(default="image-verify-results")
+    KAFKA_BACKEND_CONSUMER_GROUP: str = Field(default="backend-group")
 
     # MinIO
     MINIO_ENDPOINT: str = Field(default="minio1:9000")
