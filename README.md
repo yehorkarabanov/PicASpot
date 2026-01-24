@@ -1,6 +1,6 @@
 # PicASpot
 
-<div align="center"> <!-- Project Status --> <div> <a href="https://github.com/yehorkarabanov/PicASpot"><img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge&labelColor=black" alt="Status" /></a> <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge&labelColor=black" alt="License" /></a> <a href="https://github.com/yehorkarabanov/PicASpot"><img src="https://img.shields.io/badge/Type-Learning%20Project-orange?style=for-the-badge&labelColor=black" alt="Type" /></a> <a href="https://deepwiki.com/yehorkarabanov/PicASpot"><img src="https://img.shields.io/badge/DeepWiki-Ask-purple?style=for-the-badge&labelColor=black&logo=bookstack&logoColor=white" alt="DeepWiki" /></a> </div> <br/> <!-- Technologies --> <div> <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&labelColor=black&logo=python&logoColor=white" alt="Python" /> <img src="https://img.shields.io/badge/FastAPI-0.104+-009688?style=for-the-badge&labelColor=black&logo=fastapi&logoColor=white" alt="FastAPI" /> <img src="https://img.shields.io/badge/React%20Native-Expo-61DAFB?style=for-the-badge&labelColor=black&logo=react&logoColor=61DAFB" alt="React Native" /> <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&labelColor=black&logo=postgresql&logoColor=white" alt="PostgreSQL" /> <img src="https://img.shields.io/badge/Kafka-3.6-231F20?style=for-the-badge&labelColor=black&logo=apachekafka&logoColor=white" alt="Kafka" /> <img src="https://img.shields.io/badge/Redis-7.2-DC382D?style=for-the-badge&labelColor=black&logo=redis&logoColor=white" alt="Redis" /> <img src="https://img.shields.io/badge/Docker-Latest-2496ED?style=for-the-badge&labelColor=black&logo=docker&logoColor=white" alt="Docker" /> <img src="https://img.shields.io/badge/Nginx-1.25-009639?style=for-the-badge&labelColor=black&logo=nginx&logoColor=white" alt="Nginx" /> </div> </div> <br/> <p align="center"> A location-based gamification platform where users unlock landmarks by taking AI-verified selfies at specific locations. </p>
+<div align="center"> <!-- Project Status --> <div> <a href="https://github.com/yehorkarabanov/PicASpot"><img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge&labelColor=black" alt="Status" /></a> <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge&labelColor=black" alt="License" /></a> <a href="https://github.com/yehorkarabanov/PicASpot"><img src="https://img.shields.io/badge/Type-Learning%20Project-orange?style=for-the-badge&labelColor=black" alt="Type" /></a> <a href="https://deepwiki.com/yehorkarabanov/PicASpot"><img src="https://img.shields.io/badge/DeepWiki-Ask-purple?style=for-the-badge&labelColor=black&logo=bookstack&logoColor=white" alt="DeepWiki" /></a> </div> <br/> <!-- Technologies --> <div> <img src="https://img.shields.io/badge/Python-3.14+-3776AB?style=for-the-badge&labelColor=black&logo=python&logoColor=white" alt="Python" /> <img src="https://img.shields.io/badge/FastAPI-0.124.0-009688?style=for-the-badge&labelColor=black&logo=fastapi&logoColor=white" alt="FastAPI" /> <img src="https://img.shields.io/badge/React%20Native-Expo-61DAFB?style=for-the-badge&labelColor=black&logo=react&logoColor=61DAFB" alt="React Native" /> <img src="https://img.shields.io/badge/PostgreSQL-18-4169E1?style=for-the-badge&labelColor=black&logo=postgresql&logoColor=white" alt="PostgreSQL" /> <img src="https://img.shields.io/badge/Kafka-4.1-231F20?style=for-the-badge&labelColor=black&logo=apachekafka&logoColor=white" alt="Kafka" /> <img src="https://img.shields.io/badge/Redis-8.2-DC382D?style=for-the-badge&labelColor=black&logo=redis&logoColor=white" alt="Redis" /> <img src="https://img.shields.io/badge/Docker-Latest-2496ED?style=for-the-badge&labelColor=black&logo=docker&logoColor=white" alt="Docker" /> <img src="https://img.shields.io/badge/Nginx-1.29-009639?style=for-the-badge&labelColor=black&logo=nginx&logoColor=white" alt="Nginx" /> </div> </div> <br/> <p align="center"> A location-based gamification platform where users unlock landmarks by taking AI-verified selfies at specific locations. </p>
 
 ---
 
@@ -28,14 +28,14 @@ PicASpot is a mobile application that gamifies exploration by challenging users 
 │   Frontend  │────▶│    Nginx       │────▶│   Backend   │
 │ React Native│      │ Reverse Proxy │      │   FastAPI   │
 └─────────────┘      └───────────────┘      └──────┬──────┘
-                                                 │
-                    ┌────────────────────────────┼────────────────┐
-                    │                            │                │
-                    ▼                            ▼                ▼
-            ┌───────────────┐          ┌─────────────┐   ┌──────────┐
-            │ Apache Kafka  │          │ PostgreSQL  │   │  Redis   │
-            │   (3 brokers) │          │  + PostGIS  │   │  Cache   │
-            └───────┬───────┘          └─────────────┘   └──────────┘
+                                                   │
+                    ┌──────────────────────────────┼────────────────┐
+                    │                              │                │
+                    ▼                              ▼                ▼
+            ┌───────────────┐            ┌─────────────┐   ┌──────────┐
+            │ Apache Kafka  │            │ PostgreSQL  │   │  Redis   │
+            │   (3 brokers) │            │  + PostGIS  │   │  Cache   │
+            └───────┬───────┘            └─────────────┘   └──────────┘
                     │
         ┌───────────┼───────────┐
         │           │           │
