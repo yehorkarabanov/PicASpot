@@ -9,7 +9,6 @@ const DashboardLayout = () => {
   const iconSize = 30;
 
   return (
-    <LandmarkProvider>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -91,7 +90,6 @@ const DashboardLayout = () => {
         }}
       />
     </Tabs>
-    </LandmarkProvider>
   );
 };
 

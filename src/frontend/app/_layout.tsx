@@ -9,6 +9,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import { useTheme } from '@/theme';
 import { LocationProvider } from '@/contexts/LocationContext';
+import { Landmark } from 'lucide-react-native';
+import { LandmarkProvider } from '@/contexts/LandmarkContext';
 
 export {
   ErrorBoundary,
@@ -23,11 +25,13 @@ export default function RootLayout() {
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       <AuthProvider>
         <LocationProvider>
-          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-          <Stack>
-            <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
-          </Stack>
-          <PortalHost />
+          <LandmarkProvider>
+            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+            <Stack>
+              <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
+            </Stack>
+            <PortalHost />
+          </LandmarkProvider>
         </LocationProvider>
       </AuthProvider>
     </ThemeProvider>

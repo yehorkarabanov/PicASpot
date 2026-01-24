@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Landmark, landmarkService, landmarkToMarker } from '@/lib/map';
+import { Landmark, landmarkService, landmarkToMarker, Area } from '@/lib/map';
 
 interface LandmarkContextType {
   landmarks: Landmark[];
   markers: ReturnType<typeof landmarkToMarker>[];
+  areas: Area[];
   isLoading: boolean;
   fetchNearbyLandmarks: (latitude: number, longitude: number, radius?: number) => Promise<void>;
 }
@@ -13,12 +14,13 @@ const LandmarkContext = createContext<LandmarkContextType | undefined>(undefined
 export const LandmarkProvider = ({ children }: { children: React.ReactNode }) => {
   const [landmarks, setLandmarks] = useState<Landmark[]>([]);
   const [markers, setMarkers] = useState<ReturnType<typeof landmarkToMarker>[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchNearbyLandmarks = async (latitude: number, longitude: number, radius = 1000) => {
     try {
       setIsLoading(true);
-      const data = await landmarkService.getNearbyLandmarks({
+      const { landmarks: data, areas: fetchedAreas } = await landmarkService.getNearbyLandmarks({
         latitude,
         longitude,
         radius_meters: radius,
@@ -29,20 +31,29 @@ export const LandmarkProvider = ({ children }: { children: React.ReactNode }) =>
       });
 
       setLandmarks(data);
+      setAreas(fetchedAreas);
+
       const mapped = data.map(landmarkToMarker);
       setMarkers(mapped);
-      console.log('Fetched landmarks:', mapped);
+
+      console.log('Fetched landmarks:', data.map(l => ({
+        title: l.title,
+        radius: l.radius,
+        unlock_radius: l.unlock_radius
+      })));
+      console.log('Fetched areas:', fetchedAreas.map(a => a.name));
     } catch (error) {
-      console.error('Failed to fetch nearby landmarks', error);
+      console.error('Failed to fetch nearby landmarks and areas', error);
       setLandmarks([]);
       setMarkers([]);
+      setAreas([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <LandmarkContext.Provider value={{ landmarks, markers, isLoading, fetchNearbyLandmarks }}>
+    <LandmarkContext.Provider value={{ landmarks, markers, areas, isLoading, fetchNearbyLandmarks }}>
       {children}
     </LandmarkContext.Provider>
   );

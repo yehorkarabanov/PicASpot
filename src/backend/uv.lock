@@ -256,6 +256,7 @@ dependencies = [
     { name = "bcrypt" },
     { name = "cryptography" },
     { name = "fastapi", extra = ["standard"] },
+    { name = "fastapi-injectable" },
     { name = "geoalchemy2", extra = ["shapely"] },
     { name = "itsdangerous" },
     { name = "miniopy-async" },
@@ -286,6 +287,7 @@ requires-dist = [
     { name = "bcrypt", specifier = ">=5.0.0" },
     { name = "cryptography", specifier = ">=46.0.3" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.124.0" },
+    { name = "fastapi-injectable", specifier = ">=1.4.6" },
     { name = "geoalchemy2", extras = ["shapely"], specifier = ">=0.18.1" },
     { name = "itsdangerous", specifier = ">=2.2.0" },
     { name = "miniopy-async", specifier = ">=1.21.1" },
@@ -608,6 +610,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/cf/0d/3b0d2991f481c122c552b4ae38a8b400a75ab0edbc85536f2a6224f72da2/fastapi_cloud_cli-0.7.0.tar.gz", hash = "sha256:8b025944475c3d53262105886dfe051f46383e4f287787a46892b524922ac0b6", size = 30906, upload-time = "2025-12-16T12:51:49.082Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2d/aa/a2319f008e123b178a5c4cba34935e8459e72d24d8c31214b244ab7266a6/fastapi_cloud_cli-0.7.0-py3-none-any.whl", hash = "sha256:9a152e80d08d465d4a6c4f5c75aa8871d1e8919f69ff131b0567f04e95d5f36c", size = 23376, upload-time = "2025-12-16T12:51:47.847Z" },
+]
+
+[[package]]
+name = "fastapi-injectable"
+version = "1.4.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "fastapi" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/af/52/35200738a05702e215685ce13880939ad52d57649d25b5001adebd692ae8/fastapi_injectable-1.4.6.tar.gz", hash = "sha256:4d8b74f11f9581c9bfdb9b3360f464de55e9f628103f8b7ca0e7efbf1b649858", size = 31077, upload-time = "2025-12-12T05:05:20.347Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a3/1d/3e3d1717c4976fa9466d0718a25ddc85c8da9c3d7effa8bf43c4ac2bce8b/fastapi_injectable-1.4.6-py3-none-any.whl", hash = "sha256:f236a4338302756e7eb49cc1d8c601e1d17e94e171d68ae2df9b5e962a5cbc5c", size = 26729, upload-time = "2025-12-12T05:05:19.161Z" },
 ]
 
 [[package]]

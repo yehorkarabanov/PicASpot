@@ -16,6 +16,7 @@ import { X, CircleQuestionMark, Camera, Redo , RotateCw} from 'lucide-react-nati
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { useLandmarks } from '@/contexts/LandmarkContext';
 import { cameraStyles } from '@/components/camera/cameraStyle';
+import { landmarkService } from '@/lib/map';
 
 
 
@@ -83,6 +84,8 @@ export default function MapScreen() {
   const { markers, fetchNearbyLandmarks } = useLandmarks();
   const [showMenu, setShowMenu] = React.useState(false);
   const menuAnim = React.useRef(new Animated.Value(0)).current;
+
+
 
   const refetchLocationAndLandmarks = async () => {
     try {
@@ -431,7 +434,8 @@ export default function MapScreen() {
 
 
     const renderSimplePopup = () => {
-      const hasImage = Boolean(selectedMarker?.image);
+      const hintImageUrl = selectedMarker?.hint_image_url || selectedMarker?.image;
+      const hasImage = Boolean(hintImageUrl);
       return (
         <Modal
             visible={showHint}
@@ -443,7 +447,7 @@ export default function MapScreen() {
                 {hasImage ? (
                     <Image
                       source={{
-                        uri: normalizeImageUrl(selectedMarker?.image ?? "")
+                        uri: normalizeImageUrl(hintImageUrl ?? "")
                       }}
                       style={{ width: 300, height: 300, borderRadius: 10, backgroundColor: 'white', marginBottom: 20 }}
                       resizeMode="cover"
