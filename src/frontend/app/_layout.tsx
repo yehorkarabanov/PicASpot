@@ -29,6 +29,17 @@ export default function RootLayout() {
             <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
             <Stack>
               <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
+              <Stack.Screen name="post/[id]" options={{ headerShown: true, title: "Post" }} />
+              <Stack.Screen name="create-post" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
+              <Stack.Screen 
+                name="media/avatar-preview" 
+                options={{ 
+                  presentation: 'transparentModal',
+                  animation: 'fade',
+                  headerShown: false 
+                }} 
+              />
             </Stack>
             <PortalHost />
           </LandmarkProvider>

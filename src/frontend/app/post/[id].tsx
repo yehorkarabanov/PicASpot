@@ -1,92 +1,91 @@
 import React from "react";
-import { Stack } from "expo-router";
-import { View, Text, Image, ScrollView, TouchableOpacity, FlatList } from "react-native";
-import { useLocalSearchParams } from "expo-router";
-import { posts } from "@/components/feed_components/posts";
-import { user } from "@/components/feed_components/user";
+import { Stack, useLocalSearchParams } from "expo-router";
+import { View, ScrollView, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/theme";
+import { MOCK_FEED_POSTS } from "@/lib/mockData";
+import { Text } from "@/components/ui/text";
+import { PostItem } from "@/components/feed/PostItem";
 import { Feather } from '@expo/vector-icons';
-import { styles as postCardStyles } from "@/components/feed_components/postCardStyle";
 
 export default function PostDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const post = posts.find((p) => p.id.toString() === id);
+  
+  // Simulate database fetch using the universal ID
+  // Handle generated IDs from the feed (e.g., "post1-0") by stripping the suffix
+  const post = MOCK_FEED_POSTS.find((p) => p.id === id) || 
+               MOCK_FEED_POSTS.find((p) => id?.startsWith(p.id));
+  
   const colors = useTheme();
 
-  if (!post) return <Text>Post not found</Text>;
+  if (!post) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-background">
+        <Text className="text-foreground">Post not found</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <>
       <Stack.Screen
         options={{
-          title: "",
+          headerTitle: "Post",
           headerShown: true,
-          headerTransparent: true,
-          animation: 'fade',
+          headerBackTitle: "Back",
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.foreground,
+          animation: 'slide_from_right',
         }}
       />
 
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-        <ScrollView contentContainerStyle={{ paddingTop: 55, paddingHorizontal: 16 }}>
-          {/* Header */}
-          <View style={postCardStyles.header}>
-            <Image source={{ uri: user.avatar }} style={postCardStyles.avatar} />
-            <View>
-              <Text style={[postCardStyles.username, { color: colors.foreground }]}>{user.username}</Text>
-              <Text style={[postCardStyles.location, { color: colors.mutedForeground }]}>{post.location}</Text>
-            </View>
-          </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['bottom', 'left', 'right']}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+          {/* Reuse the exact PostItem component */}
+          <PostItem post={post} isDetail={true} />
 
-          {/* Post content */}
-          <Text style={[postCardStyles.text, { color: colors.foreground }]}>{post.text}</Text>
-          <Image source={{ uri: post.image }} style={postCardStyles.image} />
+          {/* Divider */}
+          <View className="h-[1px] w-full bg-border" />
 
-          {/* Likes & Comments */}
-          <View style={postCardStyles.actions}>
-            <TouchableOpacity style={postCardStyles.action}>
-              <Feather name="heart" size={20} color={colors.foreground} />
-              <Text style={[postCardStyles.count, { color: colors.foreground }]}>{post.likes}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={postCardStyles.action}>
-              <Feather name="message-circle" size={20} color={colors.foreground} />
-              <Text style={[postCardStyles.count, { color: colors.foreground }]}>{post.comments_nr}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Render Comments */}
-          {post.comments && post.comments.length > 0 && (
-            <FlatList
-              data={post.comments}
-              keyExtractor={(item) => item.id.toString()}
-              style={{ marginTop: 16 }}
-              scrollEnabled={false}
-              renderItem={({ item }) => (
-                <View style={{ flexDirection: "row", marginBottom: 20, alignItems: "center" }}>
+          {/* Comments Section */}
+          <View className="px-4 pt-4">
+            <Text className="mb-4 text-lg font-bold text-foreground">Comments</Text>
+            
+            {post.commentsList && post.commentsList.length > 0 ? (
+               post.commentsList.map((item) => (
+                <View key={item.id} className="mb-5 flex-row items-start">
                   {/* Commenter Avatar */}
                   <Image
                     source={{ uri: item.avatar }}
-                    style={{ width: 36, height: 36, borderRadius: 18, marginRight: 8 }}
+                    className="mr-3 h-9 w-9 rounded-full bg-muted"
                   />
 
-                  {/* Comment Text */}
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontWeight: "600", color: colors.foreground }}>
-                      {item.username}
-                    </Text>
-                    <Text style={{ color: colors.foreground }}>{item.comment}</Text>
+                  {/* Comment Content */}
+                  <View className="flex-1">
+                    <View className="mb-0.5 flex-row items-center">
+                        <Text className="mr-2 font-semibold text-foreground">
+                          {item.username}
+                        </Text>
+                        <Text className="text-xs text-muted-foreground">
+                            {item.timestamp}
+                        </Text>
+                    </View>
+                    <Text className="leading-5 text-foreground">{item.text}</Text>
                   </View>
 
-                  {/* Like Button */}
-                  <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                    <Text style={{ color: colors.foreground, fontSize: 13 }}>{item.likes}</Text>
-                    <Feather name="heart" size={20} color={colors.foreground} />
+                  {/* Comment Like Button */}
+                  <TouchableOpacity className="ml-2 items-center">
+                     <Feather name="heart" size={14} color={colors.mutedForeground} />
+                     <Text className="mt-0.5 text-[10px] text-muted-foreground">{item.likes}</Text>
                   </TouchableOpacity>
                 </View>
-              )}
-            />
-          )}
+              ))
+            ) : (
+                <View className="py-4">
+                  <Text className="text-center text-muted-foreground">No comments yet. Be the first to say something!</Text>
+                </View>
+            )}
+          </View>
         </ScrollView>
       </SafeAreaView>
     </>
