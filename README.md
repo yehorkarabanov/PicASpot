@@ -6,7 +6,9 @@
 
 ## 📋 Overview
 
-PicASpot is a mobile application that gamifies exploration by challenging users to visit real-world landmarks and verify their presence through AI-powered photo matching. Using computer vision and geospatial technologies, the app creates an engaging experience for discovering and collecting locations.
+PicASpot is a mobile application that gamifies exploration by challenging users to visit real-world landmarks and verify
+their presence through AI-powered photo matching. Using computer vision and geospatial technologies, the app creates an
+engaging experience for discovering and collecting locations.
 
 ### Key Features
 
@@ -25,25 +27,25 @@ PicASpot is a mobile application that gamifies exploration by challenging users 
 
 ```
 ┌─────────────┐      ┌───────────────┐      ┌─────────────┐
-│   Frontend  │────▶│    Nginx       │────▶│   Backend   │
+│   Frontend  │────▶ │    Nginx      │────▶ │   Backend   │
 │ React Native│      │ Reverse Proxy │      │   FastAPI   │
 └─────────────┘      └───────────────┘      └──────┬──────┘
                                                    │
-                    ┌──────────────────────────────┼────────────────┐
-                    │                              │                │
-                    ▼                              ▼                ▼
-            ┌───────────────┐            ┌─────────────┐   ┌──────────┐
-            │ Apache Kafka  │            │ PostgreSQL  │   │  Redis   │
-            │   (3 brokers) │            │  + PostGIS  │   │  Cache   │
-            └───────┬───────┘            └─────────────┘   └──────────┘
+                    ┌──────────────────────────────┼─────────────────────────────┐
+                    │                              │                │            │
+                    ▼                              ▼                ▼            ▼
+            ┌───────────────┐            ┌─────────────┐     ┌──────────┐   ┌──────────┐
+            │ Apache Kafka  │            │ PostgreSQL  │     │  Redis   │   │  MinIO   │
+            │   (3 brokers) │            │  + PostGIS  │     │  Cache   │   │ Storage  │
+            └───────┬───────┘            └─────────────┘     └──────────┘   └──────────┘
                     │
-        ┌───────────┼───────────┐
-        │           │           │
-        ▼           ▼           ▼
-┌─────────────┐ ┌─────────────┐ ┌──────────┐
-│Image Service│ │Email Service│ │  MinIO   │
-│ GeoMatchAI  │ │    SMTP     │ │ Storage  │
-└─────────────┘ └─────────────┘ └──────────┘
+        ┌───────────┴───────────┐
+        │                       │
+        ▼                       ▼
+┌─────────────┐         ┌─────────────┐
+│Image Service│         │Email Service│
+│ GeoMatchAI  │         │    SMTP     │
+└─────────────┘         └─────────────┘
 ```
 
 ### Core Services
@@ -62,6 +64,7 @@ PicASpot is a mobile application that gamifies exploration by challenging users 
 ## 🛠️ Technology Stack
 
 ### Backend
+
 - **FastAPI** - Modern async Python web framework
 - **SQLAlchemy 2.0** - Async ORM with declarative models
 - **Alembic** - Database migrations
@@ -72,12 +75,14 @@ PicASpot is a mobile application that gamifies exploration by challenging users 
 - **MinIO Python SDK** - Object storage client
 
 ### Frontend
+
 - **React Native** - Cross-platform mobile framework
 - **Expo** - Development and build tooling
 - **NativeWind** - Tailwind CSS for React Native
 - **React Native Reusables** - UI component library
 
 ### Infrastructure
+
 - **Docker & Docker Compose** - Container orchestration
 - **Nginx** - Reverse proxy and load balancing
 - **Apache Kafka** - Distributed message streaming
@@ -98,6 +103,7 @@ PicASpot is a mobile application that gamifies exploration by challenging users 
 ### Installation
 
 1. **Clone the repository**
+
 ```bash
 git clone https://github.com/yehorkarabanov/PicASpot.git
 cd PicASpot
@@ -106,6 +112,7 @@ cd PicASpot
 2. **Configure environment variables**
 
 Create a `.env` file in the root directory:
+
 ```bash
 MAPILLARY_API_KEY=your_mapillary_api_key_here
 POSTGRES_PASSWORD=your_secure_password
@@ -113,11 +120,13 @@ JWT_SECRET_KEY=your_jwt_secret_key
 ```
 
 3. **Start the backend services**
+
 ```bash
 docker-compose up -d
 ```
 
 This will start all backend services:
+
 - Backend API (port 8000)
 - PostgreSQL + PostGIS (port 5432)
 - Redis (port 6379)
@@ -128,24 +137,29 @@ This will start all backend services:
 - Email service
 
 4. **Install frontend dependencies**
+
 ```bash
 cd src/frontend
 npm install
 ```
 
 5. **Detect backend server IP** (Windows)
+
 ```bash
 npm run predev
 ```
 
-> **Note**: This script automatically detects your server IP and configures the API URL. For other operating systems, manually update the API endpoint in the frontend configuration.
+> **Note**: This script automatically detects your server IP and configures the API URL. For other operating systems,
+> manually update the API endpoint in the frontend configuration.
 
 6. **Start the frontend development server**
+
 ```bash
 npm run dev
 ```
 
 7. **Run the app**
+
 - **iOS**: Press `i` to launch in iOS simulator (Mac only)
 - **Android**: Press `a` to launch in Android emulator
 - **Web**: Press `w` to run in browser
@@ -164,28 +178,33 @@ Once the backend is running, interactive API documentation is available:
 ### API Endpoints
 
 #### Authentication
+
 - `POST /api/v1/auth/register` - Register new user
 - `POST /api/v1/auth/login` - Login and get JWT token
 - `POST /api/v1/auth/verify-email` - Verify email address
 - `POST /api/v1/auth/reset-password` - Reset password
 
 #### Users
+
 - `GET /api/v1/user/me` - Get current user profile
 - `PATCH /api/v1/user/me` - Update user profile
 - `POST /api/v1/user/me/profile-picture` - Upload profile picture
 
 #### Areas
+
 - `POST /api/v1/area` - Create new area
 - `GET /api/v1/area/{area_id}` - Get area details
 - `GET /api/v1/area/nearby` - Find nearby areas
 
 #### Landmarks
+
 - `POST /api/v1/landmark` - Create new landmark
 - `GET /api/v1/landmark/{landmark_id}` - Get landmark details
 - `GET /api/v1/landmark/nearby` - Find nearby landmarks
 - `POST /api/v1/landmark/{landmark_id}/unlock` - Attempt to unlock
 
 #### Unlocks
+
 - `GET /api/v1/unlock/me` - Get user's unlocks
 - `GET /api/v1/unlock/feed` - Get global unlock feed
 
@@ -196,6 +215,7 @@ Once the backend is running, interactive API documentation is available:
 ### Environment Variables
 
 #### Backend Service
+
 ```env
 # Database
 POSTGRES_HOST=postgres
@@ -225,6 +245,7 @@ KAFKA_BOOTSTRAP_SERVERS=kafka-0:9092,kafka-1:9092,kafka-2:9092
 ```
 
 #### Image Service
+
 ```env
 # GeoMatchAI
 GEOMATCH_SIMILARITY_THRESHOLD=0.65
@@ -243,6 +264,7 @@ MAPILLARY_API_KEY=your_mapillary_key
 ### Core Models
 
 #### User
+
 - UUID-based primary key
 - Username and email (unique, indexed)
 - Hashed password with bcrypt
@@ -252,6 +274,7 @@ MAPILLARY_API_KEY=your_mapillary_key
 - Timestamps (created_at, updated_at)
 
 #### Area
+
 - Hierarchical geographic regions (self-referencing parent)
 - Name, description, image, and badge URLs
 - Creator reference and verification flag
@@ -259,6 +282,7 @@ MAPILLARY_API_KEY=your_mapillary_key
 - Relationships: child areas, landmarks
 
 #### Landmark
+
 - Points of interest with coordinates (PostGIS Geography)
 - Area reference, difficulty rating, points value
 - Image and hint image URLs
@@ -266,6 +290,7 @@ MAPILLARY_API_KEY=your_mapillary_key
 - Relationships: unlocks, attempts
 
 #### Unlock
+
 - User achievement records
 - Landmark and user references
 - Unlock timestamp and photo URL
@@ -273,6 +298,7 @@ MAPILLARY_API_KEY=your_mapillary_key
 - Feed visibility flag
 
 #### Attempt
+
 - Temporary verification requests (5-minute TTL)
 - User, landmark, and photo references
 - Status: PENDING, APPROVED, REJECTED
@@ -287,9 +313,9 @@ MAPILLARY_API_KEY=your_mapillary_key
 3. **Backend publishes** message to Kafka topic `image-verify-requests`
 4. **Image Service consumes** message and downloads photo from MinIO
 5. **GeoMatchAI verifies** photo against Mapillary street view data
-   - Fetches reference images from Mapillary API
-   - Uses EfficientNet B4 model for feature extraction
-   - Computes similarity score (threshold: 0.65)
+    - Fetches reference images from Mapillary API
+    - Uses EfficientNet B4 model for feature extraction
+    - Computes similarity score (threshold: 0.65)
 6. **Image Service publishes** result to `image-verify-results` topic
 7. **Backend consumes** result and creates Unlock or rejects Attempt
 8. **User receives** notification of success/failure
@@ -355,6 +381,7 @@ docker-compose exec backend pytest tests/unit/test_auth.py
 ```
 
 ### Test Coverage
+
 - Unit tests for business logic
 - Integration tests for API endpoints
 - Database fixtures with in-memory SQLite
@@ -388,6 +415,7 @@ GET /health
 ```
 
 Response:
+
 ```json
 {
   "status": "healthy",
