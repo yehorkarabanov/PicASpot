@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 
-import { MOCK_FEED_POSTS, Post } from '@/lib/mockData';
 import { FeedFilterBar, FeedType } from '@/components/feed/FeedFilterBar';
 import { FollowingFeedList } from '@/components/feed/FollowingFeedList';
 import { NearbyFeedList } from '@/components/feed/NearbyFeedList';
-import { useLandmarks } from '@/contexts/LandmarkContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
+import { usePosts } from '@/hooks/usePosts'; // Custom hook for fetching posts
 
 // Default location (Zurich) for prototyping
 const DEFAULT_LOCATION = {
@@ -25,19 +24,7 @@ export default function FeedScreen() {
   const [activeFeed, setActiveFeed] = useState<FeedType>('following');
   const [radius, setRadius] = useState<number>(5);
   const [location, setLocation] = useState(DEFAULT_LOCATION);
-  
-  const { landmarks, fetchNearbyLandmarks, isLoading } = useLandmarks();
-  const { isAuthenticated, user } = useAuth();
-
-  // Generate a large list of mock posts to simulate infinite scroll
-  const LARGE_MOCK_POSTS = useMemo(() => {
-    return Array.from({ length: 100 }).flatMap((_, i) => 
-      MOCK_FEED_POSTS.map(post => ({
-        ...post,
-        id: `${post.id}-${i}`, // Ensure unique IDs
-      }))
-    );
-  }, []);
+  const { user } = useAuth();
 
   // Get User Location
   useEffect(() => {
@@ -57,26 +44,16 @@ export default function FeedScreen() {
     })();
   }, []);
 
-  // Fetch landmarks when activeFeed is nearby or params change
-  // MOCK MODE: Disabled fetching to show mock data
-  /*
-  useEffect(() => {
-    if (activeFeed === 'nearby' && isAuthenticated) {
-      // Radius in meters
-      fetchNearbyLandmarks(location.latitude, location.longitude, radius * 1000);
-    }
-  }, [activeFeed, radius, location, fetchNearbyLandmarks, isAuthenticated]);
-  */
-
-  // Convert landmarks to posts
-  // MOCK MODE: Use LARGE_MOCK_POSTS directly
-  const nearbyPosts: Post[] = LARGE_MOCK_POSTS;
-
-  console.log('Rendering FeedScreen', { activeFeed, postsCount: nearbyPosts.length, isAuthenticated });
+  // Fetch posts using the custom hook (API integration point)
+  const { posts, isLoading, error } = usePosts({
+    type: activeFeed,
+    radius,
+    userLocation: location
+  });
 
   const CreatePostHeader = () => {
     return (
-      <View className="p-4 border-b border-border bg-background">
+      <View className="p-4 bg-background border-b border-border">
         <View className="flex-row items-center space-x-5">
           <Avatar source={user?.avatar_url || 'https://github.com/shadcn.png'} size="md" />
           <TouchableOpacity 
@@ -101,28 +78,34 @@ export default function FeedScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      {/* 1. FIXED HEADER (Input + Tabs) */}
+      {/* 2. FIXED FILTER BAR (Tabs + Radius) */}
       <FeedFilterBar
         activeFeed={activeFeed}
         setActiveFeed={setActiveFeed}
         radius={radius}
         setRadius={setRadius}
+        // ExtraHeaderComponent removed to allow scroll
       />
 
-      {/* 2. SCROLLABLE CONTENT (Feed List) */}
+      {/* 3. SCROLLABLE CONTENT (Feed List) */}
       <View className="flex-1 bg-background">
-        {activeFeed === 'following' ? (
+        {isLoading ? (
+           <View className="flex-1 justify-center items-center">
+             <ActivityIndicator size="large" />
+           </View>
+        ) : activeFeed === 'following' ? (
           <FollowingFeedList 
-            posts={LARGE_MOCK_POSTS} 
+            posts={posts} 
             ListHeaderComponent={<CreatePostHeader />}
+            isLoading={isLoading}
           />
         ) : (
           <View style={{ flex: 1 }}>
             <NearbyFeedList
-                posts={nearbyPosts}
-                currentLocation={location}
-                radius={radius}
+                posts={posts}
+                ListHeaderComponent={<CreatePostHeader />}
                 ListFooterComponent={<CaughtUpFooter />}
+                isLoading={isLoading}
             />
           </View>
         )}

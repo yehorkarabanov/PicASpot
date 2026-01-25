@@ -1,22 +1,41 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Stack, useLocalSearchParams } from "expo-router";
-import { View, ScrollView, TouchableOpacity, Image } from "react-native";
+import { View, ScrollView, TouchableOpacity, Image, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/theme";
 import { MOCK_FEED_POSTS } from "@/lib/mockData";
 import { Text } from "@/components/ui/text";
 import { PostItem } from "@/components/feed/PostItem";
 import { Feather } from '@expo/vector-icons';
+import { Avatar } from "@/components/ui/Avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { Icon } from "@/components/ui/icon";
+import { Send } from "lucide-react-native";
+import { cn } from "@/lib/utils";
 
 export default function PostDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, autoFocus } = useLocalSearchParams<{ id: string; autoFocus?: string }>();
+  const { user } = useAuth();
+  const inputRef = useRef<TextInput>(null);
+  const [isFocused, setIsFocused] = useState(false);
   
   // Simulate database fetch using the universal ID
-  // Handle generated IDs from the feed (e.g., "post1-0") by stripping the suffix
   const post = MOCK_FEED_POSTS.find((p) => p.id === id) || 
                MOCK_FEED_POSTS.find((p) => id?.startsWith(p.id));
   
   const colors = useTheme();
+  
+  const [comments, setComments] = useState(post?.commentsList || []);
+  const [newComment, setNewComment] = useState("");
+
+  useEffect(() => {
+    if (autoFocus === 'true' && inputRef.current) {
+      // Small delay to ensure navigation transition finishes or component mounts
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 500);
+    }
+  }, [autoFocus]);
 
   if (!post) {
     return (
@@ -26,8 +45,25 @@ export default function PostDetail() {
     );
   }
 
+  const handleSendComment = () => {
+    if (!newComment.trim()) return;
+
+    const newCommentObj = {
+      id: `comment-${Date.now()}`,
+      username: user?.username || 'You',
+      avatar: user?.avatar_url || 'https://github.com/shadcn.png',
+      text: newComment.trim(),
+      timestamp: 'Just now',
+      likes: 0,
+    };
+
+    setComments([newCommentObj, ...comments]);
+    setNewComment("");
+    inputRef.current?.blur();
+  };
+
   return (
-    <>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['bottom', 'left', 'right']}>
       <Stack.Screen
         options={{
           headerTitle: "Post",
@@ -39,7 +75,11 @@ export default function PostDetail() {
         }}
       />
 
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['bottom', 'left', 'right']}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"} 
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      >
         <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
           {/* Reuse the exact PostItem component */}
           <PostItem post={post} isDetail={true} />
@@ -50,9 +90,39 @@ export default function PostDetail() {
           {/* Comments Section */}
           <View className="px-4 pt-4">
             <Text className="mb-4 text-lg font-bold text-foreground">Comments</Text>
+
+            {/* Comment Input */}
+            <View className="flex-row items-center gap-3 mb-6">
+               <Avatar source={user?.avatar_url || 'https://github.com/shadcn.png'} size="sm" />
+               <View 
+                  className={cn(
+                    "flex-1 flex-row items-center bg-secondary/30 rounded-full px-4 py-2 border",
+                    isFocused ? "border-primary bg-secondary/50" : "border-border"
+                  )}
+               >
+                  <TextInput
+                    ref={inputRef}
+                    placeholder="Add a comment..."
+                    placeholderTextColor={colors.mutedForeground}
+                    className="flex-1 text-foreground mr-2 min-h-[24px]"
+                    multiline
+                    value={newComment}
+                    onChangeText={setNewComment}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                  />
+                  <TouchableOpacity 
+                    onPress={handleSendComment}
+                    disabled={!newComment.trim()}
+                    className={!newComment.trim() ? "opacity-50" : "opacity-100"}
+                  >
+                    <Icon as={Send} size={20} className={isFocused ? "text-primary" : "text-muted-foreground"} />
+                  </TouchableOpacity>
+               </View>
+            </View>
             
-            {post.commentsList && post.commentsList.length > 0 ? (
-               post.commentsList.map((item) => (
+            {comments.length > 0 ? (
+               comments.map((item) => (
                 <View key={item.id} className="mb-5 flex-row items-start">
                   {/* Commenter Avatar */}
                   <Image
@@ -87,7 +157,7 @@ export default function PostDetail() {
             )}
           </View>
         </ScrollView>
-      </SafeAreaView>
-    </>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
