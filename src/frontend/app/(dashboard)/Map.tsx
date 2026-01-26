@@ -345,26 +345,22 @@ export default function MapScreen() {
 
         if (marker.unlocked === 0) {
             const newCircles: CircleData[] = [];
-            //const hasCustomLocs = marker.customPhotoLoc && marker.customPhotoLoc.length > 0;
-            /*
-            if (hasCustomLocs) {
-                marker.customPhotoLoc.forEach((loc, i) => {
-                    const specificRadius = marker.radius && marker.radius[i]
-                        ? marker.radius[i]
-                        : (marker.radius?.[0] || DEFAULT_SEARCH_RADIUS_METERS);
 
-                    newCircles.push({
-                        center: loc,
-                        radius: specificRadius
-                    });
+            // Check if marker has custom photo location
+            if (marker.photo_latitude !== undefined && marker.photo_longitude !== undefined) {
+                newCircles.push({
+                    center: {
+                        latitude: marker.photo_latitude,
+                        longitude: marker.photo_longitude,
+                    },
+                    radius: marker.photo_location_radius || marker.radius?.[0] || DEFAULT_SEARCH_RADIUS_METERS,
                 });
-                */
-           // } else {
+            } else {
                 newCircles.push({
                     center: marker.coordinate,
                     radius: marker.radius?.[0] || DEFAULT_SEARCH_RADIUS_METERS,
                 });
-            //}
+            }
 
             setActiveCircles(newCircles);
 

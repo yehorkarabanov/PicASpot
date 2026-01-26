@@ -155,9 +155,8 @@ export default function AddLandmarkScreen() {
         photo_longitude: useCustomPhotoLocation ? photoLocation?.longitude : undefined,
       };
 
-      // Change this part
       if (guidePhoto) {
-        payload.hint_image_uri = guidePhoto;  // ← Changed from hint_image_url
+        payload.hint_image_uri = guidePhoto;
       }
 
       console.log('Sending payload:', JSON.stringify(payload, null, 2));
@@ -450,9 +449,24 @@ export default function AddLandmarkScreen() {
                 value={useCustomPhotoLocation}
                 onValueChange={(value) => {
                   setUseCustomPhotoLocation(value);
-                  if (value && landmarkRegion) {
-                    setPhotoLocation({ latitude: landmarkRegion.latitude, longitude: landmarkRegion.longitude });
-                    setPhotoRegion(landmarkRegion);
+                  if (value) {
+                    // Use landmarkLocation as fallback if photoLocation is not set
+                    if (!photoLocation && landmarkLocation) {
+                      setPhotoLocation(landmarkLocation);
+                    }
+                    // Use landmarkRegion or create one from landmarkLocation
+                    if (!photoRegion) {
+                      if (landmarkRegion) {
+                        setPhotoRegion(landmarkRegion);
+                      } else if (landmarkLocation) {
+                        setPhotoRegion({
+                          latitude: landmarkLocation.latitude,
+                          longitude: landmarkLocation.longitude,
+                          latitudeDelta: 0.001,
+                          longitudeDelta: 0.001,
+                        });
+                      }
+                    }
                   }
                 }}
               />

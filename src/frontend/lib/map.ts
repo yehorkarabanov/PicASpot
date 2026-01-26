@@ -1,5 +1,4 @@
 import api from './api';
-import * as SecureStore from 'expo-secure-store';
 
 export interface Landmark {
   id: string;
@@ -53,7 +52,7 @@ export const landmarkService = {
     const [landmarksResponse, areasResponse] = await Promise.all([
       api.get<ApiResponse<{ landmarks: Landmark[] }>>(
         '/v1/landmark/nearby',
-        { params }
+        { params: { ...params, page_size: 100 } }
       ),
       api.get<ApiResponse<{
         areas: Area[];
@@ -120,7 +119,7 @@ export const landmarkService = {
 
       console.log('Sending as query parameters:', params_obj);
 
-      const response = await api.post<ApiResponse<{ landmark: Landmark }>>(
+      const response = await api.post<ApiResponse<Landmark | { landmarks: Landmark[] }>>(
         '/v1/landmark/',
         null,
         {
@@ -131,7 +130,13 @@ export const landmarkService = {
       );
 
       console.log('Landmark created successfully:', response.data);
-      return response.data.data.landmark;
+
+      // Handle both paginated and direct responses
+      const data = response.data.data;
+      if ('landmarks' in data && Array.isArray(data.landmarks) && data.landmarks.length > 0) {
+        return data.landmarks[0];
+      }
+      return data as Landmark;
     } catch (error: any) {
       console.error('Full error object:', error);
       throw error;
@@ -206,6 +211,9 @@ export function landmarkToMarker(landmark: Landmark) {
     hint_image_url: landmark.hint_image ?? landmark.hint_image_url ?? null,
     radius: [landmark.unlock_radius || landmark.radius],
     area_id: landmark.area_id,
+    photo_latitude: landmark.photo_latitude,
+    photo_longitude: landmark.photo_longitude,
+    photo_location_radius: landmark.photo_location_radius,
   };
 }
 

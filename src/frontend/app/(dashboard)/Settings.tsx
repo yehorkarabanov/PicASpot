@@ -25,9 +25,7 @@ const Profile = () => {
         }}
       />
       <View className="flex-1 bg-background px-6 pt-12">
-        <View className="items-end mb-8">
-          <ThemeToggle />
-        </View>
+
 
         <View className="bg-card shadow-lg rounded-2xl p-6 space-y-4">
           <Text className="text-card-foreground text-lg font-semibold">
