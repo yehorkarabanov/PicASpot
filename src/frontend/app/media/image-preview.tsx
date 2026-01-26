@@ -26,64 +26,53 @@ export default function ImagePreview() {
 
   return (
     <View style={styles.container}>
-       <Stack.Screen 
-          options={{ 
-            headerShown: false, 
-            presentation: 'transparentModal', 
-            animation: 'fade',
-            contentStyle: { backgroundColor: 'transparent' }
-          }} 
-       />
-      
-      {/* Blurred Backdrop */}
-      <BlurView intensity={40} style={styles.absolute} tint="systemThinMaterialDark" />
-      
-      {/* Dismiss Area */}
-      <TouchableOpacity 
-        style={styles.absolute} 
-        activeOpacity={1} 
-        onPress={() => router.back()}
+      <Stack.Screen
+        options={{
+          headerShown: false,
+          presentation: 'transparentModal',
+          animation: 'fade',
+          contentStyle: { backgroundColor: 'transparent' },
+        }}
       />
 
-      <SafeAreaView className="flex-1 justify-center items-center" pointerEvents="box-none">
-        {/* The "Card" - Balanced size */}
-        <View 
-            className="w-[94%] h-[85%] bg-card rounded-2xl overflow-hidden shadow-2xl border border-border"
-            style={styles.cardShadow}
-        >
-            {/* Header / Actions Row */}
-            <View className="flex-row justify-between items-center px-4 py-3 bg-card/95 absolute top-0 left-0 right-0 z-10 border-b border-border/10">
-                <View className="w-10" />
+      {}
+      <BlurView intensity={40} style={styles.absolute} tint="systemThinMaterialDark" />
 
-                <Text className="text-sm font-semibold text-muted-foreground">Preview</Text>
+      {}
+      <TouchableOpacity style={styles.absolute} activeOpacity={1} onPress={() => router.back()} />
 
-                <TouchableOpacity 
-                    onPress={() => router.back()} 
-                    className="p-2 rounded-full bg-secondary/80"
-                >
-                    <Icon as={X} size={20} className="text-foreground" />
-                </TouchableOpacity>
-            </View>
+      <SafeAreaView className="flex-1 items-center justify-center" pointerEvents="box-none">
+        {}
+        <View
+          className="h-[85%] w-[94%] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+          style={styles.cardShadow}>
+          {}
+          <View className="absolute left-0 right-0 top-0 z-10 flex-row items-center justify-between border-b border-border/10 bg-card/95 px-4 py-3">
+            <View className="w-10" />
 
-            {/* Image Container */}
-            <View className="flex-1 bg-black/5 justify-center items-center">
-                 <Image 
-                    source={{ uri }} 
-                    className="w-full h-full"
-                    resizeMode="contain" 
-                  />
-            </View>
+            <Text className="text-sm font-semibold text-muted-foreground">Preview</Text>
 
-            {/* Bottom Actions (Optional) */}
-            <View className="flex-row justify-center items-center p-4 bg-card border-t border-border/10 gap-6">
-                <TouchableOpacity 
-                  className="flex-row items-center gap-2 bg-primary px-6 py-2 rounded-full"
-                  onPress={handleShare}
-                >
-                    <Icon as={Share2} size={18} className="text-primary-foreground" />
-                    <Text className="text-primary-foreground font-medium">Share</Text>
-                </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="rounded-full bg-secondary/80 p-2">
+              <Icon as={X} size={20} className="text-foreground" />
+            </TouchableOpacity>
+          </View>
+
+          {}
+          <View className="flex-1 items-center justify-center bg-black/5">
+            <Image source={{ uri }} className="h-full w-full" resizeMode="contain" />
+          </View>
+
+          {}
+          <View className="flex-row items-center justify-center gap-6 border-t border-border/10 bg-card p-4">
+            <TouchableOpacity
+              className="flex-row items-center gap-2 rounded-full bg-primary px-6 py-2"
+              onPress={handleShare}>
+              <Icon as={Share2} size={18} className="text-primary-foreground" />
+              <Text className="font-medium text-primary-foreground">Share</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -103,7 +92,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   cardShadow: {
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 10,
@@ -111,5 +100,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 10,
-  }
+  },
 });

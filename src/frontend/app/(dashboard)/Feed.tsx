@@ -5,15 +5,15 @@ import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 
 import { FeedFilterBar, FeedType } from '@/components/feed/FeedFilterBar';
+import { RadiusSelector } from '@/components/feed/RadiusSelector';
 import { FollowingFeedList } from '@/components/feed/FollowingFeedList';
 import { NearbyFeedList } from '@/components/feed/NearbyFeedList';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { usePosts } from '@/hooks/usePosts'; // Custom hook for fetching posts
+import { usePosts } from '@/hooks/usePosts';
 
-// Default location (Zurich) for prototyping
 const DEFAULT_LOCATION = {
   latitude: 47.3768,
   longitude: 8.5417,
@@ -26,7 +26,6 @@ export default function FeedScreen() {
   const [location, setLocation] = useState(DEFAULT_LOCATION);
   const { user } = useAuth();
 
-  // Get User Location
   useEffect(() => {
     (async () => {
       try {
@@ -44,23 +43,19 @@ export default function FeedScreen() {
     })();
   }, []);
 
-  // Fetch posts using the custom hook (API integration point)
   const { posts, isLoading, error } = usePosts({
     type: activeFeed,
     radius,
-    userLocation: location
+    userLocation: location,
   });
 
   const CreatePostHeader = () => {
     return (
-      <View className="p-4 bg-background border-b border-border">
+      <View className="border-b border-border bg-background p-4">
         <View className="flex-row items-center space-x-5">
           <Avatar source={user?.avatar_url || 'https://github.com/shadcn.png'} size="md" />
-          <TouchableOpacity 
-            className="flex-1 ml-2"
-            onPress={() => router.push('/create-post')}
-          >
-            <Text className="text-muted-foreground text-lg">What's happening?</Text>
+          <TouchableOpacity className="ml-2 flex-1" onPress={() => router.push('/create-post')}>
+            <Text className="text-lg text-muted-foreground">What's happening?</Text>
           </TouchableOpacity>
           <Button size="sm" onPress={() => router.push('/create-post')}>
             <Text className="font-bold">Post</Text>
@@ -70,42 +65,45 @@ export default function FeedScreen() {
     );
   };
 
+  const NearbyHeader = () => {
+    return (
+      <View>
+        <CreatePostHeader />
+        <RadiusSelector radius={radius} setRadius={setRadius} />
+      </View>
+    );
+  };
+
   const CaughtUpFooter = () => (
-    <View className="py-8 items-center justify-center">
-      <Text className="text-muted-foreground text-sm font-medium">You're all caught up!</Text>
+    <View className="items-center justify-center py-8">
+      <Text className="text-sm font-medium text-muted-foreground">You're all caught up!</Text>
     </View>
   );
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      {/* 2. FIXED FILTER BAR (Tabs + Radius) */}
-      <FeedFilterBar
-        activeFeed={activeFeed}
-        setActiveFeed={setActiveFeed}
-        radius={radius}
-        setRadius={setRadius}
-        // ExtraHeaderComponent removed to allow scroll
-      />
+      {}
+      <FeedFilterBar activeFeed={activeFeed} setActiveFeed={setActiveFeed} />
 
-      {/* 3. SCROLLABLE CONTENT (Feed List) */}
+      {}
       <View className="flex-1 bg-background">
         {isLoading ? (
-           <View className="flex-1 justify-center items-center">
-             <ActivityIndicator size="large" />
-           </View>
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator size="large" />
+          </View>
         ) : activeFeed === 'following' ? (
-          <FollowingFeedList 
-            posts={posts} 
+          <FollowingFeedList
+            posts={posts}
             ListHeaderComponent={<CreatePostHeader />}
             isLoading={isLoading}
           />
         ) : (
           <View style={{ flex: 1 }}>
             <NearbyFeedList
-                posts={posts}
-                ListHeaderComponent={<CreatePostHeader />}
-                ListFooterComponent={<CaughtUpFooter />}
-                isLoading={isLoading}
+              posts={posts}
+              ListHeaderComponent={<NearbyHeader />}
+              ListFooterComponent={<CaughtUpFooter />}
+              isLoading={isLoading}
             />
           </View>
         )}
