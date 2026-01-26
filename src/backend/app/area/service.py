@@ -86,7 +86,7 @@ class AreaService:
             )
 
         if hit_depth_limit:
-            raise BadRequestError("Cannot set parent: hierarchy depth limit reached. ")
+            raise BadRequestError("Cannot set parent: hierarchy depth limit reached")
 
     async def create_area(self, area_data: AreaCreate, user: User) -> AreaResponse:
         """
@@ -113,7 +113,7 @@ class AreaService:
         if area_data.image_file:
             result = await self.storage.upload_file(
                 file_data=await area_data.image_file.read(),
-                original_filename=area_data.image_file.filename,
+                original_filename=area_data.image_file.filename or "unnamed",
                 path_prefix=StorageDir.AREAS,
                 content_type=area_data.image_file.content_type
                 or "application/octet-stream",
@@ -125,7 +125,7 @@ class AreaService:
         if area_data.badge_file:
             result = await self.storage.upload_file(
                 file_data=await area_data.badge_file.read(),
-                original_filename=area_data.badge_file.filename,
+                original_filename=area_data.badge_file.filename or "unnamed",
                 path_prefix=StorageDir.AREAS,
                 content_type=area_data.badge_file.content_type
                 or "application/octet-stream",
@@ -186,9 +186,7 @@ class AreaService:
         if not user.is_superuser and area.creator_id != user.id:
             raise ForbiddenError("You do not have permission to delete this area")
 
-        deleted = await self.area_repository.delete(area_id)
-        if not deleted:
-            raise NotFoundError(f"Area with ID {area_id} not found")
+        await self.area_repository.delete(area_id)
         logger.info("Area deleted: %s by user %s", area.name, user.username)
 
     async def update_area(
@@ -216,7 +214,7 @@ class AreaService:
         if not area:
             raise NotFoundError(f"Area with ID {area_id} not found")
 
-        if area.creator_id != user.id and not user.is_superuser:
+        if not user.is_superuser and area.creator_id != user.id:
             raise ForbiddenError("You do not have permission to update this area")
 
         if area_data.parent_area_id is not None:
@@ -240,7 +238,7 @@ class AreaService:
         if area_data.image_file:
             result = await self.storage.upload_file(
                 file_data=await area_data.image_file.read(),
-                original_filename=area_data.image_file.filename,
+                original_filename=area_data.image_file.filename or "unnamed",
                 path_prefix=StorageDir.AREAS,
                 content_type=area_data.image_file.content_type
                 or "application/octet-stream",
@@ -249,7 +247,7 @@ class AreaService:
         if area_data.badge_file:
             result = await self.storage.upload_file(
                 file_data=await area_data.badge_file.read(),
-                original_filename=area_data.badge_file.filename,
+                original_filename=area_data.badge_file.filename or "unnamed",
                 path_prefix=StorageDir.AREAS,
                 content_type=area_data.badge_file.content_type
                 or "application/octet-stream",

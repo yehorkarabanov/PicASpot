@@ -157,7 +157,7 @@ class UnlockService:
                 {
                     "error_message": error,
                     "status": AttemptStatus.FAILED,
-                }
+                },
             )
             logger.info(
                 "Unlock failed for user %s at landmark %s: %s",
@@ -181,7 +181,7 @@ class UnlockService:
                 {
                     "similarity_score": similarity_score,
                     "status": AttemptStatus.SUCCESS,
-                }
+                },
             )
             logger.info(
                 "Unlock successful for user %s at landmark %s", user_id, landmark_id
@@ -192,7 +192,7 @@ class UnlockService:
                 {
                     "similarity_score": similarity_score,
                     "status": AttemptStatus.FAILED,
-                }
+                },
             )
             logger.info(
                 "Unlock failed for user %s at landmark %s",
@@ -226,7 +226,7 @@ class UnlockService:
         )
 
         if not unlock:
-            raise NotFoundError(f"Unlock {unlock_id} not found")
+            raise NotFoundError(f"Unlock with ID {unlock_id} not found")
 
         return self._build_unlock_response(unlock, params)
 
@@ -343,7 +343,7 @@ class UnlockService:
         )
 
         if not attempt:
-            raise NotFoundError(f"Attempt {attempt_id} not found")
+            raise NotFoundError(f"Attempt with ID {attempt_id} not found")
 
         return self._build_attempt_response(attempt, params)
 

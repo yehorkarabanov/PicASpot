@@ -69,7 +69,12 @@ class UserService:
         try:
             url, _ = await self.get_profile_picture_url(user_id)
             user_response.profile_picture_url = url
+        except NotFoundError:
+            # User not found case - this shouldn't happen since we just fetched the user
+            logger.error(f"User {user_id} not found when fetching profile picture")
+            user_response.profile_picture_url = settings.DEFAULT_PROFILE_PICTURE_URL
         except Exception as e:
+            # Catch any unexpected storage errors
             logger.warning(f"Failed to generate profile picture URL: {e}")
             # Fallback to default if something goes wrong
             user_response.profile_picture_url = settings.DEFAULT_PROFILE_PICTURE_URL

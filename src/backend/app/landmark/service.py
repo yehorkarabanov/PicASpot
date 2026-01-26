@@ -88,7 +88,7 @@ class LandmarkService:
         if landmark_data.image_file:
             result = await self.storage.upload_file(
                 file_data=await landmark_data.image_file.read(),
-                original_filename=landmark_data.image_file.filename,
+                original_filename=landmark_data.image_file.filename or "unnamed",
                 path_prefix=StorageDir.LANDMARKS,
                 content_type=landmark_data.image_file.content_type
                 or "application/octet-stream",
@@ -100,7 +100,7 @@ class LandmarkService:
         if landmark_data.hint_image_file:
             result = await self.storage.upload_file(
                 file_data=await landmark_data.hint_image_file.read(),
-                original_filename=landmark_data.hint_image_file.filename,
+                original_filename=landmark_data.hint_image_file.filename or "unnamed",
                 path_prefix=StorageDir.LANDMARKS,
                 content_type=landmark_data.hint_image_file.content_type
                 or "application/octet-stream",
@@ -181,9 +181,7 @@ class LandmarkService:
         if not user.is_superuser and landmark.creator_id != user.id:
             raise ForbiddenError("You do not have permission to delete this landmark")
 
-        deleted = await self.landmark_repository.delete(landmark_id)
-        if not deleted:
-            raise NotFoundError(f"Landmark with ID {landmark_id} not found")
+        await self.landmark_repository.delete(landmark_id)
         logger.info("Landmark deleted: %s by user %s", landmark.name, user.username)
 
     async def update_landmark(
@@ -207,11 +205,11 @@ class LandmarkService:
             NotFoundError: If the landmark does not exist.
             ForbiddenError: If the user is not the creator of the landmark.
         """
-        landmark = await self.landmark_repository.get(landmark_id)
+        landmark = await self.landmark_repository.get_by_id(landmark_id)
         if not landmark:
             raise NotFoundError(f"Landmark with ID {landmark_id} not found")
 
-        if landmark.creator_id != user.id:
+        if not user.is_superuser and landmark.creator_id != user.id:
             raise ForbiddenError("You can only update landmarks you created")
 
         # Convert update data to dict, excluding None values
@@ -231,7 +229,7 @@ class LandmarkService:
         if landmark_data.image_file:
             result = await self.storage.upload_file(
                 file_data=await landmark_data.image_file.read(),
-                original_filename=landmark_data.image_file.filename,
+                original_filename=landmark_data.image_file.filename or "unnamed",
                 path_prefix=StorageDir.LANDMARKS,
                 content_type=landmark_data.image_file.content_type
                 or "application/octet-stream",
@@ -241,7 +239,7 @@ class LandmarkService:
         if landmark_data.hint_image_file:
             result = await self.storage.upload_file(
                 file_data=await landmark_data.hint_image_file.read(),
-                original_filename=landmark_data.hint_image_file.filename,
+                original_filename=landmark_data.hint_image_file.filename or "unnamed",
                 path_prefix=StorageDir.LANDMARKS,
                 content_type=landmark_data.hint_image_file.content_type
                 or "application/octet-stream",
