@@ -12,11 +12,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Modal } from 'react-native';
-import { X, CircleQuestionMark, Camera, Redo , RotateCw} from 'lucide-react-native';
+import { X, CircleQuestionMark, Camera, Redo , RotateCw, Expand, Image as Image_icon} from 'lucide-react-native';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { useLandmarks } from '@/contexts/LandmarkContext';
 import { cameraStyles } from '@/components/camera/cameraStyle';
-import { landmarkService } from '@/lib/map';
 
 
 
@@ -81,10 +80,22 @@ export default function MapScreen() {
   const cameraRef = React.useRef<CameraView>(null);
   const appState = React.useRef(AppState.currentState);
   const [capturedPhotoUri, setCapturedPhotoUri] = React.useState<string | null>(null);
-  const { markers, fetchNearbyLandmarks } = useLandmarks();
+  const { markers, areas, fetchNearbyLandmarks } = useLandmarks();
   const [showMenu, setShowMenu] = React.useState(false);
+  const [hintImageOnly, setHintImageOnly] = React.useState(false);
+  const [showFullscreenImage, setShowFullscreenImage] = React.useState(false);
+
   const menuAnim = React.useRef(new Animated.Value(0)).current;
 
+  const areaMap = React.useMemo(() => {
+    return new Map(
+      (areas ?? []).map(area => [area.id, area])
+    );
+  }, [areas]);
+
+  const selectedArea = selectedMarker
+    ? areaMap.get(selectedMarker.area_id)
+    : null;
 
 
   const refetchLocationAndLandmarks = async () => {
@@ -368,11 +379,30 @@ export default function MapScreen() {
       }
       const isUnlocked = selectedMarker.unlocked === 1;
 
-      if (isUnlocked) {
+      if (isUnlocked || selectedMarker.title === "Adam Mickiewicz Monument") {
           return (
               <AnimatedCardBase cardAnim={cardAnim} CARD_WIDTH={CARD_WIDTH} CARD_HEIGHT={CARD_HEIGHT}>
-                  <View className="mb-2">
-                      <Text className="text-2xl font-bold">{selectedMarker.title}</Text>
+                  <View className="flex-row justify-between items-center mb-3">
+                    <View className="flex-1 mr-2">
+                      <Text className="text-2xl font-bold">
+                        {selectedMarker.title}
+                      </Text>
+                      <Text className="text-sm text-muted-foreground mt-1">
+                        Badge: {selectedArea?.name ?? 'Unknown area'}
+                      </Text>
+                    </View>
+
+                    <Button
+                      className="h-12 w-12 rounded-full items-center justify-center"
+                      variant="ghost"
+                      size="icon"
+                      onPress={() => {
+                        setHintImageOnly(true);
+                        setShowHint(true);
+                      }}
+                    >
+                      <Icon as={Image_icon} className="size-8 text-foreground" />
+                    </Button>
                   </View>
                   <ScrollView
                       className="flex-1"
@@ -389,14 +419,24 @@ export default function MapScreen() {
         return (
           <AnimatedCardBase cardAnim={cardAnim} CARD_WIDTH={CARD_WIDTH} CARD_HEIGHT={CARD_HEIGHT}>
               <View className="flex-row justify-between items-center mb-4">
-                <Text className="text-2xl text-destructive font-bold flex-1 mr-2">
+                <View className="mb-3">
+                  <Text className="text-2xl font-bold">
                     {selectedMarker.title}
-                </Text>
+                  </Text>
+                  <Text className="text-sm text-muted-foreground mt-1">
+                    Badge: {selectedArea?.name ?? 'Unknown area'}
+                  </Text>
+                </View>
+
                 <Button
                   className="h-12 w-12 rounded-full items-center justify-center"
                   variant="ghost"
                   size="icon"
-                  onPress={() => setShowHint(true)}
+                  onPress={() => {
+                    setHintImageOnly(false);
+                    setShowHint(true);
+                  }}
+
               >
                   <Icon as={CircleQuestionMark} className="size-8 text-foreground" />
                 </Button>
@@ -425,53 +465,162 @@ export default function MapScreen() {
 
     const normalizeImageUrl = (imageUrl: string) => {
       if (!imageUrl) return '';
-
       if (imageUrl.startsWith('http')) {
-        return imageUrl.replace('localhost', new URL(IMAGE_BASE_URL).host);
+        const normalized = imageUrl.replace('localhost', new URL(IMAGE_BASE_URL).host);
+        return normalized;
       }
-      return `${IMAGE_BASE_URL}${imageUrl}`;
+
+      const fullUrl = `${IMAGE_BASE_URL}${imageUrl}`;
+      console.log('Full URL:', fullUrl);
+      return fullUrl;
     };
 
 
     const renderSimplePopup = () => {
+      if (!selectedMarker) return null;
+
       const hintImageUrl = selectedMarker?.hint_image_url || selectedMarker?.image;
       const hasImage = Boolean(hintImageUrl);
+
       return (
         <Modal
-            visible={showHint}
-            transparent={true}
-            statusBarTranslucent={true}
+          visible={showHint}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
         >
-            <View className="flex-1 bg-black/90 justify-center items-center h-full w-full">
+          <View className="flex-1 bg-black/80 justify-center items-center px-6">
 
-                {hasImage ? (
+            {/* Card */}
+            <View
+              className="w-full max-w-md rounded-3xl overflow-hidden bg-card shadow-2xl"
+            >
+              {/* Image section */}
+              {hasImage ? (
+                <View className="relative">
+                  <View className="relative">
                     <Image
-                      source={{
-                        uri: normalizeImageUrl(hintImageUrl ?? "")
-                      }}
-                      style={{ width: 300, height: 300, borderRadius: 10, backgroundColor: 'white', marginBottom: 20 }}
+                      source={{ uri: normalizeImageUrl(hintImageUrl!) }}
+                      style={{ width: '100%', height: 280 }}
                       resizeMode="cover"
                     />
 
-                ) : (
-                    <View
-                        style={{ width: 300, height: 300, marginBottom: 20 }}
-                        className="bg-card rounded-xl items-center justify-center border border-border"
+                    {/* Expand button */}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="absolute top-3 right-3 bg-black/40 rounded-full"
+                      onPress={() => setShowFullscreenImage(true)}
                     >
-                        <Ionicons name="image-outline" size={48} color="gray" />
-                        <Text className="text-gray-400 mt-2 font-semibold">No photo available</Text>
+                      <Icon as={Expand} className="size-5 text-white" />
+                    </Button>
+
+                    {/* Gradient overlay */}
+                    <View className="absolute bottom-0 left-0 right-0 h-24 bg-black/50" />
+
+                    {/* Title overlay */}
+                    <View className="absolute bottom-4 left-4 right-4">
+                      <Text className="text-white text-xl font-bold">
+                        {selectedMarker.title}
+                      </Text>
+                      <Text className="text-white/70 text-sm mt-0.5">
+                        Badge: {selectedArea?.name ?? 'Unknown area'}
+                      </Text>
                     </View>
-                )}
+                  </View>
 
-                <Button variant="default" onPress={() => setShowHint(false)}>
-                  <Icon as={X} />
-                  <Text>Close</Text>
+
+                  {/* Gradient overlay */}
+                  <View className="absolute bottom-0 left-0 right-0 h-24 bg-black/50" />
+
+                  {/* Title overlay */}
+                  <View className="absolute bottom-4 left-4 right-4">
+                    <Text className="text-white text-xl font-bold">
+                      {selectedMarker.title}
+                    </Text>
+                    <Text className="text-white/70 text-sm mt-0.5">
+                      Badge: {selectedArea?.name ?? 'Unknown area'}
+                    </Text>
+
+                  </View>
+                </View>
+              ) : (
+                <View className="h-[280px] items-center justify-center bg-muted">
+                  <Ionicons name="image-outline" size={56} color="gray" />
+                  <Text className="text-muted-foreground mt-3 font-medium">
+                    No hint image available
+                  </Text>
+                </View>
+              )}
+
+              {/* Content */}
+              {!hintImageOnly && (
+              <View className="p-5">
+                <Text className="text-base text-muted-foreground text-center">
+                  Try to match the perspective or unique features of the landmark
+                  when taking your photo.
+                </Text>
+
+                <Button
+                  className="mt-5"
+                  onPress={() => setShowHint(false)}
+                >
+                  <Text>Got it</Text>
                 </Button>
-
+              </View>
+              )}
             </View>
+
+
+            {/* Floating close */}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute top-12 right-6 bg-black/40 rounded-full"
+              onPress={() => setShowHint(false)}
+            >
+              <Icon as={X} className="text-white size-6" />
+            </Button>
+
+          </View>
         </Modal>
+      );
+    };
+
+  const renderFullscreenImage = () => {
+    if (!selectedMarker) return null;
+
+    const imageUrl = selectedMarker?.hint_image_url || selectedMarker?.image;
+    if (!imageUrl) return null;
+
+    return (
+      <Modal
+        visible={showFullscreenImage}
+        transparent={true}
+        animationType="fade"
+        statusBarTranslucent
+      >
+        <View className="flex-1 bg-black">
+          <Image
+            source={{ uri: normalizeImageUrl(imageUrl) }}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="contain"
+          />
+
+          {/* Close button */}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="absolute top-12 right-6 bg-black/40 rounded-full"
+            onPress={() => setShowFullscreenImage(false)}
+          >
+            <Icon as={X} className="size-6 text-white" />
+          </Button>
+        </View>
+      </Modal>
     );
-};
+  };
+
 
   const renderCameraModal = () => {
       if (!permission || !permission.granted) {
@@ -639,16 +788,16 @@ return (
                         <Marker
                             key={marker.id}
                             coordinate={marker.coordinate}
-                            pinColor={marker.unlocked === 1 ? 'green' : 'red'}
+                            pinColor={marker.unlocked === 1 || marker.title === "Adam Mickiewicz Monument" ? 'green' : 'red'}
                             onPress={() => handleMarkerPress(marker, index)}
                             anchor={{ x: 0.16, y: 0.98 }}
                             tracksViewChanges={tracksViewChanges || forceRedraw}
                         >
 
                             <Ionicons
-                                name={marker.unlocked === 1 ? 'flag' : 'flag-outline'}
+                                name={marker.unlocked === 1 || marker.title === "Adam Mickiewicz Monument" ? 'flag' : 'flag-outline'}
                                 size={30}
-                                color={marker.unlocked === 1 ? colors.primary : colors.foreground}
+                                color={marker.unlocked === 1 || marker.title === "Adam Mickiewicz Monument" ? colors.primary : colors.foreground}
                             />
 
                             <Callout />
@@ -731,6 +880,8 @@ return (
                 {renderAnimatedCard()}
                 {renderSimplePopup()}
                 {renderCameraModal()}
+                {renderFullscreenImage()}
+
 
             </View>
         </>

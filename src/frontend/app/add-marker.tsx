@@ -155,8 +155,9 @@ export default function AddLandmarkScreen() {
         photo_longitude: useCustomPhotoLocation ? photoLocation?.longitude : undefined,
       };
 
-      if (imageUrl) {
-        payload.hint_image_url = imageUrl;
+      // Change this part
+      if (guidePhoto) {
+        payload.hint_image_uri = guidePhoto;  // ← Changed from hint_image_url
       }
 
       console.log('Sending payload:', JSON.stringify(payload, null, 2));
@@ -351,7 +352,12 @@ export default function AddLandmarkScreen() {
                       onChangeText={setNewAreaDescription}
                       multiline
                       numberOfLines={3}
-                      style={{ minHeight: 80, textAlignVertical: 'top', paddingTop: 12 }}
+                      style={{
+                        height: 80,
+                        textAlignVertical: 'top',
+                        paddingTop: 12,
+                        maxHeight: 80,  // Add this
+                      }}
                     />
                   </View>
                 </View>

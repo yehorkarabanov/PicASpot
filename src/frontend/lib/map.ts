@@ -1,4 +1,5 @@
 import api from './api';
+import * as SecureStore from 'expo-secure-store';
 
 export interface Landmark {
   id: string;
@@ -8,9 +9,13 @@ export interface Landmark {
   title: string;
   description?: string;
   image?: string;
+  hint_image?: string;
   hint_image_url?: string;
   radius: number;
   unlock_radius: number;
+  photo_location_radius?: number;
+  photo_latitude?: number;
+  photo_longitude?: number;
   badge_url?: string;
   area_id: string;
   area_name?: string;
@@ -77,7 +82,7 @@ export const landmarkService = {
     };
   },
 
-  async createLandmark(params: {
+ async createLandmark(params: {
     name: string;
     description?: string;
     latitude: number;
@@ -86,7 +91,7 @@ export const landmarkService = {
     area_id: string;
     photo_latitude?: number;
     photo_longitude?: number;
-    hint_image_url?: string;
+    hint_image_url?: string;  // Keep this name in your params
   }): Promise<Landmark> {
     console.log('Creating landmark with params:', params);
 
@@ -98,7 +103,6 @@ export const landmarkService = {
         unlock_radius_meters: params.unlock_radius_meters,
         photo_radius_meters: 50,
         area_id: params.area_id,
-        hint_image_url: ""
       };
 
       if (params.description) {
@@ -110,7 +114,8 @@ export const landmarkService = {
         params_obj.photo_location_radius = 50;
       }
       if (params.hint_image_url) {
-        params_obj.hint_image_url = params.hint_image_url;
+        // Change this to match what backend expects
+        params_obj.hint_image = params.hint_image_url;  // ← Changed from hint_image_url to hint_image
       }
 
       console.log('Sending as query parameters:', params_obj);
@@ -129,10 +134,6 @@ export const landmarkService = {
       return response.data.data.landmark;
     } catch (error: any) {
       console.error('Full error object:', error);
-      if (error.message) console.error('Error message:', error.message);
-      if (error.code) console.error('Error code:', error.code);
-      if (error.response?.status) console.error('Response status:', error.response.status);
-      if (error.response?.data) console.error('Response data:', error.response.data);
       throw error;
     }
   },
@@ -202,8 +203,9 @@ export function landmarkToMarker(landmark: Landmark) {
     title: landmark.title,
     description: landmark.description ?? '',
     image: landmark.image ?? null,
-    hint_image_url: landmark.hint_image_url ?? null,
+    hint_image_url: landmark.hint_image ?? landmark.hint_image_url ?? null,
     radius: [landmark.unlock_radius || landmark.radius],
+    area_id: landmark.area_id,
   };
 }
 
@@ -222,7 +224,8 @@ export const storageService = {
       console.log('Uploading image:', filename);
       const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://192.168.1.108/api';
 
-      const response = await fetch(`${apiUrl}/v1/storage/upload?folder=landmark_guides`, {
+      // CHANGE THIS LINE: use path_prefix instead of folder
+      const response = await fetch(`${apiUrl}/v1/storage/upload?path_prefix=landmarks`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -38,10 +38,10 @@ export const LandmarkProvider = ({ children }: { children: React.ReactNode }) =>
 
       console.log('Fetched landmarks:', data.map(l => ({
         title: l.title,
-        radius: l.radius,
-        unlock_radius: l.unlock_radius
+        id: l.id,
+
       })));
-      console.log('Fetched areas:', fetchedAreas.map(a => a.name));
+      console.log('Fetched areas:', fetchedAreas.map(a => ({ name: a.name, id: a.id })));
     } catch (error) {
       console.error('Failed to fetch nearby landmarks and areas', error);
       setLandmarks([]);
