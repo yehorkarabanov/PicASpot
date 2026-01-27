@@ -21,6 +21,20 @@ engaging experience for discovering and collecting locations.
 
 ---
 
+## 🌟 UI showcase
+
+![Popup demo](./readme-assets/1.gif)
+![Popup demo](./readme-assets/2.gif)
+![Popup demo](./readme-assets/3.gif)
+![Popup demo](./readme-assets/4.gif)
+![Popup demo](./readme-assets/5.gif)
+![Popup demo](./readme-assets/6.gif)
+![Popup demo](./readme-assets/7.gif)
+![Popup demo](./readme-assets/8.gif)
+![Popup demo](./readme-assets/9.gif)
+
+---
+
 ## 🏗️ Architecture
 
 ### Microservices Overview
