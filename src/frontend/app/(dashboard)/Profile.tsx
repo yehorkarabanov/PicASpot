@@ -1,28 +1,22 @@
 import * as React from 'react';
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { Text } from '@/components/ui/text';
-import { useAuth } from '@/contexts/AuthContext';
-import { Link, Stack, useRouter} from 'expo-router';
-import { Container, LogOut, MoonStarIcon, SunIcon } from 'lucide-react-native';
-import { useColorScheme } from 'nativewind';
-import { View } from 'react-native';
-export default function Screen() {
+import { Stack } from 'expo-router';
+import { UserProfile } from '@/components/profile/UserProfile';
+import { MOCK_FEED_POSTS } from '@/lib/mockData';
 
+// Assuming Alex is the logged-in user for this prototype
+const CURRENT_USER_ID = '1'; 
+
+export default function ProfileScreen() {
+  const currentUser = MOCK_FEED_POSTS.find(p => p.user.id === CURRENT_USER_ID)?.user || MOCK_FEED_POSTS[0].user;
 
   return (
     <>
       <Stack.Screen options={{
         title: 'Profile',
-      }}/>
-      <View className="flex-1 pt-12 gap-8 p-4 bg-background">
-        <View className="items-center gap-2">
-          <Text className="text-foreground">
-            Profile placeholder
-          </Text>
-        </View>
-      </View>
+        headerShown: false,
+        animation: 'fade',
+      }} />
+      <UserProfile user={currentUser} isCurrentUser={true} />
     </>
   );
 }
-

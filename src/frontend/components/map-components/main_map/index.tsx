@@ -1,17 +1,16 @@
-import React, { forwardRef } from 'react'
-import { View } from 'react-native'
-import MapView, {PROVIDER_GOOGLE} from 'react-native-maps'
-import { cn } from '@/lib/utils'
-import { mapVariants } from './variants'
-import { styles } from './styles'
-import type { CustomMapProps } from './types'
+import React, { forwardRef } from 'react';
+import { View, StyleSheet } from 'react-native';
+import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import { cn } from '@/lib/utils';
+import { mapVariants } from './variants';
+import type { CustomMapProps } from './types';
 
 const defaultRegion = {
   latitude: 52.237049,
   longitude: 21.017532,
   latitudeDelta: 0.0922,
   longitudeDelta: 0.0421,
-}
+};
 
 export const MainMap = forwardRef<MapView, CustomMapProps>(
   (
@@ -28,11 +27,14 @@ export const MainMap = forwardRef<MapView, CustomMapProps>(
     ref
   ) => {
     return (
-      <View className={cn(mapVariants({ variant, rounded }), className)}>
+      <View
+        style={{ flex: 1 }}
+        className={cn(mapVariants({ variant, rounded }), className)}
+      >
         <MapView
           ref={ref}
           provider={provider}
-          style={[styles.map, style]}
+          style={[StyleSheet.absoluteFill, style]}
           initialRegion={initialRegion}
           showsUserLocation
           showsBuildings
@@ -45,8 +47,8 @@ export const MainMap = forwardRef<MapView, CustomMapProps>(
           {children}
         </MapView>
       </View>
-    )
+    );
   }
-)
+);
 
-MainMap.displayName = 'MainMap'
+MainMap.displayName = 'MainMap';

@@ -152,9 +152,13 @@ class UnlockService:
         landmark_id = attempt.landmark_id
 
         if error:
-            attempt.error_message = error
-            attempt.status = AttemptStatus.FAILED
-            await self.attempt_repository.update(attempt.id, attempt.__dict__)
+            await self.attempt_repository.update(
+                attempt.id,
+                {
+                    "error_message": error,
+                    "status": AttemptStatus.FAILED,
+                },
+            )
             logger.info(
                 "Unlock failed for user %s at landmark %s: %s",
                 user_id,
@@ -162,8 +166,6 @@ class UnlockService:
                 error,
             )
             return
-
-        attempt.similarity_score = similarity_score
 
         if success:
             await self.unlock_repository.create(
@@ -174,20 +176,29 @@ class UnlockService:
                     "attempt_id": attempt.id,
                 }
             )
-            attempt.status = AttemptStatus.SUCCESS
+            await self.attempt_repository.update(
+                attempt.id,
+                {
+                    "similarity_score": similarity_score,
+                    "status": AttemptStatus.SUCCESS,
+                },
+            )
             logger.info(
                 "Unlock successful for user %s at landmark %s", user_id, landmark_id
             )
         else:
-            attempt.status = AttemptStatus.FAILED
+            await self.attempt_repository.update(
+                attempt.id,
+                {
+                    "similarity_score": similarity_score,
+                    "status": AttemptStatus.FAILED,
+                },
+            )
             logger.info(
-                "Unlock failed for user %s at landmark %s: %s",
+                "Unlock failed for user %s at landmark %s",
                 user_id,
                 landmark_id,
-                error,
             )
-
-        await self.attempt_repository.update(attempt.id, attempt.__dict__)
 
     async def get_unlock_by_id(
         self, unlock_id: uuid.UUID, user: User, params: UnlockRequestParams
@@ -215,7 +226,7 @@ class UnlockService:
         )
 
         if not unlock:
-            raise NotFoundError(f"Unlock {unlock_id} not found")
+            raise NotFoundError(f"Unlock with ID {unlock_id} not found")
 
         return self._build_unlock_response(unlock, params)
 
@@ -332,7 +343,7 @@ class UnlockService:
         )
 
         if not attempt:
-            raise NotFoundError(f"Attempt {attempt_id} not found")
+            raise NotFoundError(f"Attempt with ID {attempt_id} not found")
 
         return self._build_attempt_response(attempt, params)
 
