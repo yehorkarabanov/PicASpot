@@ -22,16 +22,27 @@ engaging experience for discovering and collecting locations.
 ---
 
 ## 🌟 UI showcase
+<p>
+  <h3>Login and registration page</h3>
+  <img src="./readme-assets/1.gif" width="300" /><br/>
+  <h3>Completed landmark</h3>
+  <img src="./readme-assets/2.gif" width="300" /><br/>
+  <h3>Uncompleted landmark</h3>
+  <img src="./readme-assets/3.gif" width="300" /><br/>
+  <h3>The map</h3>
+  <img src="./readme-assets/4.gif" width="300" /><br/>
+  <h3>Map menu</h3>
+  <img src="./readme-assets/5.gif" width="300" /><br/>
+  <h3>Creating a new landmark</h3>
+  <img src="./readme-assets/6.gif" width="300" /><br/>
+  <h3>Scroll feed</h3>
+  <img src="./readme-assets/7.gif" width="300" /><br/>
+  <h3>Profile page</h3>
+  <img src="./readme-assets/8.gif" width="300" /><br/>
+  <h3>Light color scheme</h3>
+  <img src="./readme-assets/9.gif" width="300" />
+</p>
 
-![Popup demo](./readme-assets/1.gif)
-![Popup demo](./readme-assets/2.gif)
-![Popup demo](./readme-assets/3.gif)
-![Popup demo](./readme-assets/4.gif)
-![Popup demo](./readme-assets/5.gif)
-![Popup demo](./readme-assets/6.gif)
-![Popup demo](./readme-assets/7.gif)
-![Popup demo](./readme-assets/8.gif)
-![Popup demo](./readme-assets/9.gif)
 
 ---
 
